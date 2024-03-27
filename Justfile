@@ -14,3 +14,7 @@ build: sqlc
     version=v0-$(git describe --tags --always)
   fi
   go build -o dist/pg-helper -ldflags "-X main.Version=${version}" cmd/pg-helper/*.go
+
+clean:
+  rm -rf dist/
+  rm -rf internal/db/

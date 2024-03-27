@@ -9,7 +9,7 @@ new-table name: (_new-migrate "create_table" name)
 
 build: sqlc
   #!/usr/bin/env bash
-  version=$(git describe --tags)
+  version=$(git describe --tags 2>/dev/null)
   if [ $? -ne 0 ]; then
     version=v0-$(git describe --tags --always)
   fi

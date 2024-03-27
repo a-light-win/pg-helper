@@ -1,0 +1,11 @@
+
+CREATE TABLE IF NOT EXISTS db_task_depends (
+  id BIGSERIAL PRIMARY KEY,
+  task_id BIGINT NOT NULL,
+  depends_on_task_id BIGINT NOT NULL,
+  created_at TIMESTAMP DEFAULT timezone('utc', now())
+);
+
+CREATE INDEX db_task_depends_task_id_idx ON db_task_depends (task_id);
+CREATE INDEX db_task_depends_on_task_id_idx ON db_task_depends (depends_on_task_id);
+

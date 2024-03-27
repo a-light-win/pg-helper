@@ -9,9 +9,9 @@ new-table name: (_new-migrate "create_table" name)
 
 build: sqlc
   #!/usr/bin/env bash
-  version=$(git describe --tags 2>/dev/null)
+  version=$(git describe --tags --dirty 2>/dev/null)
   if [ $? -ne 0 ]; then
-    version=v0-$(git describe --tags --always)
+    version=v0-$(git describe --tags --always --dirty)
   fi
   go build -o dist/pg-helper -ldflags "-X main.Version=${version}" cmd/pg-helper/*.go
 

@@ -1,0 +1,33 @@
+---
+version: "3"
+
+services:
+  pg-13:
+    image: postgres:13
+    container_name: pg-13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_admin_password
+    secrets:
+      - pg_admin_password
+  pg-helper-13:
+    image: pg-helper:13
+    container_name: pg-helper-13
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PG_VERSION: 13
+    volumes:
+      - ./tests/config.yaml:/etc/pg-helper/config.yaml
+    environment:
+      PG_HELPER_DB_PASSWORD_FILE: /run/secrets/pg_admin_password
+    secrets:
+      - pg_admin_password
+    depends_on:
+      - pg-13
+
+secrets:
+  pg_admin_password:
+    file: ./tests/secrets/pg_admin_password

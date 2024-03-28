@@ -13,12 +13,13 @@ build: sqlc
   if [ $? -ne 0 ]; then
     version=v0-$(git describe --tags --always --dirty)
   fi
-  go build -o dist/pg-helper -ldflags "-X main.Version=${version}" cmd/pg-helper/*.go
+  go build -o dist/pg-helper -ldflags "-X main.Version=${version}" cmd/pg-helper/*.go || exit $?
+  echo "Build pg-helper ${version} success"
 
 clean:
   rm -rf dist/
   rm -rf internal/db/
 
 serve: build
-  ./dist/pg-helper serve --config=tests/config.yaml
+  {{ env('DOCKER_CMD', 'podman')}} compose up --force-recreate --build
   

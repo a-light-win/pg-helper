@@ -16,10 +16,18 @@ build: sqlc
   go build -o dist/pg-helper -ldflags "-X main.Version=${version}" cmd/pg-helper/*.go || exit $?
   echo "Build pg-helper ${version} success"
 
+strip: build
+  #!/usr/bin/env bash
+  cd dist/
+  objcopy --only-keep-debug pg-helper pg-helper.dbg
+  objcopy --strip-unneeded pg-helper
+  objcopy --add-gnu-debuglink=pg-helper.dbg pg-helper
+
+
 clean:
   rm -rf dist/
   rm -rf internal/db/
 
-serve: build
+serve: strip
   {{ env('DOCKER_CMD', 'podman')}} compose up --force-recreate --build
   

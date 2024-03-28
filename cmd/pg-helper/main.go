@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	viper_ "github.com/spf13/viper"
 )
 
 var (
+	viper   = viper_.NewWithOptions(viper_.KeyDelimiter("::"))
 	cfgFile string
 	rootCmd = &cobra.Command{
 		Use:   "pg-helper",
@@ -36,12 +38,13 @@ func initConfig() {
 		home, err := os.UserCacheDir()
 		cobra.CheckErr(err)
 
-		viper.AddConfigPath(home)
-		viper.SetConfigType("yaml")
-		viper.SetConfigName(".pg-helper")
+		home_config_path := filepath.Join(home, ".config", "pg-helper")
+		viper.AddConfigPath(home_config_path)
+		viper.AddConfigPath("/etc/pg-helper/")
+		viper.SetConfigName("config.yaml")
 	}
 
-	viper.SetEnvPrefix("PG_HELPER_")
+	viper.SetEnvPrefix("PG_HELPER")
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err == nil {

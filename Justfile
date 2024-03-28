@@ -18,3 +18,7 @@ build: sqlc
 clean:
   rm -rf dist/
   rm -rf internal/db/
+
+serve: build
+  ./dist/pg-helper serve --config=tests/config.yaml
+  

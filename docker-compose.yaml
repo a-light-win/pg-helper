@@ -21,7 +21,9 @@ services:
         PG_VERSION: 13
     volumes:
       - ./tests/config.yaml:/etc/pg-helper/config.yaml
+      - ./db/migrations:/usr/share/pg-helper/migrations
     environment:
+      PG_HELPER_DB_HOST: pg-13
       PG_HELPER_DB_PASSWORD_FILE: /run/secrets/pg_admin_password
     secrets:
       - pg_admin_password
@@ -46,8 +48,10 @@ services:
         PG_VERSION: 14
     volumes:
       - ./tests/config.yaml:/etc/pg-helper/config.yaml
+      - ./db/migrations:/usr/share/pg-helper/migrations
     environment:
       PG_HELPER_DB_PASSWORD_FILE: /run/secrets/pg_admin_password
+      PG_HELPER_DB_HOST: pg-14
     secrets:
       - pg_admin_password
     depends_on:

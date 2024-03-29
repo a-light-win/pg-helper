@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	viper_ "github.com/spf13/viper"
 )
@@ -39,10 +38,4 @@ func initConfig() {
 
 	viper.SetEnvPrefix("PG_HELPER")
 	viper.AutomaticEnv()
-
-	if err := viper.ReadInConfig(); err == nil {
-		log.Log().Str("file", viper.ConfigFileUsed()).Msg("Load config")
-	} else {
-		log.Warn().Err(err).Msg("Failed to load config")
-	}
 }

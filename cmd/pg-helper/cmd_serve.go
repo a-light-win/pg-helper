@@ -38,6 +38,12 @@ var (
 func serve(cmd *cobra.Command, args []string) {
 	gin.SetMode(gin.ReleaseMode)
 
+	if err := viper.ReadInConfig(); err == nil {
+		log.Log().Str("file", viper.ConfigFileUsed()).Msg("Load config")
+	} else {
+		log.Warn().Err(err).Msg("Failed to load config")
+	}
+
 	viper.Unmarshal(&config)
 	server := server_.New(&config)
 

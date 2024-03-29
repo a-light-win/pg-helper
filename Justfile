@@ -15,7 +15,8 @@ build: sqlc && _strip
   if [ $? -ne 0 ]; then
     version=v0-$(git describe --tags --always --dirty)
   fi
-  go build -o dist/pg-helper -trimpath -ldflags "-X main.Version=${version}" cmd/pg-helper/*.go || exit $?
+  go_version=$(go version|sed 's/go version go\(.*\)/\1/g')
+  go build -o dist/pg-helper -trimpath -ldflags "-X main.Version=${version} -X 'main.GoVersion=${go_version}'" cmd/pg-helper/*.go || exit $?
 
   echo "Build pg-helper ${version} success"
 

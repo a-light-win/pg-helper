@@ -1,5 +1,5 @@
 
-sqlc:
+_sqlc:
   {{ env('DOCKER_CMD', 'podman') }} run -it --rm -v `pwd`:`pwd` -w `pwd` docker.io/sqlc/sqlc generate 
 
 _new-migrate action name:
@@ -7,7 +7,7 @@ _new-migrate action name:
 
 new-table name: (_new-migrate "create_table" name)
 
-build: sqlc && _strip
+build: _sqlc && _strip
   #!/usr/bin/env bash
   echo "Building pg-helper ..."
 

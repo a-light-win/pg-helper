@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Version   = "0.0.1"
+	Version   = "v0.0.1"
 	GoVersion = "1.22"
 	buildInfo bool
 )

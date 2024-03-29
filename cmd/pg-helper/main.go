@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	viper_ "github.com/spf13/viper"
 )
@@ -22,6 +20,7 @@ or migrade a database from an old pg version to current pg version.`,
 )
 
 func main() {
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	rootCmd.Execute()
 }
 
@@ -35,19 +34,15 @@ func initConfig() {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
-		home, err := os.UserCacheDir()
-		cobra.CheckErr(err)
-
-		home_config_path := filepath.Join(home, ".config", "pg-helper")
-		viper.AddConfigPath(home_config_path)
-		viper.AddConfigPath("/etc/pg-helper/")
-		viper.SetConfigName("config.yaml")
+		viper.SetConfigFile("/etc/pg-helper/config.yaml")
 	}
 
 	viper.SetEnvPrefix("PG_HELPER")
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		log.Log().Str("file", viper.ConfigFileUsed()).Msg("Load config")
+	} else {
+		log.Warn().Err(err).Msg("Failed to load config")
 	}
 }

@@ -2,13 +2,13 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog/log"
 )
 
 type DbConfig struct {
@@ -33,7 +33,7 @@ type DbConfig struct {
 }
 
 func (c *DbConfig) Url() string {
-	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", c.User, url.QueryEscape(c.Password()), c.Host, c.Port, c.DbName)
+	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", c.User, url.QueryEscape(c.Password()), c.Host, c.Port, c.DbName)
 }
 
 func (c *DbConfig) Password() string {
@@ -41,7 +41,7 @@ func (c *DbConfig) Password() string {
 		if c.PasswordFile != "" {
 			password, err := os.ReadFile(c.PasswordFile)
 			if err != nil {
-				log.Fatal("Failed to read the password file, error: ", err)
+				log.Fatal().Err(err).Msg("Failed to read the password file")
 			}
 			c.Password_ = strings.TrimSpace(string(password))
 		}
@@ -60,7 +60,7 @@ func (c *DbConfig) NewPoolConfig() *pgxpool.Config {
 	if err != nil {
 		detail := string(err.Error())
 		detail = strings.ReplaceAll(detail, fmt.Sprintf(":%s@", url.QueryEscape(c.Password())), ":******@")
-		log.Fatal("Failed to create a config, error: ", detail)
+		log.Fatal().Str("Error", detail).Msg("Failed to create a pool config")
 	}
 
 	dbConfig.MaxConns = c.MaxConns

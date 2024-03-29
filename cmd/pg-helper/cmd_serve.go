@@ -4,6 +4,7 @@ import (
 	config_ "github.com/a-light-win/pg-helper/internal/config"
 	server_ "github.com/a-light-win/pg-helper/internal/server"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +41,12 @@ func serve(cmd *cobra.Command, args []string) {
 	viper.Unmarshal(&config)
 	server := server_.New(&config)
 
-	server.Init()
+	server.InitLogger()
+	log.Log().Msgf("pg-helper %s is start up", Version)
+
+	if server.Init() != nil {
+		return
+	}
 
 	server.Run()
 }

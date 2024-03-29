@@ -37,10 +37,6 @@ _strip:
 
   echo "Stripping pg-helper binary success"
 
-# compress binary
-upx: build
-  upx --best dist/pg-helper
-
 clean:
   rm -rf dist/
   rm -rf internal/db/

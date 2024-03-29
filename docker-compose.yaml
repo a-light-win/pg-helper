@@ -27,6 +27,31 @@ services:
       - pg_admin_password
     depends_on:
       - pg-13
+  pg-14:
+    image: postgres:14
+    container_name: pg-14
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_admin_password
+    secrets:
+      - pg_admin_password
+  pg-helper-14:
+    image: pg-helper:14
+    container_name: pg-helper-14
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PG_VERSION: 14
+    volumes:
+      - ./tests/config.yaml:/etc/pg-helper/config.yaml
+    environment:
+      PG_HELPER_DB_PASSWORD_FILE: /run/secrets/pg_admin_password
+    secrets:
+      - pg_admin_password
+    depends_on:
+      - pg-14
 
 secrets:
   pg_admin_password:

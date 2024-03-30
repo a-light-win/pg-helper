@@ -13,14 +13,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type Handler struct {
-	DbPool *pgxpool.Pool
-}
-
-func New(dbPool *pgxpool.Pool) *Handler {
-	return &Handler{DbPool: dbPool}
-}
-
 type CreateDbRequest struct {
 	Name     string        `json:"name" binding:"required,max=63,id"`
 	Owner    string        `json:"owner" binding:"required,max=63,id"`
@@ -84,8 +76,6 @@ func (h *Handler) CreateDb(c *gin.Context) {
 			return
 		}
 		// Create User here
-		// TODO: Ensure request.User is valid
-		// TODO: Ensure request.Password is not empty
 		_, err := request.Conn.Exec(c, fmt.Sprintf("CREATE USER %s WITH PASSWORD %s",
 			pq.QuoteIdentifier(request.Owner),
 			pq.QuoteLiteral(request.Password)))

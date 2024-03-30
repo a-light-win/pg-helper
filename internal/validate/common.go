@@ -1,20 +1,10 @@
-package handler
+package validate
 
 import (
-	"regexp"
-
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
 )
-
-// idRegex matches valid IDs.
-var idRegex = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]+$`)
-
-// validateID checks if the field value matches the idRegex.
-func validateID(field validator.FieldLevel) bool {
-	return idRegex.MatchString(field.Field().String())
-}
 
 func RegisterCustomValidations() {
 	// Get the validator engine.

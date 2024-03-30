@@ -1,11 +1,14 @@
 package server
 
-import "github.com/a-light-win/pg-helper/internal/handler"
+import (
+	"github.com/a-light-win/pg-helper/internal/handler"
+	"github.com/a-light-win/pg-helper/internal/validate"
+)
 
 func (s *Server) initWebServer() error {
 	s.Handler = handler.New(s.DbPool)
 
-	handler.RegisterCustomValidations()
+	validate.RegisterCustomValidations()
 
 	err := s.initWebServerByConfig()
 	if err != nil {

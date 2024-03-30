@@ -19,6 +19,8 @@ services:
       dockerfile: Dockerfile
       args:
         PG_VERSION: 13
+    ports:
+      - "127.0.0.1:8080:8080"
     volumes:
       - ./tests/config.yaml:/etc/pg-helper/config.yaml
       - ./db/migrations:/usr/share/pg-helper/migrations

@@ -8,16 +8,23 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var id_re = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]+$`)
+// idRegex matches valid IDs.
+var idRegex = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]+$`)
 
-func validateID(fl validator.FieldLevel) bool {
-	return id_re.MatchString(fl.Field().String())
+// validateID checks if the field value matches the idRegex.
+func validateID(field validator.FieldLevel) bool {
+	return idRegex.MatchString(field.Field().String())
 }
 
-func init() {
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		if err := v.RegisterValidation("id", validateID); err != nil {
-			log.Error().Err(err).Msg("Failed to register id validator")
-		}
+func RegisterCustomValidations() {
+	// Get the validator engine.
+	validatorEngine, ok := binding.Validator.Engine().(*validator.Validate)
+	if !ok {
+		log.Fatal().Msg("Failed to get validator engine")
+	}
+
+	// Register the "id" validation function.
+	if err := validatorEngine.RegisterValidation("id", validateID); err != nil {
+		log.Fatal().Err(err).Msg("Failed to register id validator")
 	}
 }

@@ -35,7 +35,7 @@ func (h *Handler) CreateDb(c *gin.Context) {
 		log.Error().
 			Err(err).
 			Msg("Failed to bind request")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to bind request"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to bind request", "detail": err.Error()})
 		return
 	}
 

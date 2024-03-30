@@ -5,6 +5,8 @@ import "github.com/a-light-win/pg-helper/internal/handler"
 func (s *Server) initWebServer() error {
 	s.Handler = handler.New(s.DbPool)
 
+	handler.RegisterCustomValidations()
+
 	err := s.initWebServerByConfig()
 	if err != nil {
 		return err

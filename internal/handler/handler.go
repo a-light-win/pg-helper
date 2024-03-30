@@ -24,7 +24,7 @@ func New(dbPool *pgxpool.Pool) *Handler {
 type CreateDbRequest struct {
 	Name     string        `json:"name" binding:"required,max=63,id"`
 	Owner    string        `json:"owner" binding:"required,max=63,id"`
-	Password string        `json:"password" binding:"required"`
+	Password string        `json:"password" binding:"required,min=8"`
 	Conn     *pgxpool.Conn `json:"-"`
 }
 

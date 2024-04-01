@@ -28,7 +28,7 @@ func (h *Handler) CreateDb(c *gin.Context) {
 		return
 	}
 
-	if exists, err := isDbExists(c, request); exists || err != nil {
+	if exists, err := checkDatabaseOwnership(c, request.query, request.Name, request.Owner); exists || err != nil {
 		return
 	}
 
@@ -85,31 +85,66 @@ func createUser(c *gin.Context, request *CreateDbRequest) error {
 	return nil
 }
 
-func isDbExists(c *gin.Context, request *CreateDbRequest) (bool, error) {
-	owner, err := request.query.GetDbOwner(c, request.Name)
+func getDbOwner(c *gin.Context, query *db.Queries, dbName string) (pgtype.Text, error) {
+	owner, err := query.GetDbOwner(c, dbName)
 	if err != nil {
 		if err != pgx.ErrNoRows {
 			logErrorAndRespond(c, err, "Failed to get database owner")
-			return false, err
+			return pgtype.Text{Valid: false}, err
 		}
 	}
+	return owner, nil
+}
 
-	if owner.Valid {
-		if owner.String == request.Owner {
+func checkDatabaseOwnership(c *gin.Context, query *db.Queries, dbName string, expectOwner string) (bool, error) {
+	db_, err := query.GetDbByName(c, dbName)
+	if err != nil {
+		if err != pgx.ErrNoRows {
+			logErrorAndRespond(c, err, "Failed to get database")
+			return false, err
+		}
+	} else {
+		if db_.Owner == expectOwner {
 			c.JSON(http.StatusOK, gin.H{"message": "Database already exists"})
 			return true, nil
 		}
-
 		log.Error().
-			Str("db_name", request.Name).
-			Str("owner", owner.String).
-			Str("request_owner", request.Owner).
+			Str("db_name", dbName).
+			Str("owner", db_.Owner).
+			Str("request_owner", expectOwner).
 			Msg("Database exists with another owner")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Database exists with another owner"})
+		return false, errors.New("database exists with another owner")
+	}
 
+	owner, err := getDbOwner(c, query, dbName)
+	if err != nil {
+		return false, err
+	}
+	if owner.Valid {
+		if owner.String == expectOwner {
+			query.CreateDb(c, db.CreateDbParams{Name: dbName, Owner: expectOwner})
+			c.JSON(http.StatusOK, gin.H{"message": "Database already exists"})
+			return true, nil
+		}
+		log.Error().
+			Str("db_name", dbName).
+			Str("owner", owner.String).
+			Str("request_owner", expectOwner).
+			Msg("Database exists with another owner")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Database exists with another owner"})
 		return false, errors.New("database exists with another owner")
 	}
 	return false, nil
+}
+
+func isDbExist(c *gin.Context, query *db.Queries, dbName string) (bool, error) {
+	owner, err := getDbOwner(c, query, dbName)
+	if err != nil {
+		return false, err
+	}
+
+	return owner.Valid, nil
 }
 
 func createDb(c *gin.Context, request *CreateDbRequest) error {
@@ -119,6 +154,7 @@ func createDb(c *gin.Context, request *CreateDbRequest) error {
 		logErrorAndRespond(c, err, "Failed to create database")
 		return err
 	}
+	request.query.CreateDb(c, db.CreateDbParams{Name: request.Name, Owner: request.Owner})
 
 	log.Log().Msg("Database created successfully")
 	c.JSON(http.StatusCreated, gin.H{"message": "Database created successfully"})

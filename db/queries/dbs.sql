@@ -10,3 +10,6 @@ UPDATE dbs SET is_enabled = FALSE, disabled_at = timezone('utc', now()) WHERE id
 
 -- name: GetDbByName :one
 SELECT * FROM dbs WHERE name = $1;
+
+-- name: GetDbByID :one
+SELECT * FROM dbs WHERE id = $1;

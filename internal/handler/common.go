@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"github.com/a-light-win/pg-helper/internal/config"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
@@ -10,10 +11,7 @@ import (
 
 type Handler struct {
 	DbPool *pgxpool.Pool
-}
-
-func New(dbPool *pgxpool.Pool) *Handler {
-	return &Handler{DbPool: dbPool}
+	Config *config.Config
 }
 
 func logErrorAndRespond(c *gin.Context, err error, message string) {

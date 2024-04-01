@@ -1,8 +1,8 @@
 
 CREATE TABLE IF NOT EXISTS db_task_depends (
   id BIGSERIAL PRIMARY KEY,
-  task_id BIGINT NOT NULL,
-  depends_on_task_id BIGINT NOT NULL,
+  task_id UUID NOT NULL,
+  depends_on_task_id UUID NOT NULL,
   created_at TIMESTAMP DEFAULT timezone('utc', now())
 );
 

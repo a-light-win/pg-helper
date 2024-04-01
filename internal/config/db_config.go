@@ -30,6 +30,11 @@ type DbConfig struct {
 	MaxConns int32 `mapstructure:"max_conns" json:"max_conns"`
 	// The path of the database migrations.
 	MigrationsPath string `mapstructure:"migrations_path" json:"migrations_path"`
+
+	// The path of the database backups.
+	BackupRootPath string `mapstructure:"backup_root_path" json:"backup_root_path"`
+	// The majar version of the database that pg-helper work with.
+	CurrentDbVersion int `mapstructure:"current_db_version" json:"current_db_version"`
 }
 
 func (c *DbConfig) Url() string {
@@ -71,4 +76,13 @@ func (c *DbConfig) NewPoolConfig() *pgxpool.Config {
 	dbConfig.ConnConfig.ConnectTimeout = defaultConnectTimeout
 
 	return dbConfig
+}
+
+func (c *DbConfig) BackupDbDir(dbName string) string {
+	return fmt.Sprintf("%s/pg-%d/%s", c.BackupRootPath, c.CurrentDbVersion, dbName)
+}
+
+// The backup file is relative to the BackupRootPath
+func (c *DbConfig) NewBackupFile(dbName string) string {
+	return fmt.Sprintf("pg-%d/%s/%s.sql", c.CurrentDbVersion, dbName, time.Now().Format("2006-01-02_15:04:05"))
 }

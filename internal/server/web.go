@@ -6,7 +6,10 @@ import (
 )
 
 func (s *Server) initWebServer() error {
-	s.Handler = handler.New(s.DbPool)
+	s.Handler = &handler.Handler{
+		DbPool: s.DbPool,
+		Config: s.Config,
+	}
 
 	validate.RegisterCustomValidations()
 
@@ -24,6 +27,12 @@ func (s *Server) initWebServerByConfig() error {
 }
 
 func (s *Server) registerRoutes() error {
-	s.Router.POST("/api/v1/db/create", s.Handler.DbConn, s.Handler.CreateDb)
+	dbGroup := s.Router.Group("/api/v1/db")
+	dbGroup.Use(s.Handler.DbConn)
+	dbGroup.POST("create", s.Handler.CreateDb)
+
+	dbGroup.POST("/backup", s.Handler.BackupDb)
+	dbGroup.GET("/backup/:taskId", s.Handler.BackupStatus)
+
 	return nil
 }

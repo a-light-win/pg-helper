@@ -21,9 +21,11 @@ func init() {
 	viper.SetDefault("db::reserve_db_names", []string{"postgres"})
 	viper.SetDefault("db::max_conns", 4)
 	viper.SetDefault("db::migrations_path", "file:///usr/share/pg-helper/migrations")
+	viper.SetDefault("db::backup_root_path", "/var/lib/pg-helper/backups")
 	viper.BindEnv("db::password_file", "PG_HELPER_DB_PASSWORD_FILE")
 	viper.BindEnv("db::password", "PG_HELPER_DB_PASSWORD")
 	viper.BindEnv("db::host", "PG_HELPER_DB_HOST")
+	viper.BindEnv("db::current_db_version", "PG_MAJOR")
 }
 
 var (

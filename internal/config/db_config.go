@@ -37,8 +37,11 @@ type DbConfig struct {
 	CurrentDbVersion int `mapstructure:"current_db_version" json:"current_db_version"`
 }
 
-func (c *DbConfig) Url() string {
-	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", c.User, url.QueryEscape(c.Password()), c.Host, c.Port, c.DbName)
+func (c *DbConfig) Url(dbName string) string {
+	if dbName == "" {
+		dbName = c.DbName
+	}
+	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", c.User, url.QueryEscape(c.Password()), c.Host, c.Port, dbName)
 }
 
 func (c *DbConfig) Password() string {
@@ -61,7 +64,7 @@ func (c *DbConfig) NewPoolConfig() *pgxpool.Config {
 	const defaultHealthCheckPeriod = time.Minute
 	const defaultConnectTimeout = time.Second * 5
 
-	dbConfig, err := pgxpool.ParseConfig(c.Url())
+	dbConfig, err := pgxpool.ParseConfig(c.Url(""))
 	if err != nil {
 		detail := string(err.Error())
 		detail = strings.ReplaceAll(detail, fmt.Sprintf(":%s@", url.QueryEscape(c.Password())), ":******@")

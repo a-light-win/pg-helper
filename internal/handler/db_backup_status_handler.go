@@ -7,13 +7,13 @@ import (
 
 	"github.com/a-light-win/pg-helper/internal/db"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func (h *Handler) BackupStatus(c *gin.Context) {
-	var taskId pgtype.UUID
+	var taskId uuid.UUID
 	if err := taskId.Scan(c.Param("taskId")); err != nil {
 		logErrorAndRespond(c, err, "invalid task ID")
 		return

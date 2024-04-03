@@ -13,6 +13,7 @@ import (
 	"github.com/a-light-win/pg-helper/internal/config"
 	"github.com/a-light-win/pg-helper/internal/db"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -28,7 +29,7 @@ type BackupDbRequest struct {
 }
 
 type BackupDbResponse struct {
-	ID       pgtype.UUID      `json:"id"`
+	ID       uuid.UUID        `json:"id"`
 	DbID     int64            `json:"db_id"`
 	DbName   string           `json:"db_name"`
 	Action   db.DbAction      `json:"action"`
@@ -51,20 +52,19 @@ func (h *Handler) BackupDb(c *gin.Context) {
 	}
 
 	// Check if the database exists
-	db := mustGetDbByName(c, request.query, request.Name)
-	if db == nil {
+	request.db, err = mustGetDbByName(c, request.query, request.Name)
+	if err != nil {
 		return
 	}
-	request.db = db
 
 	// Ensure there is only one backup tasks for the database at a time
 	// This is to prevent the database from being backed up multiple times concurrently
-	backupTask, err := getBackupTask(c, request.query, db.ID)
+	backupTask, err := getBackupTask(c, request.query, request.db.ID)
 	if err != nil {
 		return
 	}
 	if backupTask != nil {
-		resp := fromDbTask(db.Name, backupTask)
+		resp := fromDbTask(request.db.Name, backupTask)
 		c.JSON(http.StatusOK, resp)
 		return
 	}
@@ -90,7 +90,7 @@ func fromDbTask(dbName string, task *db.DbTask) *BackupDbResponse {
 	return &resp
 }
 
-func mustGetDbByName(c *gin.Context, query *db.Queries, dbName string) *db.Db {
+func mustGetDbByName(c *gin.Context, query *db.Queries, dbName string) (*db.Db, error) {
 	db, err := query.GetDbByName(c, dbName)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -98,14 +98,14 @@ func mustGetDbByName(c *gin.Context, query *db.Queries, dbName string) *db.Db {
 		} else {
 			logErrorAndRespond(c, err, "Failed to get database")
 		}
-		return nil
+		return nil, err
 	}
-	return &db
+	return &db, nil
 }
 
 func checkBackupDbRequest(c *gin.Context) (*BackupDbRequest, error) {
 	request := BackupDbRequest{}
-	if err := c.ShouldBindJSON(&request); err != nil {
+	if err := c.ShouldBind(&request); err != nil {
 		logErrorAndRespondWithCode(c, err, "Failed to bind request", http.StatusBadRequest)
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func checkBackupDbRequest(c *gin.Context) (*BackupDbRequest, error) {
 }
 
 func getBackupTask(c *gin.Context, query *db.Queries, dbID int64) (*db.DbTask, error) {
-	backupTask, err := query.GetActiveTaskByDbID(c, db.GetActiveTaskByDbIDParams{DbID: dbID, Action: db.DbActionBackup})
+	backupTask, err := query.GetActiveDbTaskByDbID(c, db.GetActiveDbTaskByDbIDParams{DbID: dbID, Action: db.DbActionBackup})
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -166,7 +166,7 @@ type DbBackupHandler struct {
 	Pool       *pgxpool.Pool
 	DbName     string
 	BackupPath string
-	TaskID     pgtype.UUID
+	TaskID     uuid.UUID
 }
 
 func (h *DbBackupHandler) backup() {

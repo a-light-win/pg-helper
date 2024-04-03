@@ -36,7 +36,7 @@ func (s *Server) migrateDb() error {
 	for {
 		m, err := migrate.New(
 			s.Config.Db.MigrationsPath,
-			s.Config.Db.Url())
+			s.Config.Db.Url(""))
 		if err != nil {
 			log.Warn().Err(err).Msg("Setup Migrate environment failed")
 			time.Sleep(5 * time.Second)

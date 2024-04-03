@@ -29,6 +29,7 @@ func (s *Server) initWebServerByConfig() error {
 func (s *Server) registerRoutes() error {
 	dbGroup := s.Router.Group("/api/v1/db")
 	dbGroup.Use(s.Handler.DbConn)
+
 	dbGroup.POST("create", s.Handler.CreateDb)
 
 	dbGroup.POST("/backup", s.Handler.BackupDb)

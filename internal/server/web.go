@@ -7,8 +7,9 @@ import (
 
 func (s *Server) initWebServer() error {
 	s.Handler = &handler.Handler{
-		DbPool: s.DbPool,
-		Config: s.Config,
+		DbPool:      s.DbPool,
+		Config:      s.Config,
+		JobProducer: s.JobProducer,
 	}
 
 	validate.RegisterCustomValidations()
@@ -34,6 +35,10 @@ func (s *Server) registerRoutes() error {
 
 	dbGroup.POST("/backup", s.Handler.BackupDb)
 	dbGroup.GET("/backup/:taskId", s.Handler.BackupStatus)
+
+	dbGroup.POST("/migrate", s.Handler.MigrateDb)
+	// TODO: Get task status
+	// dbGroup.GET("/migrate/:taskId", s.Handler.MigrateDbStatus)
 
 	return nil
 }

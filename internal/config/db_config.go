@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -88,4 +90,41 @@ func (c *DbConfig) BackupDbDir(dbName string) string {
 // The backup file is relative to the BackupRootPath
 func (c *DbConfig) NewBackupFile(dbName string) string {
 	return fmt.Sprintf("pg-%d/%s/%s.sql", c.CurrentDbVersion, dbName, time.Now().Format("2006-01-02_15:04:05"))
+}
+
+func (c *DbConfig) extractBackupPath(backupPath string) (dbName string, pgVersion int, err error) {
+	dbName = ""
+	pgVersion = 0
+
+	cleanPath := filepath.Clean(backupPath)
+	if !strings.HasPrefix(cleanPath, "pg-") {
+		err = fmt.Errorf("illegal backup path")
+		return
+	}
+
+	dbName = strings.Split(cleanPath, "/")[1]
+	pgVersion, err = strconv.Atoi(strings.Split(cleanPath, "/")[0][3:])
+	if err != nil {
+		err = fmt.Errorf("illegal backup path, can not parse pg version")
+	}
+	return
+}
+
+func (c *DbConfig) ValidateBackupPath(backupPath string, dbName string) (pgVersionInPath int, err error) {
+	dbNameInPath, pgVersionInPath, err := c.extractBackupPath(backupPath)
+	if err != nil {
+		return
+	}
+
+	if dbNameInPath != dbName {
+		err = fmt.Errorf("illegal backup path, db name not match")
+		return
+	}
+
+	if pgVersionInPath > c.CurrentDbVersion {
+		err = fmt.Errorf("illegal backup path, can not restore from a higher version")
+		return
+	}
+
+	return
 }

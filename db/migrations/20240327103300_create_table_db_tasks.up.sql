@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS db_tasks (
   action DB_ACTION NOT NULL,
   reason TEXT NOT NULL,
   status DB_TASK_STATUS NOT NULL,
-  created_at TIMESTAMP DEFAULT timezone('utc', now()),
-  updated_at TIMESTAMP DEFAULT timezone('utc', now()),
+  created_at TIMESTAMP NOT NULL DEFAULT timezone('utc', now()),
+  updated_at TIMESTAMP NOT NULL DEFAULT timezone('utc', now()),
   data JSONB
 );
 

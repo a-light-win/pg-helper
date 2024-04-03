@@ -5,7 +5,6 @@ import (
 
 	"github.com/a-light-win/pg-helper/internal/config"
 	"github.com/a-light-win/pg-helper/internal/db"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -44,14 +43,14 @@ func (j *JobProducer) RecoverJobs() ([]Job, error) {
 	} else {
 		jobs := make([]Job, 0, len(activeTasks))
 		for _, task := range activeTasks {
-			jobs = append(jobs, NewDbJob(j.Ctx, &task.DbTask, task.DependsOn, j.DbPool))
+			jobs = append(jobs, NewDbJob(j.Ctx, &task, j.DbPool))
 		}
 		return jobs, nil
 	}
 }
 
-func (j *JobProducer) Produce(task *db.DbTask, dependsOn []uuid.UUID) (readyChan chan struct{}) {
-	job := NewDbJob(j.Ctx, task, dependsOn, j.DbPool)
+func (j *JobProducer) Produce(task *db.DbTask) (readyChan chan struct{}) {
+	job := NewDbJob(j.Ctx, task, j.DbPool)
 	readyChan = job.ReadyChan
 	j.AddJobs <- job
 	return

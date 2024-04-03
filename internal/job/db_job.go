@@ -9,8 +9,7 @@ import (
 )
 
 type DbJob struct {
-	DbTask    *db.DbTask
-	DependsOn []uuid.UUID
+	DbTask *db.DbTask
 
 	// ReadyChan will trigger when the job is done,
 	// The consumer can wait on this channel to know when the job is done.
@@ -20,10 +19,9 @@ type DbJob struct {
 	ctx    context.Context
 }
 
-func NewDbJob(ctx context.Context, task *db.DbTask, dependsOn []uuid.UUID, pool *pgxpool.Pool) *DbJob {
+func NewDbJob(ctx context.Context, task *db.DbTask, pool *pgxpool.Pool) *DbJob {
 	return &DbJob{
 		DbTask:    task,
-		DependsOn: dependsOn,
 		ReadyChan: make(chan struct{}),
 		DbPool:    pool,
 		ctx:       ctx,
@@ -39,7 +37,7 @@ func (j *DbJob) Name() string {
 }
 
 func (j *DbJob) Requires() []uuid.UUID {
-	return j.DependsOn
+	return j.DbTask.Data.DependsOn
 }
 
 func (j *DbJob) Run() {
@@ -64,11 +62,7 @@ func (j *DbJob) updateStatus(status db.DbTaskStatus, reason string) error {
 	defer conn.Release()
 
 	q := db.New(conn)
-	if err = q.SetDbTaskStatus(j.ctx, db.SetDbTaskStatusParams{
-		ID:     j.ID(),
-		Status: status,
-		// TODO: add ErrReason to db
-	}); err != nil {
+	if err = q.SetDbTaskStatus(j.ctx, db.SetDbTaskStatusParams{ID: j.ID(), Status: status, ErrReason: reason}); err != nil {
 		return err
 	}
 

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/a-light-win/pg-helper/internal/config"
 	"github.com/a-light-win/pg-helper/internal/db"
+	"github.com/a-light-win/pg-helper/internal/dto"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -37,11 +37,7 @@ type BackupDbResponse struct {
 	Status   db.DbTaskStatus  `json:"status"`
 	CreateAt pgtype.Timestamp `json:"created_at"`
 	UpdateAt pgtype.Timestamp `json:"updated_at"`
-	Data     BAckupTaskData   `json:"data"`
-}
-
-type BAckupTaskData struct {
-	BackupPath string `json:"backup_path"`
+	Data     dto.DbTaskData   `json:"data"`
 }
 
 func (h *Handler) BackupDb(c *gin.Context) {
@@ -83,9 +79,7 @@ func fromDbTask(dbName string, task *db.DbTask) *BackupDbResponse {
 		Status:   task.Status,
 		CreateAt: task.CreatedAt,
 		UpdateAt: task.UpdatedAt,
-	}
-	if task.Data != nil {
-		json.Unmarshal(task.Data, &resp.Data)
+		Data:     task.Data,
 	}
 	return &resp
 }
@@ -127,19 +121,14 @@ func getBackupTask(c *gin.Context, query *db.Queries, dbID int64) (*db.DbTask, e
 
 func (h *Handler) backupDb(c *gin.Context, request *BackupDbRequest) {
 	// Create a backup task
-	_backupData := BAckupTaskData{BackupPath: h.Config.Db.NewBackupFile(request.Name)}
-	data, err := json.Marshal(_backupData)
-	if err != nil {
-		logErrorAndRespond(c, err, "Failed to marshal backup data")
-		return
-	}
+	_backupData := dto.DbTaskData{BackupPath: h.Config.Db.NewBackupFile(request.Name)}
 
 	task, err := request.query.CreateDbTask(c, db.CreateDbTaskParams{
 		DbID:   request.db.ID,
 		Action: db.DbActionBackup,
 		Reason: request.Reason,
 		Status: db.DbTaskStatusRunning,
-		Data:   data,
+		Data:   _backupData,
 	})
 	if err != nil {
 		logErrorAndRespond(c, err, "Failed to create backup task")

@@ -49,7 +49,7 @@ func (j *JobProducer) RecoverJobs() ([]Job, error) {
 	}
 }
 
-func (j *JobProducer) Produce(task *db.DbTask) (readyChan chan struct{}) {
+func (j *JobProducer) Produce(task *db.DbTask) (readyChan chan db.DbTaskStatus) {
 	job := NewDbJob(j.Ctx, task, j.DbPool)
 	readyChan = job.ReadyChan
 	j.AddJobs <- job

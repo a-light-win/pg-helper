@@ -11,7 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/rs/zerolog/log"
 )
 
 type MigrateDbRequest struct {
@@ -97,7 +96,7 @@ func (h *Handler) MigrateDb(c *gin.Context) {
 		return
 	}
 
-	// 3. done the migrate task
+	// 3. the migrate task
 	data.DependsOn = append(data.DependsOn, restoreTask.ID)
 	migrateTask, err := req.Query.CreateDbTask(c, db.CreateDbTaskParams{
 		DbID: db_.ID, Action: db.DbActionMigrate, Reason: "Migrate database",
@@ -117,18 +116,12 @@ func (h *Handler) MigrateDb(c *gin.Context) {
 	readyChan := h.JobProducer.Produce(&migrateTask)
 
 	select {
-	case <-readyChan:
+	case status := <-readyChan:
+		migrateTask.Status = status
 	case <-time.After(5 * time.Second):
 	}
 
-	q := req.Query.WithTx(req.tx)
-	task, err = q.GetTaskByID(c, migrateTask.ID)
-	if err != nil {
-		log.Warn().Err(err).Msg("Get task by ID failed, return the task without status update")
-		c.JSON(http.StatusOK, migrateTask)
-		return
-	}
-	c.JSON(http.StatusOK, task)
+	c.JSON(http.StatusOK, migrateTask)
 }
 
 func (h *Handler) checkMigrateDbRequest(c *gin.Context) (*MigrateDbRequest, error) {

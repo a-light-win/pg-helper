@@ -13,7 +13,7 @@ type DbJob struct {
 
 	// ReadyChan will trigger when the job is done,
 	// The consumer can wait on this channel to know when the job is done.
-	ReadyChan chan struct{}
+	ReadyChan chan db.DbTaskStatus
 
 	DbPool *pgxpool.Pool
 	ctx    context.Context
@@ -22,7 +22,7 @@ type DbJob struct {
 func NewDbJob(ctx context.Context, task *db.DbTask, pool *pgxpool.Pool) *DbJob {
 	return &DbJob{
 		DbTask:    task,
-		ReadyChan: make(chan struct{}),
+		ReadyChan: make(chan db.DbTaskStatus),
 		DbPool:    pool,
 		ctx:       ctx,
 	}
@@ -47,7 +47,7 @@ func (j *DbJob) Run() {
 	// TODO: add db.DbActionBackup
 	}
 
-	j.ReadyChan <- struct{}{}
+	j.ReadyChan <- db.DbTaskStatusCompleted
 }
 
 func (j *DbJob) Cancel(reason string) error {

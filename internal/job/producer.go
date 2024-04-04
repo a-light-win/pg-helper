@@ -43,14 +43,14 @@ func (j *JobProducer) RecoverJobs() ([]Job, error) {
 	} else {
 		jobs := make([]Job, 0, len(activeTasks))
 		for _, task := range activeTasks {
-			jobs = append(jobs, NewDbJob(j.Ctx, &task, j.DbPool))
+			jobs = append(jobs, NewDbJob(j.Ctx, &task, j.Config, j.DbPool))
 		}
 		return jobs, nil
 	}
 }
 
 func (j *JobProducer) Produce(task *db.DbTask) (readyChan chan db.DbTaskStatus) {
-	job := NewDbJob(j.Ctx, task, j.DbPool)
+	job := NewDbJob(j.Ctx, task, j.Config, j.DbPool)
 	readyChan = job.ReadyChan
 	j.AddJobs <- job
 	return

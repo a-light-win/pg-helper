@@ -16,6 +16,7 @@ import (
 type DbConfig struct {
 	// The database names that are reserved and cannot be created.
 	ReserveDbNames []string `mapstructure:"reserve_db_names" json:"reserve_db_names"`
+
 	// The pg instance host.
 	Host string `mapstructure:"host" json:"host"`
 	// The pg instance port.
@@ -30,7 +31,8 @@ type DbConfig struct {
 	PasswordFile string `mapstructure:"password_file" json:"password_file"`
 	// The max connections to the database.
 	MaxConns int32 `mapstructure:"max_conns" json:"max_conns"`
-	// The path of the database migrations.
+
+	// The path of the database migrations to migrate pg-helper's database schema.
 	MigrationsPath string `mapstructure:"migrations_path" json:"migrations_path"`
 
 	// The path of the database backups.

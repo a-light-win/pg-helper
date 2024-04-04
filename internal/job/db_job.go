@@ -3,13 +3,15 @@ package job
 import (
 	"context"
 
+	"github.com/a-light-win/pg-helper/internal/config"
 	"github.com/a-light-win/pg-helper/internal/db"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type DbJob struct {
-	DbTask *db.DbTask
+	DbTask   *db.DbTask
+	DbConfig *config.DbConfig
 
 	// ReadyChan will trigger when the job is done,
 	// The consumer can wait on this channel to know when the job is done.
@@ -19,9 +21,10 @@ type DbJob struct {
 	ctx    context.Context
 }
 
-func NewDbJob(ctx context.Context, task *db.DbTask, pool *pgxpool.Pool) *DbJob {
+func NewDbJob(ctx context.Context, task *db.DbTask, dbConfig *config.DbConfig, pool *pgxpool.Pool) *DbJob {
 	return &DbJob{
 		DbTask:    task,
+		DbConfig:  dbConfig,
 		ReadyChan: make(chan db.DbTaskStatus),
 		DbPool:    pool,
 		ctx:       ctx,
@@ -44,10 +47,11 @@ func (j *DbJob) Run() {
 	defer close(j.ReadyChan)
 
 	switch j.DbTask.Action {
-	// TODO: add db.DbActionBackup
+	case db.DbActionRemoteBackup:
+		j.execRemoteBackup()
 	}
 
-	j.ReadyChan <- db.DbTaskStatusCompleted
+	j.ReadyChan <- j.DbTask.Status
 }
 
 func (j *DbJob) Cancel(reason string) error {

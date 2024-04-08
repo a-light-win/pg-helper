@@ -1,41 +1,31 @@
 package main
 
 import (
+	"github.com/alecthomas/kong"
+	kongyaml "github.com/alecthomas/kong-yaml"
 	"github.com/rs/zerolog"
-	"github.com/spf13/cobra"
-	viper_ "github.com/spf13/viper"
 )
 
-var (
-	viper   = viper_.NewWithOptions(viper_.KeyDelimiter("::"))
-	cfgFile string
-	rootCmd = &cobra.Command{
-		Use:   "pg-helper",
-		Short: "Helpe to manage multiple databases in a postgresql instance",
-		Long: `pg-helper is a tool to help manage multiple databases in a postgresql instance.
-It can be used to create a new database and its owner,
-or migrade a database from an old pg version to current pg version.`,
-	}
-)
+type logLevel string
+
+func (l logLevel) AfterApply() error {
+	level, _ := zerolog.ParseLevel(string(l))
+	zerolog.SetGlobalLevel(level)
+	return nil
+}
+
+type Context struct{}
+
+var Cli struct {
+	LogLevel logLevel        `enum:"debug,info,warn,error,fatal" help:"Set the log level" default:"info"`
+	Config   kong.ConfigFlag `help:"Load configuration from a file"`
+
+	Version VersionCmd `cmd:"" help:"Print the version of pg-helper"`
+	Agent   AgentCmd   `cmd:"" help:"Run the backup, restore or other pg commands in the background"`
+	Serve   ServeCmd   `cmd:"" help:"The coordinator to manage the pg-helper agents"`
+}
 
 func main() {
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	rootCmd.Execute()
-}
-
-func init() {
-	cobra.OnInitialize(initConfig)
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pg-helper)")
-}
-
-func initConfig() {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		viper.SetConfigFile("/etc/pg-helper/config.yaml")
-	}
-
-	viper.SetEnvPrefix("PG_HELPER")
-	viper.AutomaticEnv()
+	ctx := kong.Parse(&Cli, kong.Configuration(kongyaml.Loader, "/etc/pg-helper/config.yaml"))
+	ctx.Run(&Context{})
 }

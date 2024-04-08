@@ -40,7 +40,6 @@ func (n NoLevelAsNotice) Run(e *zerolog.Event, level zerolog.Level, msg string) 
 
 func (s *Server) InitLogger() {
 	zerolog.TimeFieldFormat = "2006-01-02T15:04:05.999-07:00"
-	zerolog.SetGlobalLevel(s.Config.Log.GetLevel())
 
 	stdoutWriter := StdoutLevelWriter{Writer: os.Stdout}
 	stderrWriter := StderrLevelWriter{Writer: os.Stderr}

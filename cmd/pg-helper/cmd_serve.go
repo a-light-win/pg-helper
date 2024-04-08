@@ -5,9 +5,29 @@ import (
 	server_ "github.com/a-light-win/pg-helper/internal/server"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/cobra"
 )
 
+type ServeCmd struct {
+	Config config_.Config `embed:"true"`
+}
+
+func (s *ServeCmd) Run(ctx *Context) error {
+	gin.SetMode(gin.ReleaseMode)
+
+	server := server_.New(&s.Config)
+
+	server.InitLogger()
+	log.Log().Msgf("pg-helper %s is start up", Version)
+
+	if err := server.Init(); err != nil {
+		return err
+	}
+
+	server.Run()
+	return nil
+}
+
+/*
 func init() {
 	rootCmd.AddCommand(serveCmd)
 
@@ -29,34 +49,4 @@ func init() {
 	viper.BindEnv("db::host", "PG_HELPER_DB_HOST")
 	viper.BindEnv("db::current_db_version", "PG_MAJOR")
 }
-
-var (
-	config   = config_.Config{}
-	serveCmd = &cobra.Command{
-		Use:   "serve",
-		Short: "Start the server",
-		Run:   serve,
-	}
-)
-
-func serve(cmd *cobra.Command, args []string) {
-	gin.SetMode(gin.ReleaseMode)
-
-	if err := viper.ReadInConfig(); err == nil {
-		log.Log().Str("file", viper.ConfigFileUsed()).Msg("Load config")
-	} else {
-		log.Warn().Err(err).Msg("Failed to load config")
-	}
-
-	viper.Unmarshal(&config)
-	server := server_.New(&config)
-
-	server.InitLogger()
-	log.Log().Msgf("pg-helper %s is start up", Version)
-
-	if server.Init() != nil {
-		return
-	}
-
-	server.Run()
-}
+*/

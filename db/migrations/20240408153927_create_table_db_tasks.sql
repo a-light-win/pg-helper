@@ -1,4 +1,6 @@
-
+-- +goose NO TRANSACTION
+-- +goose Up
+-- +goose StatementBegin
 CREATE TYPE DB_TASK_STATUS AS ENUM (
   'pending',
   'running',
@@ -30,3 +32,13 @@ CREATE TABLE IF NOT EXISTS db_tasks (
 
 CREATE INDEX db_tasks_db_id_idx ON db_tasks (db_id);
 CREATE INDEX db_tasks_status_idx ON db_tasks (status);
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP INDEX IF EXISTS db_tasks_status_idx;
+DROP INDEX IF EXISTS db_tasks_db_id_idx;
+DROP TABLE IF EXISTS db_tasks;
+DROP TYPE IF EXISTS DB_ACTION;
+DROP TYPE IF EXISTS DB_TASK_STATUS;
+-- +goose StatementEnd

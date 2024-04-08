@@ -1,11 +1,17 @@
 
+_install-goose:
+  #!/usr/bin/env bash
+  which goose > /dev/null
+  if [ $? -ne 0 ]; then
+    echo "Installing goose ..."
+    GOBIN=~/.local/bin go install github.com/pressly/goose/v3/cmd/goose@latest
+  fi
+
+new-migrate name: _install-goose
+  goose -dir db/migrations create {{ name }} sql
+
 _sqlc:
   {{ env('DOCKER_CMD', 'podman') }} run -it --rm -v `pwd`:`pwd` -w `pwd` docker.io/sqlc/sqlc generate 
-
-_new-migrate action name:
-  {{ env('DOCKER_CMD', 'podman') }} run -v `pwd`:`pwd` -w `pwd` docker.io/migrate/migrate create -ext sql -dir db/migrations {{ action }}_{{ name }}
-
-new-table name: (_new-migrate "create_table" name)
 
 build: _sqlc && _strip
   #!/usr/bin/env bash

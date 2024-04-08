@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/a-light-win/pg-helper/db"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
+
 	"github.com/rs/zerolog/log"
 )
 
@@ -33,24 +33,25 @@ func (s *Server) initConnPool() error {
 
 func (s *Server) migrateDb() error {
 	log.Log().Msg("Start to migrate database")
+
+	db_ := stdlib.OpenDBFromPool(s.DbPool)
+	defer db_.Close()
+
+	// Ensure the database connection is ready.
 	for {
-		m, err := migrate.New(
-			s.Config.Db.MigrationsPath,
-			s.Config.Db.Url(""))
-		if err != nil {
-			log.Warn().Err(err).Msg("Setup Migrate environment failed")
+		if err := db_.Ping(); err != nil {
+			log.Warn().Err(err).Msg("Ping database failed")
 			time.Sleep(5 * time.Second)
 			continue
 		}
-
-		if err := m.Up(); err != nil {
-			if err != migrate.ErrNoChange {
-				log.Error().Err(err).Msg("Migrate database failed")
-				return err
-			}
-		}
 		break
 	}
+
+	if err := db.MigrateUp(db_); err != nil {
+		log.Error().Err(err).Msg("Migrate database failed")
+		return err
+	}
+
 	log.Log().Msg("Migrate database success")
 	return nil
 }

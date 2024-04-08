@@ -1,3 +1,0 @@
-
-DROP INDEX IF EXISTS dbs_name_idx;
-DROP TABLE IF EXISTS dbs;

@@ -9,7 +9,7 @@ import (
 )
 
 type ServeCmd struct {
-	Config config_.Config `embed:"true"`
+	config_.Config
 }
 
 func (s *ServeCmd) Run(ctx *Context) error {

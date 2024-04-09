@@ -15,35 +15,32 @@ import (
 
 type DbConfig struct {
 	// The database names that are reserved and cannot be created.
-	ReserveDbNames []string `mapstructure:"reserve_db_names" json:"reserve_db_names"`
+	ReserveNames []string `default:"postgres,template0,template1"`
 
 	// The pg instance host.
-	Host string `mapstructure:"host" json:"host"`
+	Host string `default:"127.0.0.1" env:"PG_HELPER_DB_HOST"`
 	// The pg instance port.
-	Port int `mapstructure:"port" json:"port"`
+	Port int `default:"5432"`
 	// The pg instance super user.
-	User string `mapstructure:"user" json:"user"`
+	User string `default:"postgres"`
 	// The default database use by super user
-	DbName string `mapstructure:"db_name" json:"db_name"`
+	Name string `default:"postgres"`
 	// The password of the super user.
-	Password_ string `mapstructure:"password" json:"password"`
+	Password_ string `env:"PG_HELPER_DB_PASSWORD"`
 	// The file save the password
-	PasswordFile string `mapstructure:"password_file" json:"password_file"`
+	PasswordFile string `env:"PG_HELPER_DB_PASSWORD_FILE"`
 	// The max connections to the database.
-	MaxConns int32 `mapstructure:"max_conns" json:"max_conns"`
-
-	// The path of the database migrations to migrate pg-helper's database schema.
-	MigrationsPath string `mapstructure:"migrations_path" json:"migrations_path"`
+	MaxConns int32 `default:"4"`
 
 	// The path of the database backups.
-	BackupRootPath string `mapstructure:"backup_root_path" json:"backup_root_path"`
+	BackupRootPath string `default:"/var/lib/pg-helper/backups"`
 	// The majar version of the database that pg-helper work with.
-	CurrentDbVersion int `mapstructure:"current_db_version" json:"current_db_version"`
+	CurrentVersion int `env:"PG_MAJOR"`
 }
 
 func (c *DbConfig) Url(dbName string) string {
 	if dbName == "" {
-		dbName = c.DbName
+		dbName = c.Name
 	}
 	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", c.User, url.QueryEscape(c.Password()), c.Host, c.Port, dbName)
 }
@@ -86,12 +83,12 @@ func (c *DbConfig) NewPoolConfig() *pgxpool.Config {
 }
 
 func (c *DbConfig) BackupDbDir(dbName string) string {
-	return fmt.Sprintf("%s/pg-%d/%s", c.BackupRootPath, c.CurrentDbVersion, dbName)
+	return fmt.Sprintf("%s/pg-%d/%s", c.BackupRootPath, c.CurrentVersion, dbName)
 }
 
 // The backup file is relative to the BackupRootPath
 func (c *DbConfig) NewBackupFile(dbName string) string {
-	return fmt.Sprintf("pg-%d/%s/%s.sql", c.CurrentDbVersion, dbName, time.Now().Format("2006-01-02_15:04:05"))
+	return fmt.Sprintf("pg-%d/%s/%s.sql", c.CurrentVersion, dbName, time.Now().Format("2006-01-02_15:04:05"))
 }
 
 func (c *DbConfig) extractBackupPath(backupPath string) (dbName string, pgVersion int, err error) {
@@ -123,7 +120,7 @@ func (c *DbConfig) ValidateBackupPath(backupPath string, dbName string) (pgVersi
 		return
 	}
 
-	if pgVersionInPath > c.CurrentDbVersion {
+	if pgVersionInPath > c.CurrentVersion {
 		err = fmt.Errorf("illegal backup path, can not restore from a higher version")
 		return
 	}

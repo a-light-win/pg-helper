@@ -1,5 +1,8 @@
 ---
-log_level: debug
+log-level: debug
 
-db:
-  port: 5432
+serve:
+  db:
+    port: 5432
+
+agent:

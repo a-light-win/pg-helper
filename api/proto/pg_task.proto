@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/a-light-win/pg-helper/api/proto";
+
+package proto;
+
+service PgTaskService {
+  // Register a new agent to the manager
+  // and the manager will send tasks to the agent if needed.
+  rpc Register(RegisterAgent) returns (stream DbTask) {}
+  // Agent will call this method to notify the manager
+  // that the task status has been updated.
+  rpc NotifyTaskStatus(DbTaskStatus) returns (google.protobuf.Empty) {}
+}
+
+message RegisterAgent {
+  // The unique id of the agent.
+  string agent_id = 1;
+  // The major version of the postgresql the agent handle with.
+  int32 pg_version = 2;
+  // The databases served by this pg version
+  repeated Database databases = 3;
+}
+
+message Database {
+  // The name of the database.
+  string name = 1;
+  string owner = 2;
+  // Migrate database from this pg major version
+  int32 migrate_from = 3;
+  int32 migrate_to = 4;
+  DbStatus status = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  google.protobuf.Timestamp expired_at = 8;
+}
+
+enum DbStatus {
+  // The database does not exist.
+  NotExist = 0;
+  // The database is created, but not create any tables.
+  // Step 1 of the migration process.
+  Created = 1;
+  // Backuping the database from the old pg instance.
+  // Step 2 of the migration process.
+  Backuping = 2;
+  // Restoring the database from the backup file.
+  // Step 3 of the migration process.
+  Restoring = 3;
+  // The database is ready for use. which means the tables are created.
+  Ready = 4;
+  // The database is migrated to the newer version.
+  // Which indicates the database is deprecated on this pg instance
+  // and will be deleted in the future.
+  Migrated = 5;
+  // The database is expired.
+  // Which means the database is not used anymore and safe to be dropped.
+  Expired = 6;
+}
+
+message DbTask {
+  string task_id = 1;
+  string reason = 2;
+  oneof task {
+    CreateDatabaseTask create_database = 3;
+    MigratedDatabaseTask migrated_database = 4;
+    RollbackDatabaseTask rollback_database = 5;
+    DropDatabaseTask drop_database = 6;
+  }
+}
+
+// Create and migrate a database to the new pg version.
+message CreateDatabaseTask {
+  string name = 1;
+  string owner = 2;
+  string password = 3;
+  int32 migrate_from = 4;
+}
+
+// Notify the agent that the database is already migrated to another pg version.
+message MigratedDatabaseTask {
+  string name = 1;
+  int32 migrate_to = 2;
+  google.protobuf.Timestamp expired_at = 3;
+}
+
+message RollbackDatabaseTask { string name = 1; }
+
+message DropDatabaseTask { string name = 1; }
+
+message DbTaskStatus {
+  string task_id = 1;
+  string result = 2;
+  int32 pg_version = 3;
+  Database database = 4;
+}

@@ -1,4 +1,4 @@
-package server
+package utils
 
 import (
 	"io"
@@ -38,7 +38,20 @@ func (n NoLevelAsNotice) Run(e *zerolog.Event, level zerolog.Level, msg string) 
 	}
 }
 
-func (s *Server) InitLogger() {
+type LogLevel string
+
+func (l LogLevel) AfterApply() error {
+	return InitLogger(l)
+}
+
+func InitLogger(l LogLevel) error {
+	level, err := zerolog.ParseLevel(string(l))
+	if err == nil {
+		zerolog.SetGlobalLevel(level)
+	} else {
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	}
+
 	zerolog.TimeFieldFormat = "2006-01-02T15:04:05.999-07:00"
 
 	stdoutWriter := StdoutLevelWriter{Writer: os.Stdout}
@@ -50,5 +63,9 @@ func (s *Server) InitLogger() {
 	)
 
 	log.Logger = zerolog.New(multiWriter).With().Timestamp().Logger().Hook(NoLevelAsNotice{})
+	return nil
+}
+
+func PrintCurrentLogLevel() {
 	log.Log().Msgf("Logger initialized with %s level", zerolog.GlobalLevel())
 }

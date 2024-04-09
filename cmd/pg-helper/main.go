@@ -1,23 +1,15 @@
 package main
 
 import (
+	"github.com/a-light-win/pg-helper/internal/utils"
 	"github.com/alecthomas/kong"
 	kongyaml "github.com/alecthomas/kong-yaml"
-	"github.com/rs/zerolog"
 )
-
-type logLevel string
-
-func (l logLevel) AfterApply() error {
-	level, _ := zerolog.ParseLevel(string(l))
-	zerolog.SetGlobalLevel(level)
-	return nil
-}
 
 type Context struct{}
 
 var Cli struct {
-	LogLevel logLevel        `enum:"debug,info,warn,error,fatal" help:"Set the log level" default:"info"`
+	LogLevel utils.LogLevel  `enum:"debug,info,warn,error,fatal" help:"Set the log level" default:"info"`
 	Config   kong.ConfigFlag `help:"Load configuration from a file"`
 
 	Version VersionCmd `cmd:"" help:"Print the version of pg-helper"`

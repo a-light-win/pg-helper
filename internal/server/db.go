@@ -41,8 +41,14 @@ func (s *Server) migrateDb() error {
 	for {
 		if err := db_.Ping(); err != nil {
 			log.Warn().Err(err).Msg("Ping database failed")
-			time.Sleep(5 * time.Second)
-			continue
+
+			select {
+			case <-s.QuitCtx.Done():
+				log.Log().Err(s.QuitCtx.Err()).Msg("Receive quit signal when ping database")
+				return s.QuitCtx.Err()
+			case <-time.After(5 * time.Second):
+				continue
+			}
 		}
 		break
 	}

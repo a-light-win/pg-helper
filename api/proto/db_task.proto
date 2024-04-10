@@ -7,7 +7,7 @@ option go_package = "github.com/a-light-win/pg-helper/api/proto";
 
 package proto;
 
-service PgTaskService {
+service DbTaskSvc {
   // Register a new agent to the manager
   // and the manager will send tasks to the agent if needed.
   rpc Register(RegisterAgent) returns (stream DbTask) {}

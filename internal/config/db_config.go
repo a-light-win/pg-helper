@@ -18,7 +18,7 @@ type DbConfig struct {
 	ReserveNames []string `default:"postgres,template0,template1"`
 
 	// The pg instance host.
-	Host string `default:"127.0.0.1" env:"PG_HELPER_DB_HOST"`
+	HostTemplate string `default:"127.0.0.1" env:"PG_HELPER_DB_HOST_TEMPLATE"`
 	// The pg instance port.
 	Port int `default:"5432"`
 	// The pg instance super user.
@@ -26,7 +26,7 @@ type DbConfig struct {
 	// The default database use by super user
 	Name string `default:"postgres"`
 	// The password of the super user.
-	Password_ string `env:"PG_HELPER_DB_PASSWORD"`
+	Password_ string `env:"PG_HELPER_DB_PASSWORD" name:"password"`
 	// The file save the password
 	PasswordFile string `env:"PG_HELPER_DB_PASSWORD_FILE"`
 	// The max connections to the database.
@@ -35,14 +35,21 @@ type DbConfig struct {
 	// The path of the database backups.
 	BackupRootPath string `default:"/var/lib/pg-helper/backups"`
 	// The majar version of the database that pg-helper work with.
-	CurrentVersion int `env:"PG_MAJOR"`
+	CurrentVersion int32 `env:"PG_MAJOR"`
 }
 
-func (c *DbConfig) Url(dbName string) string {
+func (c *DbConfig) Host(pg_version int32) string {
+	return fmt.Sprintf(c.HostTemplate, pg_version)
+}
+
+func (c *DbConfig) Url(dbName string, pg_version int32) string {
 	if dbName == "" {
 		dbName = c.Name
 	}
-	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", c.User, url.QueryEscape(c.Password()), c.Host, c.Port, dbName)
+	if pg_version == 0 {
+		pg_version = c.CurrentVersion
+	}
+	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", c.User, url.QueryEscape(c.Password()), c.Host(pg_version), c.Port, dbName)
 }
 
 func (c *DbConfig) Password() string {
@@ -65,7 +72,7 @@ func (c *DbConfig) NewPoolConfig() *pgxpool.Config {
 	const defaultHealthCheckPeriod = time.Minute
 	const defaultConnectTimeout = time.Second * 5
 
-	dbConfig, err := pgxpool.ParseConfig(c.Url(""))
+	dbConfig, err := pgxpool.ParseConfig(c.Url("", 0))
 	if err != nil {
 		detail := string(err.Error())
 		detail = strings.ReplaceAll(detail, fmt.Sprintf(":%s@", url.QueryEscape(c.Password())), ":******@")

@@ -8,7 +8,7 @@ import (
 func (s *Server) initJob() error {
 	s.JobScheduler = job.NewJobScheduler(s.QuitCtx, 8)
 	// Initialize the job producer.
-	s.JobProducer = job.NewJobProducer(s.DbPool, &s.Config.Db, s.JobScheduler.AddJobs)
+	// s.JobProducer = job.NewJobProducer(s.DbPool, &s.Config.Db, s.JobScheduler.AddJobs)
 
 	if jobs, err := s.JobProducer.RecoverJobs(); err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize the job producer")

@@ -1,17 +1,15 @@
 package server
 
 import (
-	"os"
-	"os/signal"
-	"syscall"
+	"context"
 
 	"github.com/a-light-win/pg-helper/internal/config"
 	"github.com/a-light-win/pg-helper/internal/handler"
 	"github.com/a-light-win/pg-helper/internal/job"
+	"github.com/a-light-win/pg-helper/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
-	"golang.org/x/net/context"
 )
 
 type Server struct {
@@ -23,7 +21,6 @@ type Server struct {
 	JobProducer  *job.JobProducer
 	JobScheduler *job.JobScheduler
 
-	quit    context.CancelFunc
 	QuitCtx context.Context
 }
 
@@ -35,12 +32,8 @@ func New(config *config.Config) *Server {
 }
 
 func (s *Server) Init() error {
-	s.initSignalHandler()
-	err := s.initDb()
-	if err != nil {
-		return err
-	}
-	err = s.initJob()
+	s.QuitCtx, _ = utils.InitSignalHandler()
+	err := s.initJob()
 	if err != nil {
 		return err
 	}
@@ -59,18 +52,4 @@ func (s *Server) Run() {
 	}
 
 	s.WaitJobSchedulerExit()
-}
-
-func (s *Server) initSignalHandler() {
-	s.QuitCtx, s.quit = context.WithCancel(context.Background())
-
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		select {
-		case <-sigs:
-			s.quit()
-		}
-	}()
 }

@@ -78,10 +78,15 @@ _strip:
 
   echo "Stripping pg-helper binary success"
 
-clean:
-  rm -rf dist/
-  rm -rf internal/db/
-
 serve: build
   {{ env('DOCKER_CMD', 'podman')}} compose up --force-recreate --build
   
+_clean-protos:
+  rm -rf api/proto/*.pb.go
+
+_clean-sqlc:
+  rm -rf internal/db/db.go internal/db/models.go internal/db/*.sql.go
+
+clean: _clean-sqlc _clean-protos
+  rm -rf dist/
+

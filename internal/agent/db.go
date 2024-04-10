@@ -1,4 +1,4 @@
-package server
+package agent
 
 import (
 	"context"
@@ -11,30 +11,30 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func (s *Server) initDb() error {
-	err := s.initConnPool()
+func (a *Agent) initDb() error {
+	err := a.initConnPool()
 	if err != nil {
 		return err
 	}
-	return s.migrateDb()
+	return a.migrateDb()
 }
 
-func (s *Server) initConnPool() error {
+func (a *Agent) initConnPool() error {
 	// Initialize the database connection pool.
-	poolConfig := s.Config.Db.NewPoolConfig()
+	poolConfig := a.Config.Db.NewPoolConfig()
 	pool, err := pgxpool.NewWithConfig(context.Background(), poolConfig)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create a pool")
 		return err
 	}
-	s.DbPool = pool
+	a.DbPool = pool
 	return nil
 }
 
-func (s *Server) migrateDb() error {
+func (a *Agent) migrateDb() error {
 	log.Log().Msg("Start to migrate database")
 
-	db_ := stdlib.OpenDBFromPool(s.DbPool)
+	db_ := stdlib.OpenDBFromPool(a.DbPool)
 	defer db_.Close()
 
 	// Ensure the database connection is ready.
@@ -43,9 +43,9 @@ func (s *Server) migrateDb() error {
 			log.Warn().Err(err).Msg("Ping database failed")
 
 			select {
-			case <-s.QuitCtx.Done():
-				log.Log().Err(s.QuitCtx.Err()).Msg("Receive quit signal when ping database")
-				return s.QuitCtx.Err()
+			case <-a.QuitCtx.Done():
+				log.Log().Err(a.QuitCtx.Err()).Msg("Receive quit signal when ping database")
+				return a.QuitCtx.Err()
 			case <-time.After(5 * time.Second):
 				continue
 			}

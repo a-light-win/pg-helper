@@ -172,7 +172,7 @@ func isReservedDbName(dbName string) bool {
 }
 
 func checkDbIsEmpty(c *gin.Context, config *config.DbConfig, dbName string) error {
-	conn, err := pgx.Connect(c, config.Url(dbName))
+	conn, err := pgx.Connect(c, config.Url(dbName, 0))
 	if err != nil {
 		logErrorAndRespond(c, err, "Connect to database failed")
 		return err

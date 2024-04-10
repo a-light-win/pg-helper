@@ -163,7 +163,7 @@ func (h *DbBackupHandler) backup() {
 
 	// Backup the database here
 	args := []string{
-		"-h", h.Config.Host,
+		"-h", h.Config.Host(h.Config.CurrentVersion),
 		"-p", fmt.Sprint(h.Config.Port),
 		"-U", h.Config.User,
 		"-d", h.DbName,

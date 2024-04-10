@@ -7,9 +7,11 @@ CREATE TABLE IF NOT EXISTS dbs (
     name VARCHAR(255) NOT NULL,
     owner VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT timezone('utc', now()),
-    expires_at TIMESTAMP,
-    disabled_at TIMESTAMP,
-    is_enabled BOOLEAN NOT NULL DEFAULT TRUE
+    updated_at TIMESTAMP NOT NULL DEFAULT timezone('utc', now()),
+    expired_at TIMESTAMP,
+    migrate_from int4 NOT NULL DEFAULT 0,
+    migrate_to int4 NOT NULL DEFAULT 0,
+    status int4 NOT NULL DEFAULT 0
   );
 
 CREATE UNIQUE INDEX dbs_name_idx ON dbs (name);

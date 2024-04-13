@@ -1,20 +1,16 @@
 package validate
 
 import (
-	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
 )
 
-func RegisterCustomValidations() {
-	// Get the validator engine.
-	validatorEngine, ok := binding.Validator.Engine().(*validator.Validate)
-	if !ok {
-		log.Fatal().Msg("Failed to get validator engine")
-	}
-
+func RegisterCustomValidations(validatorEngine *validator.Validate) {
 	// Register the "id" validation function.
 	if err := validatorEngine.RegisterValidation("id", validateID); err != nil {
 		log.Fatal().Err(err).Msg("Failed to register id validator")
+	}
+	if err := validatorEngine.RegisterValidation("pg_ver", validatePgVer); err != nil {
+		log.Fatal().Err(err).Msg("Failed to register pg_ver validator")
 	}
 }

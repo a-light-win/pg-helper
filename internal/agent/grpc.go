@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/a-light-win/pg-helper/api/proto"
+	"github.com/a-light-win/pg-helper/internal/agent/grpc_handler"
 	"github.com/a-light-win/pg-helper/internal/db"
 	"github.com/a-light-win/pg-helper/internal/utils"
 	"github.com/rs/zerolog/log"
@@ -14,8 +15,6 @@ import (
 )
 
 func (a *Agent) initGrpc() error {
-	a.GrpcCallCtx, a.CancelGrpcCall = context.WithCancel(context.Background())
-
 	dialOptions := []grpc.DialOption{}
 
 	if tlsConfig, err := a.Config.Grpc.TlsConfig(); err != nil {
@@ -72,7 +71,7 @@ func (a *Agent) runUntilSuccess(runer utils.Runner, wait time.Duration) bool {
 		select {
 		case <-a.QuitCtx.Done():
 			return false
-		case <-a.GrpcCallCtx.Done():
+		case <-a.JobCtx.Done():
 			return false
 		case <-time.After(wait):
 			continue
@@ -102,7 +101,7 @@ type grpcServiceLoader struct {
 }
 
 func (g *grpcServiceLoader) Run() bool {
-	service, err := g.agent.GrpcClient.Register(g.agent.GrpcCallCtx, g.registerAgent)
+	service, err := g.agent.GrpcClient.Register(g.agent.JobCtx, g.registerAgent)
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to register service")
 		return false
@@ -133,6 +132,13 @@ func (a *Agent) runGrpc() {
 	}
 
 	for {
+
+		select {
+		case <-a.QuitCtx.Done():
+			return
+		default:
+		}
+
 		task, err := service.Recv()
 		if err != nil {
 			log.Warn().Err(err).Msg("Failed to receive task")
@@ -146,14 +152,15 @@ func (a *Agent) runGrpc() {
 		if task == nil {
 			continue
 		}
-
-		switch task.Task.(type) {
-		case *proto.DbTask_CreateDatabase:
-			// TODO: Create the database
-		case *proto.DbTask_MigratedDatabase:
-			// TODO: The database is already migrated to another pg instance
+		// TODO: support handle multiple tasks concurrently
+		handler := grpc_handler.New(task)
+		if err := handler.Validate(); err != nil {
+			handler.OnError(err)
+			continue
 		}
-
-		break
+		if err := handler.Handle(); err != nil {
+			handler.OnError(err)
+			continue
+		}
 	}
 }

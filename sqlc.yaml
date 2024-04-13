@@ -16,7 +16,6 @@ sql:
               type: "UUID"
           - column: "db_tasks.data"
             go_type:
-              import: "github.com/a-light-win/pg-helper/internal/dto"
               type: "DbTaskData"
           - column: "dbs.status"
             go_type:

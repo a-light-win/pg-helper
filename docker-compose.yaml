@@ -11,12 +11,12 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/pg_admin_password
     secrets:
       - pg_admin_password
-  pg-helper-13:
-    image: pg-helper:13
-    container_name: pg-helper-13
+  pg-helper-agent-13:
+    image: pg-helper-agent:${PG_HELPER_VERSION}-pg-13
+    container_name: pg-helper-agent-13
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.agent
       args:
         PG_VERSION: 13
     ports:
@@ -41,12 +41,12 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/pg_admin_password
     secrets:
       - pg_admin_password
-  pg-helper-14:
-    image: pg-helper:14
-    container_name: pg-helper-14
+  pg-helper-agent-14:
+    image: pg-helper-agent:${PG_HELPER_VERSION}-pg-14
+    container_name: pg-helper-agnet-14
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.agent
       args:
         PG_VERSION: 14
     volumes:
@@ -60,6 +60,14 @@ services:
       - pg_admin_password
     depends_on:
       - pg-14
+  pg-helper:
+    image: pg-helper:${PG_HELPER_VERSION}
+    container_name: pg-helper
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./tests/config.yaml:/etc/pg-helper/config.yaml
 
 secrets:
   pg_admin_password:

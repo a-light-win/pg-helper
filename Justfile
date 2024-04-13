@@ -57,6 +57,8 @@ build: _sqlc _generate-protos && _strip
     version=v0-$(git describe --tags --always --dirty)
   fi
   go_version=$(go version|sed 's/go version go\(.*\)/\1/g')
+
+  export CGO_ENABLED=0
   go build -o dist/pg-helper -trimpath -ldflags "-X main.Version=${version} -X 'main.GoVersion=${go_version}'" cmd/pg-helper/*.go || exit $?
 
   echo "Build pg-helper ${version} success"
@@ -79,6 +81,8 @@ _strip:
   echo "Stripping pg-helper binary success"
 
 serve: build
+  #!/usr/bin/env bash
+  export PG_HELPER_VERSION=$(./dist/pg-helper version|awk '{print $2}')
   {{ env('DOCKER_CMD', 'podman')}} compose up --force-recreate --build
   
 _clean-protos:

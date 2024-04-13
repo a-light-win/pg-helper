@@ -6,6 +6,7 @@ type Job interface {
 	ID() uuid.UUID
 	Name() string
 	Requires() []uuid.UUID
+
 	Run()
 	Cancel(reason string) error
 

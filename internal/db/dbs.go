@@ -18,7 +18,7 @@ func ListDatabases(q *Queries) ([]*proto.Database, error) {
 
 	databases := make([]*proto.Database, len(dbs))
 	for i, db := range dbs {
-		databases[i] = ConvertDbToDatabase(&db)
+		databases[i] = db.ToProto()
 	}
 	return databases, nil
 }

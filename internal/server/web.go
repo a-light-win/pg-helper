@@ -3,6 +3,9 @@ package server
 import (
 	"github.com/a-light-win/pg-helper/internal/handler"
 	"github.com/a-light-win/pg-helper/internal/validate"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog/log"
 )
 
 func (s *Server) initWebServer() error {
@@ -12,7 +15,11 @@ func (s *Server) initWebServer() error {
 		JobProducer: s.JobProducer,
 	}
 
-	validate.RegisterCustomValidations()
+	validatorEngine, ok := binding.Validator.Engine().(*validator.Validate)
+	if !ok {
+		log.Fatal().Msg("Failed to get validator engine")
+	}
+	validate.RegisterCustomValidations(validatorEngine)
 
 	err := s.initWebServerByConfig()
 	if err != nil {
@@ -28,15 +35,8 @@ func (s *Server) initWebServerByConfig() error {
 }
 
 func (s *Server) registerRoutes() error {
-	dbGroup := s.Router.Group("/api/v1/db")
-	dbGroup.Use(s.Handler.DbConn)
+	// dbGroup := s.Router.Group("/api/v1/db")
 
-	dbGroup.POST("create", s.Handler.CreateDb)
-
-	dbGroup.POST("/backup", s.Handler.BackupDb)
-	dbGroup.GET("/backup/:taskId", s.Handler.BackupStatus)
-
-	dbGroup.POST("/migrate", s.Handler.MigrateDb)
 	// TODO: Get task status
 	// dbGroup.GET("/migrate/:taskId", s.Handler.MigrateDbStatus)
 

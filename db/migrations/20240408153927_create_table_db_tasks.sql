@@ -11,11 +11,10 @@ CREATE TYPE DB_TASK_STATUS AS ENUM (
 
 CREATE TYPE DB_ACTION AS ENUM (
   'create',
-  'drop',
   'backup',
-  'remote-backup',
-  'migrate',
-  'restore'
+  'restore',
+  'wait_ready',
+  'drop'
 );
 
 CREATE TABLE IF NOT EXISTS db_tasks (

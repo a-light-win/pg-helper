@@ -2,7 +2,8 @@
 log-level: debug
 
 serve:
-  db:
-    port: 5432
 
 agent:
+  db:
+    host-template: "pg-%d"
+    port: 5432

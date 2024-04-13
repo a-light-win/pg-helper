@@ -33,16 +33,10 @@ func New(config *config.Config) *Server {
 
 func (s *Server) Init() error {
 	s.QuitCtx, _ = utils.InitSignalHandler()
-	err := s.initJob()
-	if err != nil {
-		return err
-	}
 	return s.initWebServer()
 }
 
 func (s *Server) Run() {
-	s.runJobScheduler()
-
 	log.Log().Msg("Start the web server")
 
 	// TODO: customize the address and port
@@ -50,6 +44,4 @@ func (s *Server) Run() {
 	if err != nil {
 		log.Error().Err(err).Msg("Web server exit with error")
 	}
-
-	s.WaitJobSchedulerExit()
 }

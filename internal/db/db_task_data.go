@@ -1,4 +1,4 @@
-package dto
+package db
 
 import "github.com/google/uuid"
 
@@ -22,9 +22,4 @@ type DbTaskData struct {
 	// - remote-backup
 	// - restore
 	BackupPath string `json:"backup_path"`
-	// The Pg marjor version to execute the backup action
-	//
-	// Valid in following tasks:
-	// - remote-backup
-	BackupVersion int `json:"backup_version"`
 }

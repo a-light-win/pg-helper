@@ -6,20 +6,23 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func ConvertDbToDatabase(db *Db) *proto.Database {
+func (db *Db) ToProto() *proto.Database {
+	if db == nil {
+		return nil
+	}
 	return &proto.Database{
 		Name:        db.Name,
 		Owner:       db.Owner,
-		CreatedAt:   convertPgTimestampToProtoTimestamp(db.CreatedAt),
-		UpdatedAt:   convertPgTimestampToProtoTimestamp(db.UpdatedAt),
-		ExpiredAt:   convertPgTimestampToProtoTimestamp(db.ExpiredAt),
+		CreatedAt:   pgTimestampToProto(db.CreatedAt),
+		UpdatedAt:   pgTimestampToProto(db.UpdatedAt),
+		ExpiredAt:   pgTimestampToProto(db.ExpiredAt),
 		MigrateFrom: db.MigrateFrom,
 		MigrateTo:   db.MigrateTo,
 		Status:      db.Status,
 	}
 }
 
-func convertPgTimestampToProtoTimestamp(ts pgtype.Timestamp) *timestamppb.Timestamp {
+func pgTimestampToProto(ts pgtype.Timestamp) *timestamppb.Timestamp {
 	if !ts.Valid {
 		return nil
 	}

@@ -1,0 +1,4 @@
+ARG PG_VERSION=13
+FROM docker.io/postgres:${PG_VERSION}
+COPY ./dist/pg-helper /usr/bin/pg-helper
+CMD ["pg-helper", "agent"]

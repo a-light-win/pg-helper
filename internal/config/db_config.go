@@ -39,7 +39,10 @@ type DbConfig struct {
 }
 
 func (c *DbConfig) Host(pg_version int32) string {
-	return fmt.Sprintf(c.HostTemplate, pg_version)
+	if strings.Contains(c.HostTemplate, "%") {
+		return fmt.Sprintf(c.HostTemplate, pg_version)
+	}
+	return c.HostTemplate
 }
 
 func (c *DbConfig) Url(dbName string, pg_version int32) string {
@@ -98,7 +101,7 @@ func (c *DbConfig) NewBackupFile(dbName string) string {
 	return fmt.Sprintf("pg-%d/%s/%s.sql", c.CurrentVersion, dbName, time.Now().Format("2006-01-02_15:04:05"))
 }
 
-func (c *DbConfig) extractBackupPath(backupPath string) (dbName string, pgVersion int, err error) {
+func (c *DbConfig) extractBackupPath(backupPath string) (dbName string, pgVersion int32, err error) {
 	dbName = ""
 	pgVersion = 0
 
@@ -109,14 +112,15 @@ func (c *DbConfig) extractBackupPath(backupPath string) (dbName string, pgVersio
 	}
 
 	dbName = strings.Split(cleanPath, "/")[1]
-	pgVersion, err = strconv.Atoi(strings.Split(cleanPath, "/")[0][3:])
+	v, err := strconv.Atoi(strings.Split(cleanPath, "/")[0][3:])
 	if err != nil {
 		err = fmt.Errorf("illegal backup path, can not parse pg version")
 	}
+	pgVersion = int32(v)
 	return
 }
 
-func (c *DbConfig) ValidateBackupPath(backupPath string, dbName string) (pgVersionInPath int, err error) {
+func (c *DbConfig) ValidateBackupPath(backupPath string, dbName string) (pgVersionInPath int32, err error) {
 	dbNameInPath, pgVersionInPath, err := c.extractBackupPath(backupPath)
 	if err != nil {
 		return
@@ -133,4 +137,13 @@ func (c *DbConfig) ValidateBackupPath(backupPath string, dbName string) (pgVersi
 	}
 
 	return
+}
+
+func (c *DbConfig) IsReservedName(name string) bool {
+	for _, n := range c.ReserveNames {
+		if n == name {
+			return true
+		}
+	}
+	return false
 }

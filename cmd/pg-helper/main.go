@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/a-light-win/pg-helper/internal/utils"
 	"github.com/alecthomas/kong"
 	kongyaml "github.com/alecthomas/kong-yaml"
@@ -19,5 +21,8 @@ var Cli struct {
 
 func main() {
 	ctx := kong.Parse(&Cli, kong.Configuration(kongyaml.Loader, "/etc/pg-helper/config.yaml"))
-	ctx.Run(&Context{})
+	err := ctx.Run(&Context{})
+	if err != nil {
+		os.Exit(1)
+	}
 }

@@ -6,3 +6,5 @@ type GrpcClientConfig struct {
 	Url        string
 	ServerName string
 }
+
+type GrpcServerConfig struct{}

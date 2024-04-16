@@ -16,8 +16,8 @@ import (
 )
 
 type CreateDatabaseRequest struct {
-	TaskId string `validate:"required,uuid4"`
-	Reason string `validate:"required,max=255"`
+	RequestId string `validate:"required,uuid4"`
+	Reason    string `validate:"required,max=255"`
 
 	Name        string `validate:"required,max=63,id"`
 	Owner       string `validate:"required,max=63,id"`
@@ -30,10 +30,10 @@ type CreateDatabaseRequest struct {
 func NewCreateDatabaseHandler(task *proto.DbTask) *CreateDatabaseRequest {
 	taskData := task.GetCreateDatabase()
 	r := &CreateDatabaseRequest{
-		TaskId: task.TaskId,
-		Reason: task.Reason,
+		RequestId: task.RequestId,
+		Reason:    task.Reason,
 
-		Name:        taskData.Name,
+		Name:        task.Name,
 		Owner:       taskData.Owner,
 		Password:    taskData.Password,
 		MigrateFrom: taskData.MigrateFrom,
@@ -140,7 +140,13 @@ func (r *CreateDatabaseRequest) createDb(conn *pgxpool.Conn) (*db.Db, error) {
 		}
 	}
 
-	if database.Status == proto.DbStatus_NotExist {
+	if database.Stage == proto.DbStage_None {
+
+		database.Stage = proto.DbStage_Creating
+		database.Status = proto.DbStatus_Processing
+
+		q.SetDbStatus(gd_.ConnCtx, db.SetDbStatusParams{ID: database.ID, Status: database.Status, Stage: database.Stage})
+
 		// Create database
 		_, err := conn.Exec(gd_.ConnCtx, fmt.Sprintf("CREATE DATABASE %s OWNER %s",
 			r.Name, r.Owner))
@@ -149,16 +155,16 @@ func (r *CreateDatabaseRequest) createDb(conn *pgxpool.Conn) (*db.Db, error) {
 			return nil, err
 		}
 
-		database.Status = proto.DbStatus_Created
-		q.SetDbStatus(gd_.ConnCtx, db.SetDbStatusParams{ID: database.ID, Status: database.Status})
+		database.Status = proto.DbStatus_Done
+		q.SetDbStatus(gd_.ConnCtx, db.SetDbStatusParams{ID: database.ID, Status: database.Status, Stage: database.Stage})
 
 		r.log.Log().Msg("Database created successfully")
 	}
 
-	if database.Status == proto.DbStatus_Created {
+	if database.Stage == proto.DbStage_Creating && database.Status == proto.DbStatus_Done {
 		if r.MigrateFrom == 0 {
-			database.Status = proto.DbStatus_Ready
-			q.SetDbStatus(gd_.ConnCtx, db.SetDbStatusParams{ID: database.ID, Status: database.Status})
+			database.Stage = proto.DbStage_Running
+			q.SetDbStatus(gd_.ConnCtx, db.SetDbStatusParams{ID: database.ID, Status: database.Status, Stage: database.Stage})
 			r.log.Debug().Msg("Database is ready because no migration is needed")
 		}
 	}
@@ -167,14 +173,14 @@ func (r *CreateDatabaseRequest) createDb(conn *pgxpool.Conn) (*db.Db, error) {
 }
 
 func (r *CreateDatabaseRequest) createBackgroundJob(conn *pgxpool.Conn, database *db.Db) error {
-	switch database.Status {
-	case proto.DbStatus_Backuping, proto.DbStatus_Restoring, proto.DbStatus_Ready:
+	switch database.Stage {
+	case proto.DbStage_Backuping, proto.DbStage_Restoring, proto.DbStage_Running:
 		return nil
-	case proto.DbStatus_Migrated:
+	case proto.DbStage_MigrateOut:
 		err := errors.New("database is already migrate to another instance")
 		return err
-	case proto.DbStatus_Expired:
-		err := errors.New("database is expired")
+	case proto.DbStage_Dropping:
+		err := errors.New("database is dropping")
 		return err
 	}
 

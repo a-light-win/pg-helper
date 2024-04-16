@@ -98,7 +98,7 @@ func (j *DbJob) updateTaskStatus(status db.DbTaskStatus, reason string) error {
 	return nil
 }
 
-func (j *DbJob) updateDbStatus(status proto.DbStatus) error {
+func (j *DbJob) updateDbStatus(stage proto.DbStage, status proto.DbStatus) error {
 	conn, err := gd_.DbPool.Acquire(gd_.ConnCtx)
 	if err != nil {
 		j.Log().Error().Err(err).Str("NewStatus", status.String()).Msg("Failed to update db status")
@@ -107,7 +107,7 @@ func (j *DbJob) updateDbStatus(status proto.DbStatus) error {
 	defer conn.Release()
 
 	q := db.New(conn)
-	if err = q.SetDbStatus(gd_.ConnCtx, db.SetDbStatusParams{ID: j.DbID, Status: status}); err != nil {
+	if err = q.SetDbStatus(gd_.ConnCtx, db.SetDbStatusParams{ID: j.DbID, Status: status, Stage: stage}); err != nil {
 		j.Log().Error().Err(err).Str("NewStatus", status.String()).Msg("Failed to update db status")
 		return err
 	}

@@ -20,7 +20,7 @@ func (job *BackupDbJob) Run() {
 	// Ensuere backup dir is exists
 	os.MkdirAll(gd_.DbConfig.BackupDbDir(job.DbName), 0750)
 
-	job.updateDbStatus(proto.DbStatus_Backuping)
+	job.updateDbStatus(proto.DbStage_Backuping, proto.DbStatus_Processing)
 
 	// Backup the database here
 	args := []string{
@@ -43,6 +43,7 @@ func (job *BackupDbJob) Run() {
 
 		os.Remove(filepath.Join(gd_.DbConfig.BackupRootPath, job.Data.BackupPath+".tmp"))
 
+		job.updateDbStatus(proto.DbStage_Backuping, proto.DbStatus_Failed)
 		job.updateTaskStatus(db.DbTaskStatusFailed, err.Error())
 		return
 	}
@@ -54,5 +55,6 @@ func (job *BackupDbJob) Run() {
 		Str("BackupPath", job.Data.BackupPath).
 		Msg("Database backup completed")
 
+	job.updateDbStatus(proto.DbStage_Backuping, proto.DbStatus_Done)
 	job.updateTaskStatus(db.DbTaskStatusCompleted, "")
 }

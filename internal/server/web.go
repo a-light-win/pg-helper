@@ -10,9 +10,8 @@ import (
 
 func (s *Server) initWebServer() error {
 	s.Handler = &handler.Handler{
-		DbPool:      s.DbPool,
-		Config:      s.Config,
-		JobProducer: s.JobProducer,
+		DbPool: s.DbPool,
+		Config: s.Config,
 	}
 
 	validatorEngine, ok := binding.Validator.Engine().(*validator.Validate)

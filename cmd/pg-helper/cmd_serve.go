@@ -9,13 +9,13 @@ import (
 )
 
 type ServeCmd struct {
-	config_.Config
+	config_.ServerConfig
 }
 
 func (s *ServeCmd) Run(ctx *Context) error {
 	gin.SetMode(gin.ReleaseMode)
 
-	server := server_.New(&s.Config)
+	server := server_.New(&s.ServerConfig)
 
 	utils.PrintCurrentLogLevel()
 	log.Log().Msgf("pg-helper %s is start up", Version)

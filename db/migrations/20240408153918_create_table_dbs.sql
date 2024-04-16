@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS dbs (
     expired_at TIMESTAMP,
     migrate_from int4 NOT NULL DEFAULT 0,
     migrate_to int4 NOT NULL DEFAULT 0,
-    status int4 NOT NULL DEFAULT 0
+    status int4 NOT NULL DEFAULT 0,
+    stage int4 NOT NULL DEFAULT 0
   );
 
 CREATE UNIQUE INDEX dbs_name_idx ON dbs (name);

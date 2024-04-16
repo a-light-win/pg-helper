@@ -12,7 +12,7 @@ import (
 
 type Handler struct {
 	DbPool      *pgxpool.Pool
-	Config      *config.Config
+	Config      *config.ServerConfig
 	JobProducer *job.JobProducer
 }
 

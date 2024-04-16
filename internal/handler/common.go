@@ -4,16 +4,14 @@ import (
 	"net/http"
 
 	"github.com/a-light-win/pg-helper/internal/config"
-	"github.com/a-light-win/pg-helper/internal/job"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 )
 
 type Handler struct {
-	DbPool      *pgxpool.Pool
-	Config      *config.ServerConfig
-	JobProducer *job.JobProducer
+	DbPool *pgxpool.Pool
+	Config *config.ServerConfig
 }
 
 func logErrorAndRespond(c *gin.Context, err error, message string) {

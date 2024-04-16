@@ -9,18 +9,21 @@ import (
 )
 
 type TlsClientConfig struct {
-	// Enable TLS
-	Tls bool `default:"true"`
-	// Path to the client certificate file
-	ClientCert string `default:"/etc/pg-helper/certs/client.crt"`
-	// Path to the client key file
-	ClientKey string `default:"/etc/pg-helper/certs/client.key"`
-	// Path to the CA certificate file
+	Enabled              bool   `default:"true" `
+	ClientCert           string `default:"/etc/pg-helper/certs/client.crt"`
+	ClientKey            string `default:"/etc/pg-helper/certs/client.key"`
 	ClientTrustedCaCerts string `default:"/etc/pg-helper/certs/client-trusted-ca.crt"`
 }
 
+type TlsServerConfig struct {
+	Enabled              bool   `default:"true"`
+	ServerCert           string `default:"/etc/pg-helper/certs/server.crt"`
+	ServerKey            string `default:"/etc/pg-helper/certs/server.key"`
+	ServerTrustedCaCerts string `default:"/etc/pg-helper/certs/server-trusted-ca.crt"`
+}
+
 func (t *TlsClientConfig) TlsConfig() (*tls.Config, error) {
-	if !t.Tls {
+	if !t.Enabled {
 		return nil, nil
 	}
 
@@ -42,6 +45,29 @@ func (t *TlsClientConfig) TlsConfig() (*tls.Config, error) {
 		tlsConfig.RootCAs = ca
 	}
 
+	return tlsConfig, nil
+}
+
+func (t *TlsServerConfig) TlsConfig() (*tls.Config, error) {
+	if !t.Enabled {
+		return nil, nil
+	}
+	tlsConfig := &tls.Config{}
+	cert, err := loadCert(t.ServerCert, t.ServerKey)
+	if err != nil {
+		return nil, err
+	}
+	if cert != nil {
+		tlsConfig.Certificates = []tls.Certificate{*cert}
+	}
+	ca, err := loadCA(t.ServerTrustedCaCerts)
+	if err != nil {
+		return nil, err
+	}
+	if ca != nil {
+		tlsConfig.ClientCAs = ca
+		tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
+	}
 	return tlsConfig, nil
 }
 

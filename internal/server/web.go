@@ -10,7 +10,6 @@ import (
 
 func (s *Server) initWebServer() error {
 	s.Handler = &handler.Handler{
-		DbPool: s.DbPool,
 		Config: s.Config,
 	}
 

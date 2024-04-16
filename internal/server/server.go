@@ -7,15 +7,17 @@ import (
 	"github.com/a-light-win/pg-helper/internal/handler"
 	"github.com/a-light-win/pg-helper/internal/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 )
 
 type Server struct {
-	Config  *config.ServerConfig
+	Config *config.ServerConfig
+
+	// web server
 	Router  *gin.Engine
-	DbPool  *pgxpool.Pool
 	Handler *handler.Handler
+
+	// grpc server
 
 	QuitCtx context.Context
 }

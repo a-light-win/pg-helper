@@ -17,8 +17,6 @@ service DbTaskSvc {
 }
 
 message RegisterAgent {
-  // The unique id of the agent.
-  string agent_id = 1;
   // The major version of the postgresql the agent handle with.
   int32 pg_version = 2;
   // The databases served by this pg version

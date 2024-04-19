@@ -9,3 +9,5 @@ agent:
   db:
     host-template: "pg-%d"
     port: 5432
+  grpc:
+    url: "dns:///pg-helper"

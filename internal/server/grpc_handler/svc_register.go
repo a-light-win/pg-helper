@@ -6,18 +6,23 @@ import (
 )
 
 func (h *DbTaskSvcHandler) Register(m *proto.RegisterAgent, s proto.DbTaskSvc_RegisterServer) error {
-	agent := gd_.GetAgent(m.AgentId)
+	authInfo, err := authInfoWithType(s.Context(), AgentClient)
+	if err != nil {
+		return err
+	}
+
+	agent := gd_.GetAgent(authInfo.ClientId)
 	if agent == nil {
 
 		log.Log().
-			Str("AgentId", m.AgentId).
+			Str("AgentId", authInfo.ClientId).
 			Int32("PgVersion", m.PgVersion).
 			Msg("Agent register first time.")
 
 		gd_.AddAgent(m, s)
 	} else {
 		log.Debug().
-			Str("AgentId", m.AgentId).
+			Str("AgentId", authInfo.ClientId).
 			Int32("PgVersion", m.PgVersion).
 			Msg("Agent register again")
 	}

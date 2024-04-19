@@ -10,12 +10,15 @@ import (
 
 func (h *DbTaskSvcHandler) NotifyDbStatus(ctx context.Context, db *proto.Database) error {
 	// TODO: set the AgentId in the context
-	agentId := ctx.Value("AgentId").(string)
+	authInfo, err := authInfoWithType(ctx, AgentClient)
+	if err != nil {
+		return err
+	}
 
-	agent := gd_.GetAgent(agentId)
+	agent := gd_.GetAgent(authInfo.ClientId)
 	if agent == nil {
 		err := errors.New("agent not found")
-		log.Warn().Err(err).Str("AgentId", agentId).Msg("")
+		log.Warn().Err(err).Str("AgentId", authInfo.ClientId).Msg("")
 		return err
 	}
 

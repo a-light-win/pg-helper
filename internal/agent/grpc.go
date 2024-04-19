@@ -42,7 +42,6 @@ func (a *Agent) initGrpc() error {
 
 func (a *Agent) loadRegisterAgent() (*proto.RegisterAgent, error) {
 	registerAgent := &proto.RegisterAgent{
-		AgentId:   a.Config.Id,
 		PgVersion: a.Config.Db.CurrentVersion,
 	}
 

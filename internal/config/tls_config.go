@@ -6,17 +6,19 @@ import (
 	"os"
 
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type TlsClientConfig struct {
-	Enabled              bool   `default:"true" `
+	Enabled              bool   `default:"true" help:"Enable Tls"`
 	ClientCert           string `default:"/etc/pg-helper/certs/client.crt"`
 	ClientKey            string `default:"/etc/pg-helper/certs/client.key"`
 	ClientTrustedCaCerts string `default:"/etc/pg-helper/certs/client-trusted-ca.crt"`
 }
 
 type TlsServerConfig struct {
-	Enabled              bool   `default:"true"`
+	Enabled              bool   `default:"true" help:"Enable Tls"`
 	ServerCert           string `default:"/etc/pg-helper/certs/server.crt"`
 	ServerKey            string `default:"/etc/pg-helper/certs/server.key"`
 	ServerTrustedCaCerts string `default:"/etc/pg-helper/certs/server-trusted-ca.crt"`
@@ -46,6 +48,19 @@ func (t *TlsClientConfig) TlsConfig() (*tls.Config, error) {
 	}
 
 	return tlsConfig, nil
+}
+
+// Generate credentials for the server, if the tls is disabled, using insecure mode
+func (t *TlsClientConfig) Credentials() (credentials.TransportCredentials, error) {
+	if !t.Enabled {
+		return insecure.NewCredentials(), nil
+	}
+
+	tlsConfig, err := t.TlsConfig()
+	if err != nil {
+		return nil, err
+	}
+	return credentials.NewTLS(tlsConfig), nil
 }
 
 func (t *TlsServerConfig) TlsConfig() (*tls.Config, error) {

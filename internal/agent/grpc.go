@@ -10,17 +10,26 @@ import (
 	"github.com/a-light-win/pg-helper/internal/utils"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 )
 
 func (a *Agent) initGrpc() error {
 	dialOptions := []grpc.DialOption{}
 
-	if tlsConfig, err := a.Config.Grpc.TlsConfig(); err != nil {
+	creds, err := a.Config.Grpc.Credentials()
+	if err != nil {
 		return err
-	} else if tlsConfig != nil {
-		dialOptions = append(dialOptions, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+	}
+	dialOptions = append(dialOptions, grpc.WithTransportCredentials(creds))
+
+	if a.Config.Grpc.ServerName != "" {
+		dialOptions = append(dialOptions, grpc.WithAuthority(a.Config.Grpc.ServerName))
+	}
+
+	authToken, err := a.Config.Grpc.AuthToken()
+	if err == nil {
+		authCreds := grpc_handler.NewAuthToken(authToken, a.Config.Grpc.Enabled)
+		dialOptions = append(dialOptions, grpc.WithPerRPCCredentials(authCreds))
 	}
 
 	ka := keepalive.ClientParameters{

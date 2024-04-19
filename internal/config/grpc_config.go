@@ -12,6 +12,8 @@ type GrpcClientConfig struct {
 
 	Url        string
 	ServerName string
+
+	AuthTokenFile string `name:"auth-token-file" default:"/etc/pg-helper/auth-token"`
 }
 
 type GrpcServerConfig struct {
@@ -28,6 +30,14 @@ func (g *GrpcServerConfig) JwtEcDSAVerifyKey() (interface{}, error) {
 
 func (g *GrpcServerConfig) JwtEdDSAVerifyKey() (interface{}, error) {
 	return loadPublicKey(g.JwtEdDSAVerifyKeyFile)
+}
+
+func (g *GrpcClientConfig) AuthToken() (string, error) {
+	token, err := os.ReadFile(g.AuthTokenFile)
+	if err != nil {
+		return "", err
+	}
+	return string(token), nil
 }
 
 func loadPublicKey(file string) (interface{}, error) {

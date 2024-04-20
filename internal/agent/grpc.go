@@ -16,7 +16,7 @@ import (
 func (a *Agent) initGrpc() error {
 	dialOptions := []grpc.DialOption{}
 
-	creds, err := a.Config.Grpc.Credentials()
+	creds, err := a.Config.Grpc.Tls.Credentials()
 	if err != nil {
 		return err
 	}
@@ -28,7 +28,7 @@ func (a *Agent) initGrpc() error {
 
 	authToken, err := a.Config.Grpc.AuthToken()
 	if err == nil {
-		authCreds := grpc_handler.NewAuthToken(authToken, a.Config.Grpc.Enabled)
+		authCreds := grpc_handler.NewAuthToken(authToken, a.Config.Grpc.Tls.Enabled)
 		dialOptions = append(dialOptions, grpc.WithPerRPCCredentials(authCreds))
 	}
 

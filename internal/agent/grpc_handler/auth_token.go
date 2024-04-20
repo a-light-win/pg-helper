@@ -9,7 +9,7 @@ type AuthToken struct {
 
 func (a *AuthToken) GetRequestMetadata(context.Context, ...string) (map[string]string, error) {
 	return map[string]string{
-		"authorization": a.token,
+		"authorization": "Bearer " + a.token,
 	}, nil
 }
 

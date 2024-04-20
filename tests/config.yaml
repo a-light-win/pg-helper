@@ -11,3 +11,5 @@ agent:
     port: 5432
   grpc:
     url: "dns:///pg-helper"
+    tls:
+      enabled: false

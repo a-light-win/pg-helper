@@ -8,7 +8,7 @@ import (
 )
 
 type GrpcClientConfig struct {
-	TlsClientConfig
+	Tls TlsClientConfig `embed:"" prefix:"tls-" group:"grpc-tls"`
 
 	Url        string
 	ServerName string
@@ -17,7 +17,7 @@ type GrpcClientConfig struct {
 }
 
 type GrpcServerConfig struct {
-	TlsServerConfig
+	Tls TlsServerConfig `embed:"" prefix:"tls-" group:"grpc-tls"`
 
 	TrustedClientDomain   string
 	JwtEcDSAVerifyKeyFile string `name:"jwt-ecdsa-verify-key-file" default:"/etc/pg-helper/certs/jwt-ecdsa-verify-key.pem"`

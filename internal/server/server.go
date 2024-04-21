@@ -5,9 +5,10 @@ import (
 
 	"github.com/a-light-win/pg-helper/internal/config"
 	"github.com/a-light-win/pg-helper/internal/handler"
+	"github.com/a-light-win/pg-helper/internal/server/grpc_handler"
 	"github.com/a-light-win/pg-helper/internal/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc"
 )
 
 type Server struct {
@@ -18,6 +19,7 @@ type Server struct {
 	Handler *handler.Handler
 
 	// grpc server
+	GrpcServer *grpc.Server
 
 	QuitCtx context.Context
 }
@@ -31,15 +33,23 @@ func New(config *config.ServerConfig) *Server {
 
 func (s *Server) Init() error {
 	s.QuitCtx, _ = utils.InitSignalHandler()
-	return s.initWebServer()
+	if err := s.initGrpc(); err != nil {
+		return err
+	}
+	if err := s.initWebServer(); err != nil {
+		return err
+	}
+
+	grpc_handler.InitGlobalData(&s.Config.Grpc, s.QuitCtx)
+
+	return nil
 }
 
 func (s *Server) Run() {
-	log.Log().Msg("Start the web server")
+	go s.runGrpcServer()
 
-	// TODO: customize the address and port
-	err := s.Router.Run() // listen and serve on 0.0.0.0:8080
-	if err != nil {
-		log.Error().Err(err).Msg("Web server exit with error")
-	}
+	go s.runWebServer()
+
+	<-s.QuitCtxb.Done()
+	s.GrpcServer.GracefulStop()
 }

@@ -71,7 +71,7 @@ func TlsAuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 	return nil, status.Errorf(codes.Unauthenticated, "invalid certificate")
 }
 
-func HeaderAuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func BearerAuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, status.Errorf(codes.Unauthenticated, "metadata is not provided")
@@ -149,8 +149,8 @@ func parseAuthFromToken(tokenString string) (*AuthInfo, bool) {
 }
 
 func validAuthInfo(authInfo AuthInfo) error {
-	if gd_.GrpcConfig.TrustedClientDomain != "" {
-		if gd_.GrpcConfig.TrustedClientDomain != authInfo.BaseDomain {
+	if gd_.GrpcConfig.Tls.TrustedClientDomain != "" {
+		if gd_.GrpcConfig.Tls.TrustedClientDomain != authInfo.BaseDomain {
 			return errors.New("invalid base domain")
 		}
 	}

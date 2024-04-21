@@ -16,8 +16,8 @@ type HandlerData struct {
 
 var gd_ *HandlerData
 
-func InitGlobalData() {
-	gd_ = &HandlerData{}
+func InitGlobalData(config *config.GrpcServerConfig, quitCtx context.Context) {
+	gd_ = &HandlerData{GrpcConfig: config, QuitCtx: quitCtx}
 }
 
 type DbTaskSvcHandler struct {

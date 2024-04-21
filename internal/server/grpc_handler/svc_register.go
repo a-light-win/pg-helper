@@ -19,7 +19,7 @@ func (h *DbTaskSvcHandler) Register(m *proto.RegisterAgent, s proto.DbTaskSvc_Re
 			Int32("PgVersion", m.PgVersion).
 			Msg("Agent register first time.")
 
-		gd_.AddAgent(m, s)
+		gd_.AddAgent(authInfo.ClientId, m.PgVersion, s)
 	} else {
 		log.Debug().
 			Str("AgentId", authInfo.ClientId).

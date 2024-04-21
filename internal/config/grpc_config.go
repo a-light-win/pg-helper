@@ -16,12 +16,23 @@ type GrpcClientConfig struct {
 	AuthTokenFile string `name:"auth-token-file" default:"/etc/pg-helper/auth-token"`
 }
 
+func (g *GrpcClientConfig) AuthToken() (string, error) {
+	token, err := os.ReadFile(g.AuthTokenFile)
+	if err != nil {
+		return "", err
+	}
+	return string(token), nil
+}
+
 type GrpcServerConfig struct {
 	Tls TlsServerConfig `embed:"" prefix:"tls-" group:"grpc-tls"`
 
-	TrustedClientDomain   string
-	JwtEcDSAVerifyKeyFile string `name:"jwt-ecdsa-verify-key-file" default:"/etc/pg-helper/certs/jwt-ecdsa-verify-key.pem"`
-	JwtEdDSAVerifyKeyFile string `name:"jwt-eddsa-verify-key-file" default:"/etc/pg-helper/certs/jwt-eddsa-verify-key.pem"`
+	BearerAuthEnabled     bool   `default:"false" group:"grpc-auth"`
+	JwtEcDSAVerifyKeyFile string `name:"jwt-ecdsa-verify-key-file" group:"grpc-auth" type:"exitingfile"`
+	JwtEdDSAVerifyKeyFile string `name:"jwt-eddsa-verify-key-file" group:"grpc-auth" type:"existingfile"`
+
+	Host string `help:"The host that grpc server to listen on"`
+	Port int16  `help:"The port that grpc server to listen on" default:"8089"`
 }
 
 func (g *GrpcServerConfig) JwtEcDSAVerifyKey() (interface{}, error) {
@@ -32,12 +43,8 @@ func (g *GrpcServerConfig) JwtEdDSAVerifyKey() (interface{}, error) {
 	return loadPublicKey(g.JwtEdDSAVerifyKeyFile)
 }
 
-func (g *GrpcClientConfig) AuthToken() (string, error) {
-	token, err := os.ReadFile(g.AuthTokenFile)
-	if err != nil {
-		return "", err
-	}
-	return string(token), nil
+func (g *GrpcServerConfig) ListenOn() string {
+	return fmt.Sprintf("%s:%d", g.Host, g.Port)
 }
 
 func loadPublicKey(file string) (interface{}, error) {

@@ -38,6 +38,7 @@ type TlsServerConfig struct {
 
 	MTLSEnabled          bool   `name:"mtls-enabled" group:"grpc-mtls" help:"Enable mutual tls" negatable:"true"`
 	ServerTrustedCaCerts string `help:"Path to the server trusted ca certs" type:"existingfile" group:"grpc-mtls"`
+	TrustedClientDomain  string `group:"grpc-mtls"`
 }
 
 func (t *TlsClientConfig) Validate() error {
@@ -85,8 +86,19 @@ func (t *TlsClientConfig) TlsConfig() (*tls.Config, error) {
 	return tlsConfig, nil
 }
 
-// Generate credentials for the server, if the tls is disabled, using insecure mode
 func (t *TlsClientConfig) Credentials() (credentials.TransportCredentials, error) {
+	if !t.Enabled {
+		return insecure.NewCredentials(), nil
+	}
+
+	tlsConfig, err := t.TlsConfig()
+	if err != nil {
+		return nil, err
+	}
+	return credentials.NewTLS(tlsConfig), nil
+}
+
+func (t *TlsServerConfig) Credentials() (credentials.TransportCredentials, error) {
 	if !t.Enabled {
 		return insecure.NewCredentials(), nil
 	}
@@ -147,7 +159,7 @@ func (t *TlsServerConfig) TlsConfig() (*tls.Config, error) {
 func loadCert(certFile string, keyFile string) (*tls.Certificate, error) {
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		log.Error().Err(err).Str("CertFile", certFile).Str("KeyFile", keyFile).Msg("Failed to load client certificate")
+		log.Error().Err(err).Str("CertFile", certFile).Str("KeyFile", keyFile).Msg("Failed to load certificate")
 		return nil, err
 	}
 	return &cert, nil

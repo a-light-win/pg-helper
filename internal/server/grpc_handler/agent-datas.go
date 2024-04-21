@@ -17,10 +17,10 @@ func (a *AgentDatas) GetAgent(id string) *AgentData {
 	return nil
 }
 
-func (a *AgentDatas) AddAgent(m *proto.RegisterAgent, s proto.DbTaskSvc_RegisterServer) {
+func (a *AgentDatas) AddAgent(agentId string, pgVersion int32, s proto.DbTaskSvc_RegisterServer) {
 	agent := &AgentData{
-		ID:         m.AgentId,
-		PgVersion:  m.PgVersion,
+		ID:         agentId,
+		PgVersion:  pgVersion,
 		Databases:  make(map[string]*Database),
 		TaskSender: s,
 	}

@@ -40,3 +40,17 @@ func (s *Server) registerRoutes() error {
 
 	return nil
 }
+
+func (s *Server) runWebServer() {
+	if !s.Config.Web.Enabled {
+		log.Log().Msg("Web server is disabled")
+		return
+	}
+
+	log.Log().Msg("Start the web server")
+	// TODO: customize the address and port
+	err := s.Router.Run() // listen and serve on 0.0.0.0:8080
+	if err != nil {
+		log.Error().Err(err).Msg("Web server exit with error")
+	}
+}

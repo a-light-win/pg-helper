@@ -31,6 +31,7 @@ func (a *Agent) initGrpc() error {
 
 	authToken, err := a.Config.Grpc.AuthToken()
 	if err == nil {
+		log.Log().Msg("Auth token is provided")
 		authCreds := grpc_handler.NewAuthToken(authToken, a.Config.Grpc.Tls.Enabled)
 		dialOptions = append(dialOptions, grpc.WithPerRPCCredentials(authCreds))
 	} else if !a.Config.Grpc.Tls.MTLSEnabled {

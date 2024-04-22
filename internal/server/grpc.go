@@ -22,11 +22,13 @@ func (s *Server) initGrpc() error {
 
 	hasAuth := false
 	if s.Config.Grpc.Tls.MTLSEnabled {
+		log.Log().Msg("MTLS is enabled")
 		opts = append(opts, grpc.UnaryInterceptor(grpc_handler.TlsAuthInterceptor))
 		hasAuth = true
 	}
 
-	if s.Config.Grpc.BearerAuthEnabled {
+	if !hasAuth && s.Config.Grpc.BearerAuthEnabled {
+		log.Log().Msg("Bearer auth is enabled")
 		opts = append(opts, grpc.UnaryInterceptor(grpc_handler.BearerAuthInterceptor))
 		hasAuth = true
 	}

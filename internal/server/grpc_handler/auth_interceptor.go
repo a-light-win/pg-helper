@@ -52,6 +52,9 @@ func TlsAuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 	}
 
 	// Get the client's certificate
+	if len(tlsInfo.State.PeerCertificates) == 0 {
+		return nil, status.Error(codes.Unauthenticated, "no client certificate provided")
+	}
 	clientCert := tlsInfo.State.PeerCertificates[0]
 
 	// Get the CN

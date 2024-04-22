@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/a-light-win/pg-helper/api/proto"
@@ -30,6 +31,10 @@ func (a *Agent) initGrpc() error {
 	if err == nil {
 		authCreds := grpc_handler.NewAuthToken(authToken, a.Config.Grpc.Tls.Enabled)
 		dialOptions = append(dialOptions, grpc.WithPerRPCCredentials(authCreds))
+	} else if !a.Config.Grpc.Tls.MTLSEnabled {
+		err := errors.New("auth method is not provided")
+		log.Error().Err(err).Msg("Failed to init grpc client")
+		return err
 	}
 
 	ka := keepalive.ClientParameters{

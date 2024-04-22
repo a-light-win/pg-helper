@@ -4,12 +4,16 @@ log-level: debug
 serve:
   web:
     enabled: true
+  grpc:
+    port: 8443
+    tls:
+      enabled: false
 
 agent:
   db:
     host-template: "pg-%d"
     port: 5432
   grpc:
-    url: "dns:///pg-helper"
+    url: "dns:///pg-helper:8443"
     tls:
       enabled: false

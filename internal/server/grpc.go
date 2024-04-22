@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"net"
 
 	"github.com/a-light-win/pg-helper/api/proto"
@@ -19,11 +20,21 @@ func (s *Server) initGrpc() error {
 	}
 	opts = append(opts, grpc.Creds(creds))
 
+	hasAuth := false
 	if s.Config.Grpc.Tls.MTLSEnabled {
 		opts = append(opts, grpc.UnaryInterceptor(grpc_handler.TlsAuthInterceptor))
+		hasAuth = true
 	}
+
 	if s.Config.Grpc.BearerAuthEnabled {
 		opts = append(opts, grpc.UnaryInterceptor(grpc_handler.BearerAuthInterceptor))
+		hasAuth = true
+	}
+
+	if !hasAuth {
+		err := errors.New("auth method is not provided")
+		log.Error().Err(err).Msg("Failed to init grpc server")
+		return err
 	}
 
 	s.GrpcServer = grpc.NewServer(opts...)

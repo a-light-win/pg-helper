@@ -2,8 +2,6 @@ package grpc_handler
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -44,13 +42,13 @@ func TlsAuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 	// Get the credentials from the context
 	p, ok := peer.FromContext(ctx)
 	if !ok {
-		return nil, status.Errorf(codes.Unauthenticated, "no transport security info available")
+		return nil, status.Error(codes.Unauthenticated, "no transport security info available")
 	}
 
 	// Get the TLS info
 	tlsInfo, ok := p.AuthInfo.(credentials.TLSInfo)
 	if !ok {
-		return nil, status.Errorf(codes.Unauthenticated, "unable to get TLS info")
+		return nil, status.Error(codes.Unauthenticated, "unable to get TLS info")
 	}
 
 	// Get the client's certificate
@@ -68,7 +66,7 @@ func TlsAuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 	}
 
 	// Call the handler function with the new context
-	return nil, status.Errorf(codes.Unauthenticated, "invalid certificate")
+	return nil, status.Error(codes.Unauthenticated, "invalid certificate")
 }
 
 func BearerAuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
@@ -85,7 +83,7 @@ func BearerAuthInterceptor(ctx context.Context, req interface{}, info *grpc.Unar
 	token := strings.TrimPrefix(authHeader[0], "Bearer ")
 	authInfo, ok := parseAuthFromToken(token)
 	if !ok {
-		return nil, status.Errorf(codes.Unauthenticated, "invalid token")
+		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
 
 	ctx = context.WithValue(ctx, CtxKeyAuthInfo, authInfo)
@@ -126,7 +124,7 @@ func parseAuthFromToken(tokenString string) (*AuthInfo, bool) {
 		case *jwt.SigningMethodEd25519:
 			return gd_.GrpcConfig.JwtEdDSAVerifyKey()
 		default:
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, status.Errorf(codes.Unauthenticated, "unexpected signing method: %v", token.Header["alg"])
 		}
 	})
 	if err != nil {
@@ -151,7 +149,7 @@ func parseAuthFromToken(tokenString string) (*AuthInfo, bool) {
 func validAuthInfo(authInfo AuthInfo) error {
 	if gd_.GrpcConfig.Tls.TrustedClientDomain != "" {
 		if gd_.GrpcConfig.Tls.TrustedClientDomain != authInfo.BaseDomain {
-			return errors.New("invalid base domain")
+			return status.Error(codes.Unauthenticated, "invalid base domain")
 		}
 	}
 	switch authInfo.ClientType {
@@ -160,17 +158,17 @@ func validAuthInfo(authInfo AuthInfo) error {
 	case AppClient:
 		return nil
 	default:
-		return errors.New("invalid client type")
+		return status.Error(codes.Unauthenticated, "invalid client type")
 	}
 }
 
 func authInfoWithType(ctx context.Context, clientType ClientType) (*AuthInfo, error) {
 	authInfo, ok := ctx.Value(CtxKeyAuthInfo).(*AuthInfo)
 	if !ok {
-		return nil, errors.New("authInfo not found")
+		return nil, status.Error(codes.Unauthenticated, "authInfo not found")
 	}
 	if authInfo.ClientType != clientType {
-		return nil, errors.New("invalid client type")
+		return nil, status.Error(codes.Unauthenticated, "invalid client type")
 	}
 	return authInfo, nil
 }

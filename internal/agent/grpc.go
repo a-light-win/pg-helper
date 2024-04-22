@@ -11,7 +11,9 @@ import (
 	"github.com/a-light-win/pg-helper/internal/utils"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/status"
 )
 
 func (a *Agent) initGrpc() error {
@@ -154,7 +156,14 @@ func (a *Agent) runGrpc() {
 
 		task, err := service.Recv()
 		if err != nil {
+			s, ok := status.FromError(err)
+			if ok && s.Code() == codes.Unauthenticated {
+				log.Error().Err(err).Msg("Failed to receive task")
+				return
+			}
+
 			log.Warn().Err(err).Msg("Failed to receive task")
+			time.Sleep(time.Second)
 			service = a.registerService()
 			if service == nil {
 				return
@@ -165,6 +174,7 @@ func (a *Agent) runGrpc() {
 		if task == nil {
 			continue
 		}
+
 		// TODO: support handle multiple tasks concurrently
 		handler := grpc_handler.New(task)
 		if err := handler.Validate(); err != nil {

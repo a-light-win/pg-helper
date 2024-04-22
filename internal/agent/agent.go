@@ -10,6 +10,7 @@ import (
 	"github.com/a-light-win/pg-helper/internal/job/db_job"
 	"github.com/a-light-win/pg-helper/internal/utils"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog/log"
 )
 
 type Agent struct {
@@ -60,5 +61,7 @@ func (a *Agent) Run() {
 
 	a.runGrpc()
 
+	a.Quit()
 	a.JobScheduler.WaitGracefulShutdown()
+	log.Log().Msg("Agent is shutting down")
 }

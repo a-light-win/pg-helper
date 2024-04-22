@@ -23,39 +23,22 @@ var (
 )
 
 type TlsClientConfig struct {
-	Enabled              bool   `name:"enabled" default:"true" help:"Enable Tls" negatable:"true"`
-	ClientTrustedCaCerts string `help:"Path to the client trusted ca certs" type:"existingfile"`
+	Enabled              bool   `default:"true" negatable:"true" help:"Enable Tls"`
+	ClientTrustedCaCerts string `validate:"omitempty,file" help:"Path to the client trusted ca certs"`
 
-	MTLSEnabled bool   `name:"mtls-enabled" help:"Enable mutual tls" default:"false" group:"grpc-mtls" negatable:"true"`
-	ClientCert  string `help:"Path to the client tls cert" type:"existingfile" group:"grpc-mtls"`
-	ClientKey   string `help:"Path to the client tls key" type:"existingfile" group:"grpc-mtls"`
+	MTLSEnabled bool   `name:"mtls-enabled" default:"false" negatable:"true" help:"Enable mutual tls" group:"grpc-mtls"`
+	ClientCert  string `validate:"required_if=MTLSEnabled true,omitempty,file" help:"Path to the client tls cert" group:"grpc-mtls"`
+	ClientKey   string `validate:"required_if=MTLSEnabled true,omitempty,file" help:"Path to the client tls key" group:"grpc-mtls"`
 }
 
 type TlsServerConfig struct {
-	Enabled    bool   `name:"enabled" default:"true" help:"Enable Tls" negatable:"true"`
-	ServerCert string `help:"Path to the server tls cert" type:"existingfile"`
-	ServerKey  string `help:"Path to the server tls key" type:"existingfile"`
+	Enabled    bool   `default:"true" negatable:"true" help:"Enable Tls"`
+	ServerCert string `validate:"required_if=Enabled true,omitempty,file" help:"Path to the server tls cert"`
+	ServerKey  string `validate:"required_if=Enabled true,omitempty,file" help:"Path to the server tls key"`
 
-	MTLSEnabled          bool   `name:"mtls-enabled" group:"grpc-mtls" help:"Enable mutual tls" negatable:"true"`
-	ServerTrustedCaCerts string `help:"Path to the server trusted ca certs" type:"existingfile" group:"grpc-mtls"`
-	TrustedClientDomain  string `group:"grpc-mtls"`
-}
-
-func (t *TlsClientConfig) Validate() error {
-	if !t.Enabled {
-		return nil
-	}
-
-	if t.MTLSEnabled {
-		if t.ClientCert == "" {
-			return ErrEmptyClientCert
-		}
-		if t.ClientKey == "" {
-			return ErrEmptyClientKey
-		}
-	}
-
-	return nil
+	MTLSEnabled          bool   `name:"mtls-enabled" negatable:"true" help:"Enable mutual tls" group:"grpc-mtls"`
+	ServerTrustedCaCerts string `validate:"required_if=MTLSEnabled true,omitempty,file" help:"Path to the server trusted ca certs" group:"grpc-mtls"`
+	TrustedClientDomain  string `validate:"omitempty,fqdn" group:"grpc-mtls"`
 }
 
 func (t *TlsClientConfig) TlsConfig() (*tls.Config, error) {
@@ -108,27 +91,6 @@ func (t *TlsServerConfig) Credentials() (credentials.TransportCredentials, error
 		return nil, err
 	}
 	return credentials.NewTLS(tlsConfig), nil
-}
-
-func (t *TlsServerConfig) Validate() error {
-	if !t.Enabled {
-		return nil
-	}
-
-	if t.ServerCert == "" {
-		return ErrEmptyServerCert
-	}
-	if t.ServerKey == "" {
-		return ErrEmptyServerKey
-	}
-
-	if t.MTLSEnabled {
-		if t.ServerTrustedCaCerts == "" {
-			return ErrEmptyServerTrustedCaCerts
-		}
-	}
-
-	return nil
 }
 
 func (t *TlsServerConfig) TlsConfig() (*tls.Config, error) {

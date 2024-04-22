@@ -63,6 +63,12 @@ build: _sqlc _generate-protos && _strip
 
   echo "Build pg-helper ${version} success"
 
+test: build
+  go test -coverprofile=coverage.out ./...
+
+cover: test
+  go tool cover -html=coverage.out
+
 _strip:
   #!/usr/bin/env bash
   echo "Stripping pg-helper binary ..."

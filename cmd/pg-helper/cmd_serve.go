@@ -4,6 +4,7 @@ import (
 	config_ "github.com/a-light-win/pg-helper/internal/config"
 	server_ "github.com/a-light-win/pg-helper/internal/server"
 	"github.com/a-light-win/pg-helper/internal/utils"
+	"github.com/a-light-win/pg-helper/internal/validate"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
@@ -16,6 +17,12 @@ func (s *ServeCmd) Run(ctx *Context) error {
 	gin.SetMode(gin.ReleaseMode)
 
 	server := server_.New(&s.ServerConfig)
+
+	validator := validate.New()
+	if err := validator.Struct(s.ServerConfig); err != nil {
+		log.Error().Err(err).Msg("config validation failed")
+		return err
+	}
 
 	utils.PrintCurrentLogLevel()
 	log.Log().Msgf("pg-helper %s is start up", Version)

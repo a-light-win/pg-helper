@@ -4,6 +4,7 @@ import (
 	"github.com/a-light-win/pg-helper/internal/agent"
 	"github.com/a-light-win/pg-helper/internal/config"
 	"github.com/a-light-win/pg-helper/internal/utils"
+	"github.com/a-light-win/pg-helper/internal/validate"
 	"github.com/rs/zerolog/log"
 )
 
@@ -13,6 +14,12 @@ type AgentCmd struct {
 
 func (a *AgentCmd) Run(ctx *Context) error {
 	agent_ := agent.New(&a.AgentConfig)
+
+	validator := validate.New()
+	if err := validator.Struct(a.AgentConfig); err != nil {
+		log.Error().Err(err).Msg("config validation failed")
+		return err
+	}
 
 	utils.PrintCurrentLogLevel()
 	log.Log().Msgf("pg-helper agent %s is start up", Version)

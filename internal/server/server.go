@@ -50,6 +50,6 @@ func (s *Server) Run() {
 
 	go s.runWebServer()
 
-	<-s.QuitCtxb.Done()
+	<-s.QuitCtx.Done()
 	s.GrpcServer.GracefulStop()
 }

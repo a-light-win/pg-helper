@@ -13,7 +13,7 @@ type GrpcClientConfig struct {
 	Url        string `validate:"required,grpcurl" help:"The url that grpc client to connect to"`
 	ServerName string `validate:"omitempty,fqdn" help:"The server name that grpc client to connect to"`
 
-	AuthTokenFile string `validate:"omitempty,file" group:"grpc-auth"`
+	AuthTokenFile string `validate:"omitempty,file" env:"PG_HELPER_GRPC_AUTH_TOKEN_FILE" group:"grpc-auth"`
 }
 
 type GrpcServerConfig struct {

@@ -17,6 +17,9 @@ var Cli struct {
 	Version VersionCmd `cmd:"" help:"Print the version of pg-helper"`
 	Agent   AgentCmd   `cmd:"" help:"Run the backup, restore or other pg commands in the background"`
 	Serve   ServeCmd   `cmd:"" help:"The coordinator to manage the pg-helper agents"`
+
+	GenKey GenKeyCmd `cmd:"" help:"Generate a new Ed25519 key pair"`
+	GenJwt GenJwtCmd `cmd:"" help:"Generate a new JWT token"`
 }
 
 func main() {

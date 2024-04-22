@@ -137,7 +137,7 @@ func parseAuthFromToken(tokenString string) (*AuthInfo, bool) {
 		authInfo := AuthInfo{
 			ClientId:   claims["sub"].(string),
 			ClientType: ClientType(claims["type"].(string)),
-			BaseDomain: claims["baseDomain"].(string),
+			BaseDomain: claims["base_domain"].(string),
 		}
 		if err := validAuthInfo(authInfo); err != nil {
 			return nil, false

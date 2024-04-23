@@ -20,24 +20,13 @@ func (s *Server) initGrpc() error {
 	}
 	opts = append(opts, grpc.Creds(creds))
 
-	hasAuth := false
-	if s.Config.Grpc.Tls.MTLSEnabled {
-		log.Log().Msg("MTLS is enabled")
-		opts = append(opts, grpc.UnaryInterceptor(grpc_handler.TlsAuthInterceptor))
-		hasAuth = true
-	}
-
-	if !hasAuth && s.Config.Grpc.BearerAuthEnabled {
-		log.Log().Msg("Bearer auth is enabled")
-		opts = append(opts, grpc.UnaryInterceptor(grpc_handler.BearerAuthInterceptor))
-		hasAuth = true
-	}
-
-	if !hasAuth {
+	if !s.Config.Grpc.BearerAuthEnabled && !s.Config.Grpc.Tls.MTLSEnabled {
 		err := errors.New("auth method is not provided")
 		log.Error().Err(err).Msg("Failed to init grpc server")
 		return err
 	}
+	opts = append(opts, grpc.UnaryInterceptor(grpc_handler.AuthInterceptor))
+	opts = append(opts, grpc.StreamInterceptor(grpc_handler.AuthStreamInterceptor))
 
 	s.GrpcServer = grpc.NewServer(opts...)
 	proto.RegisterDbTaskSvcServer(s.GrpcServer, &grpc_handler.DbTaskSvcHandler{})

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -38,7 +39,52 @@ func (a AuthInfo) ClientTypeString() string {
 	return string(a.ClientType)
 }
 
-func TlsAuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func AuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	ctx, err := withAuthInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return handler(ctx, req)
+}
+
+func AuthStreamInterceptor(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	ctx := stream.Context()
+	ctx, err := withAuthInfo(ctx)
+	if err != nil {
+		return err
+	}
+
+	wrapped := grpc_middleware.WrapServerStream(stream)
+	wrapped.WrappedContext = ctx
+	return handler(srv, wrapped)
+}
+
+func withAuthInfo(ctx context.Context) (context.Context, error) {
+	var firstErr error
+	if gd_.GrpcConfig.BearerAuthEnabled {
+		if ctx, err := withAuthInfoFromHeader(ctx); err == nil {
+			return ctx, nil
+		} else {
+			firstErr = err
+		}
+	}
+
+	if gd_.GrpcConfig.Tls.MTLSEnabled {
+		if ctx, err := withAuthInfoFromTls(ctx); err == nil {
+			return ctx, nil
+		} else if firstErr == nil {
+			firstErr = err
+		}
+	}
+
+	if firstErr != nil {
+		return nil, firstErr
+	}
+	return nil, status.Error(codes.Unauthenticated, "no auth method found")
+}
+
+func withAuthInfoFromTls(ctx context.Context) (context.Context, error) {
 	// Get the credentials from the context
 	p, ok := peer.FromContext(ctx)
 	if !ok {
@@ -59,12 +105,11 @@ func TlsAuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 
 	// Get the CN
 	sans := clientCert.DNSNames
-
 	for _, san := range sans {
 		authInfo, ok := parseAuthFromCert(san)
 		if ok {
 			ctx = context.WithValue(ctx, CtxKeyAuthInfo, authInfo)
-			return handler(ctx, req)
+			return ctx, nil
 		}
 	}
 
@@ -72,7 +117,7 @@ func TlsAuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 	return nil, status.Error(codes.Unauthenticated, "invalid certificate")
 }
 
-func BearerAuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func withAuthInfoFromHeader(ctx context.Context) (context.Context, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, status.Errorf(codes.Unauthenticated, "metadata is not provided")
@@ -90,7 +135,7 @@ func BearerAuthInterceptor(ctx context.Context, req interface{}, info *grpc.Unar
 	}
 
 	ctx = context.WithValue(ctx, CtxKeyAuthInfo, authInfo)
-	return handler(ctx, req)
+	return ctx, nil
 }
 
 func parseAuthFromCert(san string) (*AuthInfo, bool) {

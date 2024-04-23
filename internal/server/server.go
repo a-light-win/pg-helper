@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 
-	"github.com/a-light-win/pg-helper/internal/config"
+	config "github.com/a-light-win/pg-helper/internal/config/server"
 	"github.com/a-light-win/pg-helper/internal/handler"
 	"github.com/a-light-win/pg-helper/internal/server/grpc_handler"
 	"github.com/a-light-win/pg-helper/internal/utils"

@@ -1,4 +1,4 @@
-package config
+package server
 
 type WebConfig struct {
 	Enabled        bool     `default:"false" help:"Enable the web server"`

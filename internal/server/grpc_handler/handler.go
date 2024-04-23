@@ -4,19 +4,19 @@ import (
 	"context"
 
 	"github.com/a-light-win/pg-helper/api/proto"
-	"github.com/a-light-win/pg-helper/internal/config"
+	config "github.com/a-light-win/pg-helper/internal/config/server"
 )
 
 type HandlerData struct {
 	AgentDatas
-	GrpcConfig *config.GrpcServerConfig
+	GrpcConfig *config.GrpcConfig
 
 	QuitCtx context.Context
 }
 
 var gd_ *HandlerData
 
-func InitGlobalData(config *config.GrpcServerConfig, quitCtx context.Context) {
+func InitGlobalData(config *config.GrpcConfig, quitCtx context.Context) {
 	gd_ = &HandlerData{GrpcConfig: config, QuitCtx: quitCtx}
 }
 

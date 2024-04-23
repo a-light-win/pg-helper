@@ -1,7 +1,7 @@
 package main
 
 import (
-	config_ "github.com/a-light-win/pg-helper/internal/config"
+	config_ "github.com/a-light-win/pg-helper/internal/config/server"
 	server_ "github.com/a-light-win/pg-helper/internal/server"
 	"github.com/a-light-win/pg-helper/internal/utils"
 	"github.com/a-light-win/pg-helper/internal/validate"

@@ -80,8 +80,16 @@ func (a *Agent) loadRegisterAgent() (*proto.RegisterAgent, error) {
 
 func (a *Agent) runUntilSuccess(runer utils.Runner, wait time.Duration) bool {
 	for {
-		if runer.Run() {
-			return true
+
+		select {
+		case <-a.QuitCtx.Done():
+			return false
+		case <-a.JobCtx.Done():
+			return false
+		default:
+			if runer.Run() {
+				return true
+			}
 		}
 
 		select {

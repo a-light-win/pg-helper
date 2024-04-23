@@ -1,26 +1,14 @@
-package config
+package agent
 
 import (
 	"crypto/tls"
-	"errors"
 
 	"github.com/a-light-win/pg-helper/internal/utils"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-var (
-	ErrEmptyClientCert = errors.New("empty client cert")
-	ErrEmptyClientKey  = errors.New("empty client key")
-)
-
-var (
-	ErrEmptyServerCert           = errors.New("empty server cert")
-	ErrEmptyServerKey            = errors.New("empty server key")
-	ErrEmptyServerTrustedCaCerts = errors.New("empty server trusted ca certs")
-)
-
-type TlsClientConfig struct {
+type TlsConfig struct {
 	Enabled              bool   `default:"true" negatable:"true" help:"Enable Tls"`
 	ClientTrustedCaCerts string `validate:"omitempty,file" help:"Path to the client trusted ca certs"`
 
@@ -29,7 +17,7 @@ type TlsClientConfig struct {
 	ClientKey   string `validate:"required_if=MTLSEnabled true,omitempty,file" help:"Path to the client tls key" group:"grpc-mtls"`
 }
 
-func (t *TlsClientConfig) TlsConfig() (*tls.Config, error) {
+func (t *TlsConfig) TlsConfig() (*tls.Config, error) {
 	if !t.Enabled {
 		return nil, nil
 	}
@@ -57,7 +45,7 @@ func (t *TlsClientConfig) TlsConfig() (*tls.Config, error) {
 	return tlsConfig, nil
 }
 
-func (t *TlsClientConfig) Credentials() (credentials.TransportCredentials, error) {
+func (t *TlsConfig) Credentials() (credentials.TransportCredentials, error) {
 	if !t.Enabled {
 		return insecure.NewCredentials(), nil
 	}

@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/a-light-win/pg-helper/internal/agent"
-	"github.com/a-light-win/pg-helper/internal/config"
+	config "github.com/a-light-win/pg-helper/internal/config/agent"
 	"github.com/a-light-win/pg-helper/internal/utils"
 	"github.com/a-light-win/pg-helper/internal/validate"
 	"github.com/rs/zerolog/log"

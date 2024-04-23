@@ -1,4 +1,4 @@
-package config
+package agent
 
 type AgentConfig struct {
 	Db   DbConfig         `embed:"" prefix:"db-" group:"db"`

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/a-light-win/pg-helper/api/proto"
-	"github.com/a-light-win/pg-helper/internal/config"
+	config "github.com/a-light-win/pg-helper/internal/config/agent"
 	"github.com/a-light-win/pg-helper/internal/job"
 	"github.com/jackc/pgx/v5/pgxpool"
 )

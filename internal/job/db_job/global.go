@@ -3,7 +3,7 @@ package db_job
 import (
 	"context"
 
-	"github.com/a-light-win/pg-helper/internal/config"
+	config "github.com/a-light-win/pg-helper/internal/config/agent"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

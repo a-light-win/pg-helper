@@ -1,11 +1,11 @@
-package config
+package agent
 
 import (
 	"os"
 )
 
 type GrpcClientConfig struct {
-	Tls TlsClientConfig `embed:"" prefix:"tls-" group:"grpc-tls"`
+	Tls TlsConfig `embed:"" prefix:"tls-" group:"grpc-tls"`
 
 	Url        string `validate:"required,grpcurl" help:"The url that grpc client to connect to"`
 	ServerName string `validate:"omitempty,fqdn" help:"The server name that grpc client to connect to"`

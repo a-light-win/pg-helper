@@ -11,24 +11,15 @@ func (h *DbTaskSvcHandler) Register(m *proto.RegisterAgent, s proto.DbTaskSvc_Re
 		return err
 	}
 
-	agent := gd_.GetAgent(authInfo.ClientId)
-	if agent == nil {
+	agent := gd_.NewAgent(authInfo.Subject, m.PgVersion)
+	log.Log().
+		Str("AgentId", authInfo.Subject).
+		Int32("PgVersion", m.PgVersion).
+		Msg("Agent registered.")
 
-		log.Log().
-			Str("AgentId", authInfo.ClientId).
-			Int32("PgVersion", m.PgVersion).
-			Msg("Agent register first time.")
+	agent.UpdateDatabases(m.Databases)
 
-		gd_.AddAgent(authInfo.ClientId, m.PgVersion, s)
-	} else {
-		log.Debug().
-			Str("AgentId", authInfo.ClientId).
-			Int32("PgVersion", m.PgVersion).
-			Msg("Agent register again")
-	}
+	agent.ServeDbTask(s)
 
-	for _, db := range m.Databases {
-		agent.UpdateDatabase(db)
-	}
 	return nil
 }

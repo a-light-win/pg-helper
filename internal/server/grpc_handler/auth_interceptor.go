@@ -129,9 +129,9 @@ func withAuthInfoFromHeader(ctx context.Context) (context.Context, error) {
 	}
 
 	token := strings.TrimPrefix(authHeader[0], "Bearer ")
-	authInfo, ok := parseAuthFromToken(token)
-	if !ok {
-		return nil, status.Error(codes.Unauthenticated, "invalid token")
+	authInfo, err := parseAuthFromToken(token)
+	if err != nil {
+		return nil, err
 	}
 
 	ctx = context.WithValue(ctx, CtxKeyAuthInfo, authInfo)
@@ -164,7 +164,7 @@ func parseAuthFromCert(san string) (*AuthInfo, bool) {
 	return &authInfo, true
 }
 
-func parseAuthFromToken(tokenString string) (*AuthInfo, bool) {
+func parseAuthFromToken(tokenString string) (*AuthInfo, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		switch token.Method.(type) {
 		case *jwt.SigningMethodECDSA:
@@ -176,7 +176,10 @@ func parseAuthFromToken(tokenString string) (*AuthInfo, bool) {
 		}
 	})
 	if err != nil {
-		return nil, false
+		if _, ok := status.FromError(err); !ok {
+			return nil, status.Error(codes.Unauthenticated, err.Error())
+		}
+		return nil, err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
@@ -186,11 +189,11 @@ func parseAuthFromToken(tokenString string) (*AuthInfo, bool) {
 			BaseDomain: claims["base_domain"].(string),
 		}
 		if err := validAuthInfo(authInfo); err != nil {
-			return nil, false
+			return nil, err
 		}
-		return &authInfo, true
+		return &authInfo, nil
 	} else {
-		return nil, false
+		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
 }
 

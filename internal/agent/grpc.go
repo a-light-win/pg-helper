@@ -182,7 +182,7 @@ func (a *Agent) runGrpc() {
 			}
 
 			if err == io.EOF {
-				log.Info().Msg("Server closed the connection")
+				log.Info().Msg("Grpc server closed the connection")
 			} else {
 				log.Warn().Err(err).Msg("Failed to receive task")
 			}
@@ -197,19 +197,22 @@ func (a *Agent) runGrpc() {
 			continue
 		}
 
-		if task == nil {
-			continue
-		}
+		go handleDbTask(task)
+	}
+}
 
-		// TODO: support handle multiple tasks concurrently
-		handler := grpc_handler.New(task)
-		if err := handler.Validate(); err != nil {
-			handler.OnError(err)
-			continue
-		}
-		if err := handler.Handle(); err != nil {
-			handler.OnError(err)
-			continue
-		}
+func handleDbTask(task *proto.DbTask) {
+	if task == nil {
+		return
+	}
+
+	handler := grpc_handler.New(task)
+	if err := handler.Validate(); err != nil {
+		handler.OnError(err)
+		return
+	}
+
+	if err := handler.Handle(); err != nil {
+		handler.OnError(err)
 	}
 }

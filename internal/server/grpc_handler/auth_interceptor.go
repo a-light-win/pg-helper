@@ -30,13 +30,46 @@ const (
 )
 
 type AuthInfo struct {
-	ClientId   string
+	Subject    string
 	ClientType ClientType
 	BaseDomain string
 }
 
 func (a AuthInfo) ClientTypeString() string {
 	return string(a.ClientType)
+}
+
+func (a *AuthInfo) FromClaims(claims jwt.MapClaims) {
+	if subject, ok := claims["sub"].(string); ok {
+		a.Subject = subject
+	}
+	if clientType, ok := claims["type"].(string); ok {
+		a.ClientType = ClientType(clientType)
+	}
+	if baseDomain, ok := claims["base_domain"].(string); ok {
+		a.BaseDomain = baseDomain
+	}
+}
+
+func (a *AuthInfo) Validate() error {
+	if a.Subject == "" {
+		return status.Error(codes.Unauthenticated, "invalid subject")
+	}
+
+	if gd_.GrpcConfig.Tls.TrustedClientDomain != "" {
+		if gd_.GrpcConfig.Tls.TrustedClientDomain != a.BaseDomain {
+			return status.Error(codes.Unauthenticated, "invalid base domain")
+		}
+	}
+
+	switch a.ClientType {
+	case AgentClient:
+		return nil
+	case AppClient:
+		return nil
+	default:
+		return status.Error(codes.Unauthenticated, "invalid client type")
+	}
 }
 
 func AuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
@@ -147,21 +180,21 @@ func parseAuthFromCert(san string) (*AuthInfo, bool) {
 		return nil, false
 	}
 
-	authInfo := AuthInfo{
-		ClientId:   names[0],
+	authInfo := &AuthInfo{
+		Subject:    names[0],
 		ClientType: ClientType(names[1]),
 		BaseDomain: names[2],
 	}
-	if err := validAuthInfo(authInfo); err != nil {
+	if err := authInfo.Validate(); err != nil {
 		log.Warn().Err(err).
-			Str("ClientId", authInfo.ClientId).
+			Str("ClientId", authInfo.Subject).
 			Str("ClientType", string(authInfo.ClientType)).
 			Str("BaseDomain", authInfo.BaseDomain).
 			Msg("")
 		return nil, false
 	}
 
-	return &authInfo, true
+	return authInfo, true
 }
 
 func parseAuthFromToken(tokenString string) (*AuthInfo, error) {
@@ -183,33 +216,14 @@ func parseAuthFromToken(tokenString string) (*AuthInfo, error) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		authInfo := AuthInfo{
-			ClientId:   claims["sub"].(string),
-			ClientType: ClientType(claims["type"].(string)),
-			BaseDomain: claims["base_domain"].(string),
-		}
-		if err := validAuthInfo(authInfo); err != nil {
+		authInfo := &AuthInfo{}
+		authInfo.FromClaims(claims)
+		if err := authInfo.Validate(); err != nil {
 			return nil, err
 		}
-		return &authInfo, nil
+		return authInfo, nil
 	} else {
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
-	}
-}
-
-func validAuthInfo(authInfo AuthInfo) error {
-	if gd_.GrpcConfig.Tls.TrustedClientDomain != "" {
-		if gd_.GrpcConfig.Tls.TrustedClientDomain != authInfo.BaseDomain {
-			return status.Error(codes.Unauthenticated, "invalid base domain")
-		}
-	}
-	switch authInfo.ClientType {
-	case AgentClient:
-		return nil
-	case AppClient:
-		return nil
-	default:
-		return status.Error(codes.Unauthenticated, "invalid client type")
 	}
 }
 

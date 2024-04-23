@@ -3,6 +3,8 @@ package agent
 import (
 	"context"
 	"errors"
+	"io"
+	"math/rand"
 	"time"
 
 	"github.com/a-light-win/pg-helper/api/proto"
@@ -78,7 +80,10 @@ func (a *Agent) loadRegisterAgent() (*proto.RegisterAgent, error) {
 	return registerAgent, nil
 }
 
-func (a *Agent) runUntilSuccess(runer utils.Runner, wait time.Duration) bool {
+func (a *Agent) runUntilSuccess(runer utils.Runner, firstWait int) bool {
+	continueWait := firstWait
+	maxContinueWait := 60
+
 	for {
 
 		select {
@@ -90,6 +95,11 @@ func (a *Agent) runUntilSuccess(runer utils.Runner, wait time.Duration) bool {
 			if runer.Run() {
 				return true
 			}
+		}
+
+		wait := time.Duration(continueWait) * time.Second
+		if continueWait < maxContinueWait {
+			continueWait += 1
 		}
 
 		select {
@@ -135,7 +145,7 @@ func (g *grpcServiceLoader) Run() bool {
 }
 
 func (a *Agent) registerService() proto.DbTaskSvc_RegisterClient {
-	wait := time.Second * 2
+	wait := 2
 
 	registerAgentLoader := &registerAgentLoader{agent: a}
 	if !a.runUntilSuccess(registerAgentLoader, wait) {
@@ -171,8 +181,15 @@ func (a *Agent) runGrpc() {
 				return
 			}
 
-			log.Warn().Err(err).Msg("Failed to receive task")
-			time.Sleep(time.Second)
+			if err == io.EOF {
+				log.Info().Msg("Server closed the connection")
+			} else {
+				log.Warn().Err(err).Msg("Failed to receive task")
+			}
+
+			wait := time.Duration(rand.Intn(3)+1) * time.Second
+			time.Sleep(wait)
+
 			service = a.registerService()
 			if service == nil {
 				return

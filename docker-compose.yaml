@@ -45,7 +45,7 @@ services:
       - pg_admin_password
   pg-helper-agent-14:
     image: pg-helper-agent:${PG_HELPER_VERSION}-pg-14
-    container_name: pg-helper-agnet-14
+    container_name: pg-helper-agent-14
     build:
       context: .
       dockerfile: Dockerfile.agent

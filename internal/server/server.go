@@ -8,6 +8,7 @@ import (
 	"github.com/a-light-win/pg-helper/internal/server/grpc_handler"
 	"github.com/a-light-win/pg-helper/internal/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 )
 
@@ -52,4 +53,6 @@ func (s *Server) Run() {
 
 	<-s.QuitCtx.Done()
 	s.GrpcServer.GracefulStop()
+
+	log.Log().Msg("Server is shutting down.")
 }

@@ -41,9 +41,9 @@ func (a *Agent) initGrpc() error {
 	}
 
 	ka := keepalive.ClientParameters{
-		Time:                time.Second * 10,
-		Timeout:             time.Second * 10,
-		PermitWithoutStream: true,
+		Time:                time.Second * 15,
+		Timeout:             time.Second * 5,
+		PermitWithoutStream: false,
 	}
 	dialOptions = append(dialOptions, grpc.WithKeepaliveParams(ka))
 

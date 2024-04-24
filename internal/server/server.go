@@ -4,10 +4,10 @@ import (
 	"context"
 
 	config "github.com/a-light-win/pg-helper/internal/config/server"
+	"github.com/a-light-win/pg-helper/internal/handler"
 	"github.com/a-light-win/pg-helper/internal/handler/grpc_server"
 	"github.com/a-light-win/pg-helper/internal/handler/web_server"
 	"github.com/a-light-win/pg-helper/internal/utils"
-	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 )
@@ -16,8 +16,7 @@ type Server struct {
 	Config *config.ServerConfig
 
 	// web server
-	Router  *gin.Engine
-	Handler *web_server.Handler
+	WebServer handler.Server
 
 	// grpc server
 	GrpcServer *grpc.Server
@@ -26,9 +25,7 @@ type Server struct {
 }
 
 func New(config *config.ServerConfig) *Server {
-	r := gin.Default()
-
-	server := Server{Config: config, Router: r}
+	server := Server{Config: config, WebServer: &web_server.WebServer{}}
 	return &server
 }
 
@@ -37,7 +34,7 @@ func (s *Server) Init() error {
 	if err := s.initGrpc(); err != nil {
 		return err
 	}
-	if err := s.initWebServer(); err != nil {
+	if err := s.WebServer.Init(&s.Config.Web); err != nil {
 		return err
 	}
 
@@ -49,9 +46,11 @@ func (s *Server) Init() error {
 func (s *Server) Run() {
 	go s.runGrpcServer()
 
-	go s.runWebServer()
+	go s.WebServer.Run()
 
 	<-s.QuitCtx.Done()
+
+	s.WebServer.Shutdown(context.Background())
 	s.GrpcServer.GracefulStop()
 
 	log.Log().Msg("Server is shutting down.")

@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/a-light-win/pg-helper/internal/handler"
+	"github.com/a-light-win/pg-helper/internal/handler/web_server"
 	"github.com/a-light-win/pg-helper/internal/validate"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Server) initWebServer() error {
-	s.Handler = &handler.Handler{
+	s.Handler = &web_server.Handler{
 		Config: s.Config,
 	}
 

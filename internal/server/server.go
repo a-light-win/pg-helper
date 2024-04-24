@@ -4,7 +4,7 @@ import (
 	"context"
 
 	config "github.com/a-light-win/pg-helper/internal/config/server"
-	"github.com/a-light-win/pg-helper/internal/handler"
+	"github.com/a-light-win/pg-helper/internal/handler/web_server"
 	"github.com/a-light-win/pg-helper/internal/server/grpc_handler"
 	"github.com/a-light-win/pg-helper/internal/utils"
 	"github.com/gin-gonic/gin"
@@ -17,7 +17,7 @@ type Server struct {
 
 	// web server
 	Router  *gin.Engine
-	Handler *handler.Handler
+	Handler *web_server.Handler
 
 	// grpc server
 	GrpcServer *grpc.Server

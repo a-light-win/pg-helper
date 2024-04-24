@@ -17,6 +17,7 @@ type Server struct {
 	Servers []handler.Server
 
 	QuitCtx context.Context
+	Quit    context.CancelFunc
 }
 
 func New(config *config.ServerConfig) *Server {
@@ -28,6 +29,7 @@ func New(config *config.ServerConfig) *Server {
 		Config:  config,
 		Servers: []handler.Server{ss, gs, ws},
 		QuitCtx: ss.QuitCtx,
+		Quit:    ss.Quit,
 	}
 	return &server
 }

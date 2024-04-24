@@ -2,7 +2,6 @@ package web_server
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"github.com/a-light-win/pg-helper/internal/config/server"
@@ -19,18 +18,14 @@ type WebServer struct {
 	Server *http.Server
 }
 
-func (w *WebServer) Init(config any) error {
-	c, ok := config.(*server.WebConfig)
-	if !ok {
-		err := errors.New("failed to get server config")
-		log.Error().Err(err).Msg("Failed to init web server")
-		return err
+func NewWebServer(config *server.WebConfig) *WebServer {
+	w := &WebServer{
+		Config: config,
+		Router: gin.Default(),
 	}
 
-	w.Config = c
-	w.Router = gin.Default()
 	w.Server = &http.Server{
-		Addr:    c.ListenOn(),
+		Addr:    config.ListenOn(),
 		Handler: w.Router,
 	}
 
@@ -39,17 +34,12 @@ func (w *WebServer) Init(config any) error {
 		validate.RegisterCustomValidations(validatorEngine)
 	}
 
-	err := w.initWebServerByConfig()
-	if err != nil {
-		return err
-	}
-	return w.registerRoutes()
-}
-
-func (w *WebServer) initWebServerByConfig() error {
 	w.Router.UseH2C = w.Config.UseH2C
 	w.Router.SetTrustedProxies(w.Config.TrustedProxies)
-	return nil
+
+	w.registerRoutes()
+
+	return w
 }
 
 func (w *WebServer) Run() {

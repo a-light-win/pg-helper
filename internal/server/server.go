@@ -6,8 +6,8 @@ import (
 	config "github.com/a-light-win/pg-helper/internal/config/server"
 	"github.com/a-light-win/pg-helper/internal/handler"
 	"github.com/a-light-win/pg-helper/internal/handler/grpc_server"
+	"github.com/a-light-win/pg-helper/internal/handler/signal_server"
 	"github.com/a-light-win/pg-helper/internal/handler/web_server"
-	"github.com/a-light-win/pg-helper/internal/utils"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 )
@@ -15,26 +15,27 @@ import (
 type Server struct {
 	Config *config.ServerConfig
 
-	// web server
-	WebServer handler.Server
-
 	// grpc server
 	GrpcServer *grpc.Server
+	Servers    []handler.Server
 
 	QuitCtx context.Context
 }
 
 func New(config *config.ServerConfig) *Server {
-	server := Server{Config: config, WebServer: &web_server.WebServer{}}
+	ss := signal_server.NewSignalServer()
+	ws := web_server.NewWebServer(&config.Web)
+
+	server := Server{
+		Config:  config,
+		Servers: []handler.Server{ss, ws},
+		QuitCtx: ss.QuitCtx,
+	}
 	return &server
 }
 
 func (s *Server) Init() error {
-	s.QuitCtx, _ = utils.InitSignalHandler()
 	if err := s.initGrpc(); err != nil {
-		return err
-	}
-	if err := s.WebServer.Init(&s.Config.Web); err != nil {
 		return err
 	}
 
@@ -44,14 +45,29 @@ func (s *Server) Init() error {
 }
 
 func (s *Server) Run() {
-	go s.runGrpcServer()
-
-	go s.WebServer.Run()
+	s.run()
 
 	<-s.QuitCtx.Done()
 
-	s.WebServer.Shutdown(context.Background())
+	s.Shutdown()
+}
+
+func (s *Server) run() {
+	for _, server := range s.Servers {
+		go server.Run()
+	}
+	go s.runGrpcServer()
+
+	log.Log().Msg("Server is running.")
+}
+
+func (s *Server) Shutdown() {
+	waitExitCtx := context.Background()
 	s.GrpcServer.GracefulStop()
+
+	for i := len(s.Servers) - 1; i >= 0; i-- {
+		s.Servers[i].Shutdown(waitExitCtx)
+	}
 
 	log.Log().Msg("Server is shutting down.")
 }

@@ -5,7 +5,7 @@ import (
 	"net"
 
 	"github.com/a-light-win/pg-helper/api/proto"
-	"github.com/a-light-win/pg-helper/internal/server/grpc_handler"
+	"github.com/a-light-win/pg-helper/internal/handler/grpc_server"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 )
@@ -25,11 +25,11 @@ func (s *Server) initGrpc() error {
 		log.Error().Err(err).Msg("Failed to init grpc server")
 		return err
 	}
-	opts = append(opts, grpc.UnaryInterceptor(grpc_handler.AuthInterceptor))
-	opts = append(opts, grpc.StreamInterceptor(grpc_handler.AuthStreamInterceptor))
+	opts = append(opts, grpc.UnaryInterceptor(grpc_server.AuthInterceptor))
+	opts = append(opts, grpc.StreamInterceptor(grpc_server.AuthStreamInterceptor))
 
 	s.GrpcServer = grpc.NewServer(opts...)
-	proto.RegisterDbTaskSvcServer(s.GrpcServer, &grpc_handler.DbTaskSvcHandler{})
+	proto.RegisterDbTaskSvcServer(s.GrpcServer, &grpc_server.DbTaskSvcHandler{})
 	return nil
 }
 

@@ -1,4 +1,4 @@
-package grpc_handler
+package grpc_server
 
 import (
 	"github.com/a-light-win/pg-helper/api/proto"

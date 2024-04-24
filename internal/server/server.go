@@ -4,8 +4,8 @@ import (
 	"context"
 
 	config "github.com/a-light-win/pg-helper/internal/config/server"
+	"github.com/a-light-win/pg-helper/internal/handler/grpc_server"
 	"github.com/a-light-win/pg-helper/internal/handler/web_server"
-	"github.com/a-light-win/pg-helper/internal/server/grpc_handler"
 	"github.com/a-light-win/pg-helper/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -41,7 +41,7 @@ func (s *Server) Init() error {
 		return err
 	}
 
-	grpc_handler.InitGlobalData(&s.Config.Grpc, s.QuitCtx)
+	grpc_server.InitGlobalData(&s.Config.Grpc, s.QuitCtx)
 
 	return nil
 }

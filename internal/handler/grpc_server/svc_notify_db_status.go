@@ -5,14 +5,20 @@ import (
 	"errors"
 
 	"github.com/a-light-win/pg-helper/api/proto"
+	grpcAuth "github.com/a-light-win/pg-helper/pkg/auth/grpc"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 func (h *DbTaskSvcHandler) NotifyDbStatus(ctx context.Context, db *proto.Database) (*emptypb.Empty, error) {
-	authInfo, err := authInfoWithType(ctx, AgentClient)
-	if err != nil {
-		return nil, err
+	authInfo, ok := grpcAuth.LoadAuthInfo(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "no auth info")
+	}
+	if !authInfo.ValidateScope("agent") {
+		return nil, status.Error(codes.PermissionDenied, "no agent scope")
 	}
 
 	agent := gd_.GetAgent(authInfo.Subject)

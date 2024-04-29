@@ -2,11 +2,11 @@ package grpc_server
 
 import (
 	"context"
-	"errors"
 	"net"
 
 	"github.com/a-light-win/pg-helper/api/proto"
 	config "github.com/a-light-win/pg-helper/internal/config/server"
+	grpcAuth "github.com/a-light-win/pg-helper/pkg/auth/grpc"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 )
@@ -14,10 +14,13 @@ import (
 type GrpcServer struct {
 	Config     *config.GrpcConfig
 	GrpcServer *grpc.Server
+	Auth       *grpcAuth.GrpcAuth
 }
 
 func NewGrpcServer(config *config.GrpcConfig) *GrpcServer {
 	s := &GrpcServer{Config: config}
+
+	s.Auth = grpcAuth.NewGrpcAuth(&config.Auth)
 
 	opts := []grpc.ServerOption{}
 	creds, err := s.Config.Tls.Credentials()
@@ -26,13 +29,8 @@ func NewGrpcServer(config *config.GrpcConfig) *GrpcServer {
 	}
 	opts = append(opts, grpc.Creds(creds))
 
-	if !s.Config.BearerAuthEnabled && !s.Config.Tls.MTLSEnabled {
-		err := errors.New("auth method is not provided")
-		log.Fatal().Err(err).Msg("Failed to init grpc server")
-	}
-
-	opts = append(opts, grpc.UnaryInterceptor(AuthInterceptor))
-	opts = append(opts, grpc.StreamInterceptor(AuthStreamInterceptor))
+	opts = append(opts, grpc.UnaryInterceptor(s.Auth.Interceptor))
+	opts = append(opts, grpc.StreamInterceptor(s.Auth.StreamInterceptor))
 
 	s.GrpcServer = grpc.NewServer(opts...)
 	proto.RegisterDbTaskSvcServer(s.GrpcServer, &DbTaskSvcHandler{})

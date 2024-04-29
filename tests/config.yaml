@@ -17,8 +17,15 @@ serve:
     tls:
       enabled: false
 
-    bearer-auth-enabled: true
-    jwt-eddsa-verify-key-file: "/run/secrets/auth_public_key"
+    auth:
+      jwt:
+        enabled: true
+        audience: pg-helper
+        verify-key:
+          type:
+            - EdDSA
+          file:
+            - "/run/secrets/auth_public_key"
 
 agent:
   db:

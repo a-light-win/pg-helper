@@ -18,6 +18,9 @@ func RegisterCustomValidations(validatorEngine *validator.Validate) {
 	if err := validatorEngine.RegisterValidation("grpcurl", validateGrpcUrl); err != nil {
 		log.Fatal().Err(err).Msg("Failed to register grpcurl validator")
 	}
+	if err := validatorEngine.RegisterValidation("samelen", validateSameLen); err != nil {
+		log.Fatal().Err(err).Msg("Failed to register samelen validator")
+	}
 }
 
 func New() *validator.Validate {

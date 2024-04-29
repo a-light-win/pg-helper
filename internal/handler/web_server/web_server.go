@@ -6,6 +6,7 @@ import (
 
 	"github.com/a-light-win/pg-helper/internal/config/server"
 	"github.com/a-light-win/pg-helper/internal/validate"
+	ginAuth "github.com/a-light-win/pg-helper/pkg/auth/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -16,6 +17,7 @@ type WebServer struct {
 	Config *server.WebConfig
 	Router *gin.Engine
 	Server *http.Server
+	Auth   *ginAuth.GinAuth
 }
 
 func NewWebServer(config *server.WebConfig) *WebServer {
@@ -28,6 +30,8 @@ func NewWebServer(config *server.WebConfig) *WebServer {
 		Addr:    config.ListenOn(),
 		Handler: w.Router,
 	}
+
+	w.Auth = ginAuth.NewGinAuth(&config.Auth)
 
 	validatorEngine, ok := binding.Validator.Engine().(*validator.Validate)
 	if ok {

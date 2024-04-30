@@ -7,8 +7,8 @@ import (
 	"github.com/a-light-win/pg-helper/api/proto"
 )
 
-type AgentData struct {
-	ID        string
+type DbInstance struct {
+	Name      string
 	PgVersion int32
 
 	Databases map[string]*Database
@@ -19,16 +19,16 @@ type AgentData struct {
 	nonSentDbTask *proto.DbTask
 }
 
-func NewAgentData(agentId string, pgVersion int32) *AgentData {
-	return &AgentData{
-		ID:         agentId,
+func NewDbInstance(name string, pgVersion int32) *DbInstance {
+	return &DbInstance{
+		Name:       name,
 		PgVersion:  pgVersion,
 		Databases:  make(map[string]*Database),
 		DbTaskChan: make(chan *proto.DbTask),
 	}
 }
 
-func (a *AgentData) UpdateDatabases(ctx context.Context, databases []*proto.Database) {
+func (a *DbInstance) UpdateDatabases(ctx context.Context, databases []*proto.Database) {
 	a.dbLock.Lock()
 	defer a.dbLock.Unlock()
 
@@ -38,19 +38,19 @@ func (a *AgentData) UpdateDatabases(ctx context.Context, databases []*proto.Data
 	}
 }
 
-func (a *AgentData) UpdateDatabase(ctx context.Context, db *proto.Database) {
+func (a *DbInstance) UpdateDatabase(ctx context.Context, db *proto.Database) {
 	oldDb := a.MustGetDb(ctx, db.Name)
 	oldDb.Update(db)
 }
 
-func (a *AgentData) MustGetDb(ctx context.Context, name string) *Database {
+func (a *DbInstance) MustGetDb(ctx context.Context, name string) *Database {
 	a.dbLock.Lock()
 	defer a.dbLock.Unlock()
 
 	return a.mustGetDb(ctx, name)
 }
 
-func (a *AgentData) mustGetDb(ctx context.Context, name string) *Database {
+func (a *DbInstance) mustGetDb(ctx context.Context, name string) *Database {
 	db, ok := a.Databases[name]
 
 	if !ok {
@@ -61,7 +61,7 @@ func (a *AgentData) mustGetDb(ctx context.Context, name string) *Database {
 	return db
 }
 
-func (a *AgentData) ServeDbTask(s proto.DbTaskSvc_RegisterServer) {
+func (a *DbInstance) ServeDbTask(s proto.DbTaskSvc_RegisterServer) {
 	if a.nonSentDbTask != nil {
 		if err := s.Send(a.nonSentDbTask); err != nil {
 			return
@@ -80,4 +80,8 @@ func (a *AgentData) ServeDbTask(s proto.DbTaskSvc_RegisterServer) {
 			}
 		}
 	}
+}
+
+func (a *DbInstance) Send(task *proto.DbTask) {
+	a.DbTaskChan <- task
 }

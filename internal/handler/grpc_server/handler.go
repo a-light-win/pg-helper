@@ -9,8 +9,7 @@ import (
 
 type DbTaskSvcHandler struct {
 	proto.UnimplementedDbTaskSvcServer
-
-	AgentDatas
+	DbInstanceManager
 
 	GrpcConfig *config.GrpcConfig
 

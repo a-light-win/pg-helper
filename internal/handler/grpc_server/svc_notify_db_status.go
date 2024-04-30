@@ -21,10 +21,10 @@ func (h *DbTaskSvcHandler) NotifyDbStatus(ctx context.Context, db *proto.Databas
 		return nil, status.Error(codes.PermissionDenied, "no agent scope")
 	}
 
-	agent := h.GetAgent(authInfo.Subject)
+	agent := h.GetInstance(authInfo.Subject)
 	if agent == nil {
 		err := errors.New("agent not found")
-		log.Warn().Err(err).Str("AgentId", authInfo.Subject).Msg("")
+		log.Warn().Err(err).Str("InstanceName", authInfo.Subject).Msg("")
 		return nil, err
 	}
 

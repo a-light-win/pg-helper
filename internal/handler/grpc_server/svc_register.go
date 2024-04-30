@@ -17,9 +17,9 @@ func (h *DbTaskSvcHandler) Register(m *proto.RegisterAgent, s proto.DbTaskSvc_Re
 		return status.Error(codes.PermissionDenied, "no agent scope")
 	}
 
-	agent := h.NewAgent(authInfo.Subject, m.PgVersion)
+	agent := h.NewInstance(authInfo.Subject, m.PgVersion)
 	log.Log().
-		Str("AgentId", authInfo.Subject).
+		Str("InstanceName", authInfo.Subject).
 		Int32("PgVersion", m.PgVersion).
 		Msg("Agent registered.")
 

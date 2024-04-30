@@ -8,10 +8,25 @@ gen-key:
 gen-jwt:
   signer: "tests/secrets/auth_private_key"
   duration: "90d"
+  audiences:
+    - "pg-helper-web"
+    - "pg-helper-grpc"
+    - "pg-helper"
 
 serve:
   web:
     enabled: true
+    tls:
+      enabled: false
+    auth:
+      jwt:
+        enabled: true
+        audience: pg-helper
+        verify-key:
+          type:
+            - EdDSA
+          file:
+            - "/run/secrets/auth_public_key"
   grpc:
     port: 8443
     tls:

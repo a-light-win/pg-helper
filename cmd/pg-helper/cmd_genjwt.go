@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/a-light-win/pg-helper/internal/validate"
@@ -12,18 +13,19 @@ import (
 )
 
 type GenJwtCmd struct {
-	Signer     string `validate:"required,file" help:"Path to the signer private key file"`
-	Subject    string
-	ClientType string        `help:"The client type" enum:"agent,app" default:"agent"`
-	BaseDomain string        `help:"The base domain"`
-	Dureation  time.Duration `help:"The duration of the token" default:"24h"`
-	Output     string        `help:"The output file" type:"path"`
+	Signer    string `validate:"required,file" help:"Path to the signer private key file"`
+	Subject   string `help:"Name of the user or login entity"`
+	Audiences []string
+	Scopes    []string
+	Resources []string
+	Duration  time.Duration `help:"The duration of the token" default:"24h"`
+	Output    string        `help:"The output file" type:"path"`
 }
 
 type customClaims struct {
 	jwt.RegisteredClaims
-	Type       string `json:"type"`
-	BaseDomain string `json:"base_domain,omitempty"`
+	Scope    string `json:"scope,omitempty"`
+	Resource string `json:"resource,omitempty"`
 }
 
 func (g *GenJwtCmd) Run(ctx *Context) error {
@@ -39,12 +41,13 @@ func (g *GenJwtCmd) Run(ctx *Context) error {
 
 	// Define the token claims
 	claims := &customClaims{
-		Type:       g.ClientType,
-		BaseDomain: g.BaseDomain,
+		Scope:    strings.Join(g.Scopes, " "),
+		Resource: strings.Join(g.Resources, " "),
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   g.Subject,
+			Audience:  g.Audiences,
 			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(g.Dureation)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(g.Duration)),
 		},
 	}
 

@@ -4,7 +4,7 @@ import (
 	"github.com/a-light-win/pg-helper/internal/agent"
 	config "github.com/a-light-win/pg-helper/internal/config/agent"
 	"github.com/a-light-win/pg-helper/internal/utils"
-	"github.com/a-light-win/pg-helper/internal/validate"
+	"github.com/a-light-win/pg-helper/pkg/validate"
 	"github.com/rs/zerolog/log"
 )
 

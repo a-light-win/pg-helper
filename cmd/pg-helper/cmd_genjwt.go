@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/a-light-win/pg-helper/internal/validate"
+	"github.com/a-light-win/pg-helper/pkg/validate"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"

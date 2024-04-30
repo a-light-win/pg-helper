@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/a-light-win/pg-helper/internal/config/server"
-	"github.com/a-light-win/pg-helper/internal/validate"
 	ginAuth "github.com/a-light-win/pg-helper/pkg/auth/gin"
+	"github.com/a-light-win/pg-helper/pkg/validate"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"

@@ -4,7 +4,7 @@ import (
 	config "github.com/a-light-win/pg-helper/internal/config/server"
 	server_ "github.com/a-light-win/pg-helper/internal/server"
 	"github.com/a-light-win/pg-helper/internal/utils"
-	"github.com/a-light-win/pg-helper/internal/validate"
+	"github.com/a-light-win/pg-helper/pkg/validate"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )

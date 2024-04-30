@@ -1,7 +1,7 @@
 package grpc_handler
 
 import (
-	"github.com/a-light-win/pg-helper/internal/validate"
+	"github.com/a-light-win/pg-helper/pkg/validate"
 	"github.com/go-playground/validator/v10"
 )
 

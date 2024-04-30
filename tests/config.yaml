@@ -23,9 +23,9 @@ serve:
         enabled: true
         audience: pg-helper
         verify-key:
-          type:
+          types:
             - EdDSA
-          file:
+          files:
             - "/run/secrets/auth_public_key"
   grpc:
     port: 8443
@@ -37,9 +37,9 @@ serve:
         enabled: true
         audience: pg-helper
         verify-key:
-          type:
+          types:
             - EdDSA
-          file:
+          files:
             - "/run/secrets/auth_public_key"
 
 agent:

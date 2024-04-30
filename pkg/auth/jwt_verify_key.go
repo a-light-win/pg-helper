@@ -9,8 +9,8 @@ import (
 )
 
 type JwtVerifyKey struct {
-	Type []string `enum:"ES256,ES384,ES512,EdDSA" help:"The type of the key to use for verification"`
-	File []string `validate:"samelen=Type" type:"file" help:"The path to the key file to use for verification"`
+	Types []string `enum:"ES256,ES384,ES512,EdDSA" help:"The type of the key to use for verification"`
+	Files []string `validate:"samelen=Type" type:"file" help:"The path to the key file to use for verification"`
 
 	keyLock sync.Mutex
 	keys    map[string]interface{}
@@ -24,8 +24,8 @@ func (k *JwtVerifyKey) LoadVerifyKey(token *jwt.Token) (interface{}, error) {
 	k.keyLock.Lock()
 	defer k.keyLock.Unlock()
 
-	for i := range k.Type {
-		if k.Type[i] == token.Method.Alg() {
+	for i := range k.Types {
+		if k.Types[i] == token.Method.Alg() {
 			return k.loadKey(i)
 		}
 	}
@@ -33,12 +33,12 @@ func (k *JwtVerifyKey) LoadVerifyKey(token *jwt.Token) (interface{}, error) {
 }
 
 func (k *JwtVerifyKey) loadKey(index int) (interface{}, error) {
-	type_ := k.Type[index]
+	type_ := k.Types[index]
 	if key, ok := k.keys[type_]; ok {
 		return key, nil
 	}
 
-	key, err := utils.LoadPublicKey(k.File[index])
+	key, err := utils.LoadPublicKey(k.Files[index])
 	if err != nil {
 		return nil, err
 	}

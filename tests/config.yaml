@@ -7,7 +7,7 @@ gen-key:
 
 gen-jwt:
   signer: "tests/secrets/auth_private_key"
-  duration: "90d"
+  duration: "2160h"
   audiences:
     - "pg-helper-web"
     - "pg-helper-grpc"

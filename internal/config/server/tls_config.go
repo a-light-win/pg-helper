@@ -3,7 +3,7 @@ package server
 import (
 	"crypto/tls"
 
-	"github.com/a-light-win/pg-helper/internal/utils"
+	"github.com/a-light-win/pg-helper/pkg/utils"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )

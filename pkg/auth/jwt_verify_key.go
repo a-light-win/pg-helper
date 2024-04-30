@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/a-light-win/pg-helper/internal/utils"
+	"github.com/a-light-win/pg-helper/pkg/utils"
 	"github.com/golang-jwt/jwt/v5"
 )
 

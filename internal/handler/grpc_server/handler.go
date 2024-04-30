@@ -7,19 +7,16 @@ import (
 	config "github.com/a-light-win/pg-helper/internal/config/server"
 )
 
-type HandlerData struct {
+type DbTaskSvcHandler struct {
+	proto.UnimplementedDbTaskSvcServer
+
 	AgentDatas
+
 	GrpcConfig *config.GrpcConfig
 
 	QuitCtx context.Context
 }
 
-var gd_ *HandlerData
-
-func InitGlobalData(config *config.GrpcConfig, quitCtx context.Context) {
-	gd_ = &HandlerData{GrpcConfig: config, QuitCtx: quitCtx}
-}
-
-type DbTaskSvcHandler struct {
-	proto.UnimplementedDbTaskSvcServer
+func NewDbTaskSvcHandler(config *config.GrpcConfig, quitCtx context.Context) *DbTaskSvcHandler {
+	return &DbTaskSvcHandler{GrpcConfig: config, QuitCtx: quitCtx}
 }

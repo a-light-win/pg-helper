@@ -12,13 +12,17 @@ import (
 )
 
 type GrpcServer struct {
-	Config     *config.GrpcConfig
+	Config *config.GrpcConfig
+
 	GrpcServer *grpc.Server
 	Auth       *grpcAuth.GrpcAuth
+
+	SvcHandler *DbTaskSvcHandler
+	QuitCtx    context.Context
 }
 
-func NewGrpcServer(config *config.GrpcConfig) *GrpcServer {
-	s := &GrpcServer{Config: config}
+func NewGrpcServer(config *config.GrpcConfig, quitCtx context.Context) *GrpcServer {
+	s := &GrpcServer{Config: config, QuitCtx: quitCtx}
 
 	s.Auth = grpcAuth.NewGrpcAuth(&config.Auth)
 
@@ -31,6 +35,8 @@ func NewGrpcServer(config *config.GrpcConfig) *GrpcServer {
 
 	opts = append(opts, grpc.UnaryInterceptor(s.Auth.Interceptor))
 	opts = append(opts, grpc.StreamInterceptor(s.Auth.StreamInterceptor))
+
+	s.SvcHandler = NewDbTaskSvcHandler(config, s.QuitCtx)
 
 	s.GrpcServer = grpc.NewServer(opts...)
 	proto.RegisterDbTaskSvcServer(s.GrpcServer, &DbTaskSvcHandler{})

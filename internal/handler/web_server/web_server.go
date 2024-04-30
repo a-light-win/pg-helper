@@ -15,8 +15,9 @@ import (
 
 type WebServer struct {
 	Config *server.WebConfig
-	Router *gin.Engine
+
 	Server *http.Server
+	Router *gin.Engine
 	Auth   *ginAuth.GinAuth
 }
 

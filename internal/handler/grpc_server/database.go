@@ -17,10 +17,10 @@ type Database struct {
 	Stop    context.CancelFunc
 }
 
-func NewDatabase() *Database {
+func NewDatabase(ctx context.Context) *Database {
 	newDb := &Database{}
 	newDb.Cond = sync.NewCond(&newDb.Lock)
-	newDb.StopCtx, newDb.Stop = context.WithCancel(gd_.QuitCtx)
+	newDb.StopCtx, newDb.Stop = context.WithCancel(ctx)
 	return newDb
 }
 

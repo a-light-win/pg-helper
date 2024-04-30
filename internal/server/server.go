@@ -22,7 +22,7 @@ type Server struct {
 
 func New(config *config.ServerConfig) *Server {
 	ss := signal_server.NewSignalServer()
-	gs := grpc_server.NewGrpcServer(&config.Grpc)
+	gs := grpc_server.NewGrpcServer(&config.Grpc, ss.QuitCtx)
 	ws := web_server.NewWebServer(&config.Web)
 
 	server := Server{
@@ -35,7 +35,6 @@ func New(config *config.ServerConfig) *Server {
 }
 
 func (s *Server) Init() error {
-	grpc_server.InitGlobalData(&s.Config.Grpc, s.QuitCtx)
 	return nil
 }
 

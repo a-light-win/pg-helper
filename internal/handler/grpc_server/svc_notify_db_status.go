@@ -21,13 +21,13 @@ func (h *DbTaskSvcHandler) NotifyDbStatus(ctx context.Context, db *proto.Databas
 		return nil, status.Error(codes.PermissionDenied, "no agent scope")
 	}
 
-	agent := gd_.GetAgent(authInfo.Subject)
+	agent := h.GetAgent(authInfo.Subject)
 	if agent == nil {
 		err := errors.New("agent not found")
 		log.Warn().Err(err).Str("AgentId", authInfo.Subject).Msg("")
 		return nil, err
 	}
 
-	agent.UpdateDatabase(db)
+	agent.UpdateDatabase(h.QuitCtx, db)
 	return &emptypb.Empty{}, nil
 }

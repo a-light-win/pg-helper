@@ -13,8 +13,8 @@ type CtxKey string
 const CtxKeyAuthInfo CtxKey = "auth_info"
 
 type AuthInfo struct {
-	Subject  string
-	Audience string
+	Subject   string
+	Audiences []string
 
 	ScopeEnabled bool
 	Scopes       []string
@@ -29,7 +29,7 @@ func (auth *AuthInfo) FromClaims(claims jwt.MapClaims) {
 		return
 	}
 
-	if auth.Audience, ok = claims["aud"].(string); !ok {
+	if auth.Audiences, ok = claims["aud"].(jwt.ClaimStrings); !ok {
 		return
 	}
 
@@ -66,7 +66,7 @@ func (auth *AuthInfo) FromDNSName(dnsName string) {
 	case "user":
 		auth.Subject = name
 	case "audience":
-		auth.Audience = name
+		auth.Audiences = append(auth.Audiences, name)
 	case "scope":
 		auth.Scopes = append(auth.Scopes, name)
 	case "resource":
@@ -80,6 +80,15 @@ func (auth *AuthInfo) Validate() error {
 	}
 
 	return nil
+}
+
+func (auth *AuthInfo) ValidateAudience(audience string) bool {
+	for _, a := range auth.Audiences {
+		if a == audience {
+			return true
+		}
+	}
+	return false
 }
 
 func (auth *AuthInfo) ValidateScope(scope string) bool {

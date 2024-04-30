@@ -59,9 +59,10 @@ func (jwtAuth *JwtAuth) Validate(authInfo *AuthInfo) error {
 		return err
 	}
 
-	if jwtAuth.Config.Audience != authInfo.Audience {
+	if !authInfo.ValidateAudience(jwtAuth.Config.Audience) {
 		return errors.New("invalid audience")
 	}
+
 	return nil
 }
 

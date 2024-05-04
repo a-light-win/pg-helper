@@ -21,6 +21,8 @@ type AuthInfo struct {
 
 	ResourceEnabled bool
 	Resources       []string
+
+	Uuid string
 }
 
 func (auth *AuthInfo) FromClaims(claims jwt.MapClaims) {
@@ -39,6 +41,10 @@ func (auth *AuthInfo) FromClaims(claims jwt.MapClaims) {
 
 	if resource, ok := claims["resource"].(string); ok {
 		auth.Resources = strings.Split(resource, " ")
+	}
+
+	if uuid, ok := claims["jti"].(string); ok {
+		auth.Uuid = uuid
 	}
 }
 

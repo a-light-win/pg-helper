@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/a-light-win/pg-helper/api/proto"
+	"github.com/rs/zerolog"
 )
 
 type DbInstance struct {
@@ -17,14 +18,18 @@ type DbInstance struct {
 
 	DbTaskChan    chan *proto.DbTask
 	nonSentDbTask *proto.DbTask
+
+	logger *zerolog.Logger
 }
 
-func NewDbInstance(name string, pgVersion int32) *DbInstance {
+func NewDbInstance(name string, pgVersion int32, logger *zerolog.Logger) *DbInstance {
 	return &DbInstance{
 		Name:       name,
 		PgVersion:  pgVersion,
 		Databases:  make(map[string]*Database),
 		DbTaskChan: make(chan *proto.DbTask),
+
+		logger: logger,
 	}
 }
 

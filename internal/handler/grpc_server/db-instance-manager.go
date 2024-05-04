@@ -3,7 +3,7 @@ package grpc_server
 import (
 	"sync"
 
-	"github.com/rs/zerolog/log"
+	"github.com/rs/zerolog"
 )
 
 type DbInstanceManager struct {
@@ -37,25 +37,22 @@ func (m *DbInstanceManager) instancesByVersion(pgVersion int32) []*DbInstance {
 	return result
 }
 
-func (m *DbInstanceManager) NewInstance(instName string, pgVersion int32) *DbInstance {
+func (m *DbInstanceManager) NewInstance(instName string, pgVersion int32, logger *zerolog.Logger) *DbInstance {
 	m.instLock.Lock()
 	defer m.instLock.Unlock()
 
 	if inst := m.instance(instName); inst != nil {
+		inst.logger = logger
 		if inst.PgVersion != pgVersion {
-
-			log.Log().
-				Str("Agent", instName).
-				Int32("OldPgVersion", inst.PgVersion).
-				Int32("NewPgVersion", pgVersion).
-				Msg("Agent updates pg version")
+			logger.Warn().Int32("OldPgVersion", inst.PgVersion).
+				Msg("Version of pg instance changed. We recommand to use new instance name instead of changing version.")
 
 			inst.PgVersion = pgVersion
 		}
 		return inst
 	}
 
-	inst := NewDbInstance(instName, pgVersion)
+	inst := NewDbInstance(instName, pgVersion, logger)
 	m.addInstance(inst)
 	return inst
 }

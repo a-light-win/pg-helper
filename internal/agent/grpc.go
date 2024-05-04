@@ -59,8 +59,8 @@ func (a *Agent) initGrpc() error {
 	return nil
 }
 
-func (a *Agent) loadRegisterAgent() (*proto.RegisterAgent, error) {
-	registerAgent := &proto.RegisterAgent{
+func (a *Agent) loadRegisterAgent() (*proto.RegisterInstance, error) {
+	registerAgent := &proto.RegisterInstance{
 		PgVersion: a.Config.Db.CurrentVersion,
 	}
 
@@ -115,7 +115,7 @@ func (a *Agent) runUntilSuccess(runer utils.Runner, firstWait int) bool {
 
 type registerAgentLoader struct {
 	agent         *Agent
-	registerAgent *proto.RegisterAgent
+	registerAgent *proto.RegisterInstance
 }
 
 func (r *registerAgentLoader) Run() bool {
@@ -130,7 +130,7 @@ func (r *registerAgentLoader) Run() bool {
 
 type grpcServiceLoader struct {
 	agent         *Agent
-	registerAgent *proto.RegisterAgent
+	registerAgent *proto.RegisterInstance
 	service       proto.DbTaskSvc_RegisterClient
 }
 

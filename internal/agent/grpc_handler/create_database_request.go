@@ -22,7 +22,7 @@ type CreateDatabaseRequest struct {
 	Name        string `validate:"required,max=63,id"`
 	Owner       string `validate:"required,max=63,id"`
 	Password    string `validate:"min=8"`
-	MigrateFrom int32  `validate:"pg_ver"`
+	MigrateFrom string `validate:"max=63,id"`
 
 	log zerolog.Logger
 }
@@ -31,9 +31,9 @@ func NewCreateDatabaseHandler(task *proto.DbTask) *CreateDatabaseRequest {
 	taskData := task.GetCreateDatabase()
 	r := &CreateDatabaseRequest{
 		RequestId: task.RequestId,
-		Reason:    task.Reason,
+		Reason:    taskData.Reason,
 
-		Name:        task.Name,
+		Name:        taskData.Name,
 		Owner:       taskData.Owner,
 		Password:    taskData.Password,
 		MigrateFrom: taskData.MigrateFrom,
@@ -42,7 +42,7 @@ func NewCreateDatabaseHandler(task *proto.DbTask) *CreateDatabaseRequest {
 	r.log = log.With().
 		Str("DbName", r.Name).
 		Str("Owner", r.Owner).
-		Int32("MigrateFrom", r.MigrateFrom).
+		Str("MigrateFrom", r.MigrateFrom).
 		Logger()
 
 	return r
@@ -162,7 +162,7 @@ func (r *CreateDatabaseRequest) createDb(conn *pgxpool.Conn) (*db.Db, error) {
 	}
 
 	if database.Stage == proto.DbStage_Creating && database.Status == proto.DbStatus_Done {
-		if r.MigrateFrom == 0 {
+		if r.MigrateFrom == "" {
 			database.Stage = proto.DbStage_Running
 			q.SetDbStatus(gd_.ConnCtx, db.SetDbStatusParams{ID: database.ID, Status: database.Status, Stage: database.Stage})
 			r.log.Debug().Msg("Database is ready because no migration is needed")

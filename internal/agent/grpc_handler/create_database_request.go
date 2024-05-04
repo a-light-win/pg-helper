@@ -217,7 +217,7 @@ func (r *CreateDatabaseRequest) createBackgroundJob(conn *pgxpool.Conn, database
 		Action: db.DbActionBackup,
 		Reason: r.Reason,
 		Status: db.DbTaskStatusPending,
-		Data:   db.DbTaskData{BackupPath: gd_.DbConfig.NewBackupFile(r.Name)},
+		Data:   db.DbTaskData{BackupFrom: r.MigrateFrom, BackupPath: gd_.DbConfig.NewBackupFile(r.Name)},
 	}
 	data := &dbTaskParams.Data
 
@@ -252,7 +252,7 @@ func (r *CreateDatabaseRequest) createBackgroundJob(conn *pgxpool.Conn, database
 }
 
 func (r *CreateDatabaseRequest) checkDbIsEmpty() error {
-	conn, err := pgx.Connect(gd_.ConnCtx, gd_.DbConfig.Url(r.Name, 0))
+	conn, err := pgx.Connect(gd_.ConnCtx, gd_.DbConfig.Url(r.Name, nil))
 	if err != nil {
 		r.log.Warn().Err(err).Msg("Failed to connect to the database")
 		return err

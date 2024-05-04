@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/a-light-win/pg-helper/api/proto"
+	config "github.com/a-light-win/pg-helper/internal/config/agent"
 	"github.com/a-light-win/pg-helper/internal/db"
 	"github.com/rs/zerolog/log"
 )
@@ -24,7 +25,7 @@ func (job *BackupDbJob) Run() {
 
 	// Backup the database here
 	args := []string{
-		"-h", gd_.DbConfig.Host(gd_.DbConfig.CurrentVersion),
+		"-h", gd_.DbConfig.Host(&config.InstanceInfo{InstanceName: job.Data.BackupFrom}),
 		"-p", fmt.Sprint(gd_.DbConfig.Port),
 		"-U", gd_.DbConfig.User,
 		"-d", job.DbName,

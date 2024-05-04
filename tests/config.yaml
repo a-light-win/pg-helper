@@ -44,7 +44,7 @@ serve:
 
 agent:
   db:
-    host-template: "pg-%d"
+    host-template: "{{ .InstanceName }}"
     port: 5432
   grpc:
     url: "dns:///pg-helper:8443"

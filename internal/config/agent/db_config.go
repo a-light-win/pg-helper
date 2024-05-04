@@ -1,12 +1,14 @@
 package agent
 
 import (
+	"bytes"
 	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -18,7 +20,8 @@ type DbConfig struct {
 	ReserveNames []string `default:"postgres,template0,template1"`
 
 	// The pg instance host.
-	HostTemplate string `default:"127.0.0.1" env:"PG_HELPER_DB_HOST_TEMPLATE"`
+	HostTemplate string `env:"PG_HELPER_DB_HOST_TEMPLATE"`
+	InstanceName string `env:"PG_HELPER_DB_INSTANCE"`
 	// The pg instance port.
 	Port int `default:"5432"`
 	// The pg instance super user.
@@ -36,23 +39,44 @@ type DbConfig struct {
 	BackupRootPath string `default:"/var/lib/pg-helper/backups"`
 	// The majar version of the database that pg-helper work with.
 	CurrentVersion int32 `env:"PG_MAJOR"`
+
+	tmpl *template.Template
 }
 
-func (c *DbConfig) Host(pg_version int32) string {
-	if strings.Contains(c.HostTemplate, "%") {
-		return fmt.Sprintf(c.HostTemplate, pg_version)
+type InstanceInfo struct {
+	InstanceName string
+}
+
+func (c *DbConfig) Host(info *InstanceInfo) string {
+	if info == nil {
+		info = &InstanceInfo{InstanceName: c.InstanceName}
 	}
-	return c.HostTemplate
+	if c.HostTemplate == "" {
+		return info.InstanceName
+	}
+
+	if c.tmpl == nil {
+		tmpl, err := template.New("host").Parse(c.HostTemplate)
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to parse the host template")
+		}
+		c.tmpl = tmpl
+	}
+
+	var tpl bytes.Buffer
+	if err := c.tmpl.Execute(&tpl, info); err != nil {
+		log.Error().Err(err).Msg("Failed to execute the host template")
+		return info.InstanceName
+	}
+
+	return tpl.String()
 }
 
-func (c *DbConfig) Url(dbName string, pg_version int32) string {
+func (c *DbConfig) Url(dbName string, info *InstanceInfo) string {
 	if dbName == "" {
 		dbName = c.Name
 	}
-	if pg_version == 0 {
-		pg_version = c.CurrentVersion
-	}
-	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", c.User, url.QueryEscape(c.Password()), c.Host(pg_version), c.Port, dbName)
+	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", c.User, url.QueryEscape(c.Password()), c.Host(info), c.Port, dbName)
 }
 
 func (c *DbConfig) Password() string {
@@ -75,7 +99,7 @@ func (c *DbConfig) NewPoolConfig() *pgxpool.Config {
 	const defaultHealthCheckPeriod = time.Minute
 	const defaultConnectTimeout = time.Second * 5
 
-	dbConfig, err := pgxpool.ParseConfig(c.Url("", 0))
+	dbConfig, err := pgxpool.ParseConfig(c.Url("", nil))
 	if err != nil {
 		detail := string(err.Error())
 		detail = strings.ReplaceAll(detail, fmt.Sprintf(":%s@", url.QueryEscape(c.Password())), ":******@")

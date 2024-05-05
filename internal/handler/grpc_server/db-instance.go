@@ -48,6 +48,16 @@ func (a *DbInstance) UpdateDatabase(ctx context.Context, db *proto.Database) {
 	oldDb.Update(db)
 }
 
+func (a *DbInstance) GetDb(name string) *Database {
+	a.dbLock.Lock()
+	defer a.dbLock.Unlock()
+
+	if db, ok := a.Databases[name]; ok {
+		return db
+	}
+	return nil
+}
+
 func (a *DbInstance) MustGetDb(ctx context.Context, name string) *Database {
 	a.dbLock.Lock()
 	defer a.dbLock.Unlock()

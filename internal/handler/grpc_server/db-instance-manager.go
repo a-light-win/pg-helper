@@ -84,39 +84,39 @@ func (m *DbInstanceManager) FirstMatchedInstance(filter *InstanceFilter) *DbInst
 
 func (m *DbInstanceManager) filterInstances(filter *InstanceFilter) []*DbInstance {
 	var result []*DbInstance
-
-	if filter.Name != "" {
-		if inst := m.instance(filter.Name); inst != nil {
-			result = append(result, inst)
-			return result
-		}
-	}
+	matched := false
 
 	for _, inst := range m.Instances {
+		if filter.Name != "" {
+			if inst.Name == filter.Name {
+				matched = true
+			} else {
+				continue
+			}
+		}
+
 		if filter.Version != 0 && inst.PgVersion != filter.Version {
 			continue
 		}
 
-		if filter.DbName == "" {
-			result = append(result, inst)
-			continue
-		}
-
-		if db := inst.GetDb(filter.DbName); db != nil {
-			if db.Stage != proto.DbStage_MigrateOut && db.Stage != proto.DbStage_Dropping {
-				result = append([]*DbInstance{inst}, result...)
-				return result
+		if filter.DbName != "" {
+			db := inst.GetDb(filter.DbName)
+			if db == nil && filter.MustExist {
+				continue
 			}
-			result = append(result, inst)
-			continue
+			if db != nil && db.Stage != proto.DbStage_MigrateOut && db.Stage != proto.DbStage_Dropping && db.Stage != proto.DbStage_None {
+				matched = true
+			}
 		}
 
-		if !filter.MustExist {
-			result = append(result, inst)
+		if matched {
+			result = append([]*DbInstance{inst}, result...)
+			break
 		}
+		result = append(result, inst)
 	}
 
-	if filter.Version == 0 {
+	if !matched && filter.Version == 0 {
 		// Sort the result by instance's version desc
 		sort.Slice(result, func(i, j int) bool {
 			return result[i].PgVersion > result[j].PgVersion

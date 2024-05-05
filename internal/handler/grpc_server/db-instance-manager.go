@@ -1,6 +1,7 @@
 package grpc_server
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/rs/zerolog"
@@ -37,24 +38,24 @@ func (m *DbInstanceManager) instancesByVersion(pgVersion int32) []*DbInstance {
 	return result
 }
 
-func (m *DbInstanceManager) NewInstance(instName string, pgVersion int32, logger *zerolog.Logger) *DbInstance {
+func (m *DbInstanceManager) NewInstance(instName string, pgVersion int32, logger *zerolog.Logger) (*DbInstance, error) {
 	m.instLock.Lock()
 	defer m.instLock.Unlock()
 
 	if inst := m.instance(instName); inst != nil {
-		inst.logger = logger
 		if inst.PgVersion != pgVersion {
-			logger.Warn().Int32("OldPgVersion", inst.PgVersion).
-				Msg("Version of pg instance changed. We recommand to use new instance name instead of changing version.")
-
-			inst.PgVersion = pgVersion
+			err := errors.New("change pg instance version is not supported")
+			logger.Error().Int32("OldPgVersion", inst.PgVersion).
+				Err(err).Msg("New pg instance failed")
+			return nil, err
 		}
-		return inst
+		inst.logger = logger
+		return inst, nil
 	}
 
 	inst := NewDbInstance(instName, pgVersion, logger)
 	m.addInstance(inst)
-	return inst
+	return inst, nil
 }
 
 func (m *DbInstanceManager) addInstance(inst *DbInstance) {

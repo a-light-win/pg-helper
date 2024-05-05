@@ -34,7 +34,11 @@ func (h *DbTaskSvcHandler) Register(m *proto.RegisterInstance, s proto.DbTaskSvc
 		return status.Error(codes.PermissionDenied, err.Error())
 	}
 
-	instance := h.NewInstance(m.Name, m.PgVersion, &logger)
+	instance, err := h.NewInstance(m.Name, m.PgVersion, &logger)
+	if err != nil {
+		return status.Error(codes.Internal, err.Error())
+	}
+
 	logger.Log().Msg("Instance registered.")
 
 	instance.UpdateDatabases(h.QuitCtx, m.Databases)

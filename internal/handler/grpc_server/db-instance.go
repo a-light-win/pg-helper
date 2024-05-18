@@ -2,9 +2,12 @@ package grpc_server
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/a-light-win/pg-helper/api/proto"
+	"github.com/a-light-win/pg-helper/pkg/handler"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 )
 
@@ -38,13 +41,13 @@ func (a *DbInstance) UpdateDatabases(ctx context.Context, databases []*proto.Dat
 	defer a.dbLock.Unlock()
 
 	for _, db := range databases {
-		oldDb := a.mustGetDb(ctx, db.Name)
+		oldDb := a.mustGetDb(db.Name)
 		oldDb.Update(db)
 	}
 }
 
 func (a *DbInstance) UpdateDatabase(ctx context.Context, db *proto.Database) {
-	oldDb := a.MustGetDb(ctx, db.Name)
+	oldDb := a.MustGetDb(db.Name)
 	oldDb.Update(db)
 }
 
@@ -58,18 +61,18 @@ func (a *DbInstance) GetDb(name string) *Database {
 	return nil
 }
 
-func (a *DbInstance) MustGetDb(ctx context.Context, name string) *Database {
+func (a *DbInstance) MustGetDb(name string) *Database {
 	a.dbLock.Lock()
 	defer a.dbLock.Unlock()
 
-	return a.mustGetDb(ctx, name)
+	return a.mustGetDb(name)
 }
 
-func (a *DbInstance) mustGetDb(ctx context.Context, name string) *Database {
+func (a *DbInstance) mustGetDb(name string) *Database {
 	db, ok := a.Databases[name]
 
 	if !ok {
-		db = NewDatabase(ctx)
+		db = NewDatabase()
 		a.Databases[name] = db
 	}
 
@@ -99,4 +102,42 @@ func (a *DbInstance) ServeDbTask(s proto.DbTaskSvc_RegisterServer) {
 
 func (a *DbInstance) Send(task *proto.DbTask) {
 	a.DbTaskChan <- task
+}
+
+func (a *DbInstance) IsDbReady(dbName string) bool {
+	db := a.GetDb(dbName)
+	return db != nil && db.Ready()
+}
+
+func (a *DbInstance) CreateDb(vo *handler.CreateDbVO) (*Database, error) {
+	a.dbLock.Lock()
+	defer a.dbLock.Unlock()
+
+	db := a.mustGetDb(vo.DbName)
+	if db.Status == proto.DbStatus_Processing || db.Status == proto.DbStatus_Done {
+		return db, nil
+	}
+	if db.Stage == proto.DbStage_Dropping {
+		return nil, errors.New("database is dropping")
+	}
+	if db.Stage == proto.DbStage_MigrateOut {
+		// TODO: rollback to previous version here?
+		return nil, errors.New("database is migrating out")
+	}
+
+	task := &proto.DbTask{
+		RequestId: uuid.New().String(),
+		Task: &proto.DbTask_CreateDatabase{
+			CreateDatabase: &proto.CreateDatabaseTask{
+				Name:        vo.DbName,
+				Reason:      vo.Reason,
+				Owner:       vo.DbOwner,
+				Password:    vo.DbPassword,
+				MigrateFrom: vo.MigrateFrom,
+			},
+		},
+	}
+	a.Send(task)
+
+	return db, nil
 }

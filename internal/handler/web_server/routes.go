@@ -5,5 +5,6 @@ func (w *WebServer) registerRoutes() {
 	dbGroup.Use(w.Auth.AuthMiddleware)
 
 	// TODO: Get task status
-	// dbGroup.GET("/migrate/:taskId", s.Handler.MigrateDbStatus)
+	dbGroup.GET("/ready", w.Handler.IsDbReady)
+	dbGroup.POST("", w.Handler.CreateDb)
 }

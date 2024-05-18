@@ -30,3 +30,12 @@ func (a *GinAuth) AuthMiddleware(c *gin.Context) {
 
 	c.Next()
 }
+
+func FetchAuthInfo(c *gin.Context) (*auth.AuthInfo, bool) {
+	authInfo, ok := c.Get(string(auth.CtxKeyAuthInfo))
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "auth info not found"})
+		return nil, false
+	}
+	return authInfo.(*auth.AuthInfo), true
+}

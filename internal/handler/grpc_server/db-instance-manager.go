@@ -1,11 +1,14 @@
 package grpc_server
 
 import (
+	"context"
 	"errors"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/a-light-win/pg-helper/api/proto"
+	"github.com/a-light-win/pg-helper/pkg/handler"
 	"github.com/rs/zerolog"
 )
 
@@ -53,36 +56,22 @@ func (m *DbInstanceManager) addInstance(inst *DbInstance) {
 	m.Instances[inst.Name] = inst
 }
 
-type InstanceFilter struct {
-	// The Instance Name
-	Name string `validate:"ommitempty,max=63,id"`
-	// The Postgres major version
-	Version int32 `validate:"omitempty,pg_ver"`
-	// The database name
-	DbName string `validate:"max=63,id"`
-	// Database must be in the instance
-	MustExist bool `validate:"omitempty"`
-}
-
-func (m *DbInstanceManager) FilterInstances(filter *InstanceFilter) []*DbInstance {
+func (m *DbInstanceManager) FilterInstances(filter *handler.InstanceFilter) []*DbInstance {
 	m.instLock.Lock()
 	defer m.instLock.Unlock()
 
 	return m.filterInstances(filter)
 }
 
-func (m *DbInstanceManager) FirstMatchedInstance(filter *InstanceFilter) *DbInstance {
-	m.instLock.Lock()
-	defer m.instLock.Unlock()
-
-	instances := m.filterInstances(filter)
+func (m *DbInstanceManager) FirstMatchedInstance(filter *handler.InstanceFilter) *DbInstance {
+	instances := m.FilterInstances(filter)
 	if len(instances) > 0 {
 		return instances[0]
 	}
 	return nil
 }
 
-func (m *DbInstanceManager) filterInstances(filter *InstanceFilter) []*DbInstance {
+func (m *DbInstanceManager) filterInstances(filter *handler.InstanceFilter) []*DbInstance {
 	var result []*DbInstance
 	matched := false
 
@@ -124,4 +113,41 @@ func (m *DbInstanceManager) filterInstances(filter *InstanceFilter) []*DbInstanc
 	}
 
 	return result
+}
+
+func (m *DbInstanceManager) IsDbReady(vo *handler.DbVO) bool {
+	inst := m.FirstMatchedInstance(&vo.InstanceFilter)
+	if inst == nil {
+		return false
+	}
+	return inst.IsDbReady(vo.DbName)
+}
+
+func (m *DbInstanceManager) GetDb(vo *handler.DbVO) (*proto.Database, error) {
+	inst := m.FirstMatchedInstance(&vo.InstanceFilter)
+	if inst == nil {
+		return nil, errors.New("instance not found")
+	}
+	db := inst.GetDb(vo.DbName)
+	if db == nil {
+		return nil, errors.New("database not found")
+	}
+	return db.Database, nil
+}
+
+func (m *DbInstanceManager) CreateDb(vo *handler.CreateDbVO) (*proto.Database, error) {
+	inst := m.FirstMatchedInstance(&vo.InstanceFilter)
+	if inst == nil {
+		return nil, errors.New("instance not found")
+	}
+
+	db, err := inst.CreateDb(vo)
+	if err != nil {
+		return nil, err
+	}
+
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	db.WaitReady(timeoutCtx)
+	return db.Database, nil
 }

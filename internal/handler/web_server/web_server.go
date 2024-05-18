@@ -6,6 +6,7 @@ import (
 
 	"github.com/a-light-win/pg-helper/internal/config/server"
 	ginAuth "github.com/a-light-win/pg-helper/pkg/auth/gin"
+	"github.com/a-light-win/pg-helper/pkg/handler"
 	"github.com/a-light-win/pg-helper/pkg/validate"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -19,9 +20,11 @@ type WebServer struct {
 	Server *http.Server
 	Router *gin.Engine
 	Auth   *ginAuth.GinAuth
+
+	Handler *Handler
 }
 
-func NewWebServer(config *server.WebConfig) *WebServer {
+func NewWebServer(config *server.WebConfig, dbManager handler.DbManager) *WebServer {
 	w := &WebServer{
 		Config: config,
 		Router: gin.Default(),
@@ -41,6 +44,9 @@ func NewWebServer(config *server.WebConfig) *WebServer {
 
 	w.Router.UseH2C = w.Config.UseH2C
 	w.Router.SetTrustedProxies(w.Config.TrustedProxies)
+
+	w.Handler = NewHandler()
+	w.Handler.DbManager = dbManager
 
 	w.registerRoutes()
 

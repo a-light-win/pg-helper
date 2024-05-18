@@ -12,15 +12,11 @@ type Database struct {
 
 	Lock sync.Mutex
 	Cond *sync.Cond
-
-	StopCtx context.Context
-	Stop    context.CancelFunc
 }
 
-func NewDatabase(ctx context.Context) *Database {
+func NewDatabase() *Database {
 	newDb := &Database{}
 	newDb.Cond = sync.NewCond(&newDb.Lock)
-	newDb.StopCtx, newDb.Stop = context.WithCancel(ctx)
 	return newDb
 }
 
@@ -47,47 +43,32 @@ func (d *Database) Update(db *proto.Database) {
 	d.NotifyChanged()
 }
 
-func (d *Database) RetryUntilReady(sender proto.DbTaskSvc_RegisterServer) {
-	d.Lock.Lock()
-	defer d.Lock.Unlock()
-
-	for {
-		select {
-		case <-d.StopCtx.Done():
-			return
-		default:
-			if d.Ready() {
-				return
-			}
-			d.Cond.Wait()
-		}
-
-		if d.Status == proto.DbStatus_Failed {
-			d.retry(sender)
-		}
-	}
-}
-
 func (d *Database) retry(sender proto.DbTaskSvc_RegisterServer) {
 	// TODO: retry logic
 	// If backup failed, resend create database task later
 	// If restore failed, reset the database and then resend create database task later
 }
 
-func (d *Database) WaitReady() bool {
+func (d *Database) ProtoDatabase() *proto.Database {
+	return d.Database
+}
+
+func (d *Database) WaitReady(timeoutCtx context.Context) bool {
 	d.Lock.Lock()
 	defer d.Lock.Unlock()
 
 	for {
-		select {
-		case <-d.StopCtx.Done():
-			return false
-		default:
-			if d.Ready() {
-				return true
-			}
-			d.Cond.Wait()
+		if d.Ready() {
+			return true
 		}
+		if timeoutCtx != nil {
+			select {
+			case <-timeoutCtx.Done():
+				return false
+			default:
+			}
+		}
+		d.Cond.Wait()
 	}
 }
 

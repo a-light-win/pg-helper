@@ -28,10 +28,10 @@ services:
     environment:
       PG_HELPER_DB_HOST: pg-13
       PG_HELPER_DB_PASSWORD_FILE: /run/secrets/pg_admin_password
-      PG_HELPER_GRPC_AUTH_TOKEN_FILE: /run/secrets/auth_token_13
+      PG_HELPER_GRPC_AUTH_TOKEN_FILE: /run/secrets/auth_token_pg_13
     secrets:
       - pg_admin_password
-      - auth_token_13
+      - auth_token_pg_13
     depends_on:
       - pg-13
   pg-14:
@@ -58,10 +58,10 @@ services:
     environment:
       PG_HELPER_DB_PASSWORD_FILE: /run/secrets/pg_admin_password
       PG_HELPER_DB_HOST: pg-14
-      PG_HELPER_GRPC_AUTH_TOKEN_FILE: /run/secrets/auth_token_14
+      PG_HELPER_GRPC_AUTH_TOKEN_FILE: /run/secrets/auth_token_pg_14
     secrets:
       - pg_admin_password
-      - auth_token_14
+      - auth_token_pg_14
     depends_on:
       - pg-14
   pg-helper:
@@ -78,9 +78,9 @@ services:
 secrets:
   pg_admin_password:
     file: ./tests/secrets/pg_admin_password
-  auth_token_13:
-    file: ./tests/secrets/auth_token_13
-  auth_token_14:
-    file: ./tests/secrets/auth_token_14
+  auth_token_pg_13:
+    file: ./tests/secrets/auth_token_pg_13
+  auth_token_pg_14:
+    file: ./tests/secrets/auth_token_pg_14
   auth_public_key:
     file: ./tests/secrets/auth_public_key

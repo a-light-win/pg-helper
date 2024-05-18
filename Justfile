@@ -1,56 +1,12 @@
 
-mod secrets "just.d/secrets.just"
+mod secrets "just.d/mods/secrets.just"
+mod migration "just.d/mods/migration.just"
 
-_install-goose:
-  #!/usr/bin/env bash
-  which goose &> /dev/null
-  if [ $? -ne 0 ]; then
-    echo "Installing goose ..."
-    GOBIN=~/.local/bin go install github.com/pressly/goose/v3/cmd/goose@latest
-  fi
+import "just.d/lib.just"
+import "just.d/sqlc.just"
+import "just.d/proto.just"
 
-new-migrate name: _install-goose
-  goose -dir db/migrations create {{ name }} sql
-
-_sqlc:
-  {{ env('DOCKER_CMD', 'podman') }} run -it --rm -v `pwd`:`pwd` -w `pwd` docker.io/sqlc/sqlc generate 
-
-_install-protoc:
-  #!/usr/bin/env bash
-  which protoc &> /dev/null
-  if [ $? -eq 0 ]; then
-    exit 0
-  fi
-
-  echo "Installing protoc ..."
-  if which apt-get &> /dev/null ; then
-    sudo apt install -y protobuf-compiler
-  elif which pacman &> /dev/null ; then
-    sudo pacman -S protobuf
-  fi 
-
-_install-protoc-gen-go: _install-protoc
-  #!/usr/bin/env bash
-  which protoc-gen-go &> /dev/null
-  if [ $? -ne 0 ]; then
-    echo "Installing protoc-gen-go ..."
-    GOBIN=~/.local/bin go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-  fi
-
-_install-protoc-gen-go-grpc: _install-protoc-gen-go
-  #!/usr/bin/env bash
-  which protoc-gen-go-grpc &> /dev/null
-  if [ $? -ne 0 ]; then
-    echo "Installing protoc-gen-go-grpc ..."
-    GOBIN=~/.local/bin go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-  fi
-
-_generate-protos: _install-protoc-gen-go-grpc
-  #!/usr/bin/env bash
-  echo "Generating protos ..."
-  protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative api/proto/*.proto
-
-build: _sqlc _generate-protos && _strip
+build: sqlc generate-protos && (strip 'pg-helper')
   #!/usr/bin/env bash
   echo "Building pg-helper ..."
 
@@ -65,28 +21,12 @@ build: _sqlc _generate-protos && _strip
 
   echo "Build pg-helper ${version} success"
 
-test: build
+test: build && cover
   go test -coverprofile=coverage.out ./...
 
-cover: test
+[private]
+cover:
   go tool cover -html=coverage.out
-
-_strip:
-  #!/usr/bin/env bash
-  echo "Stripping pg-helper binary ..."
-
-  cd dist/
-  file pg-helper |grep -q "not stripped"
-  if [ $? -ne 0 ]; then
-    echo "pg-helper binary already stripped"
-    exit 0
-  fi
-
-  objcopy --only-keep-debug pg-helper pg-helper.dbg
-  objcopy --strip-unneeded pg-helper
-  objcopy --add-gnu-debuglink=pg-helper.dbg pg-helper
-
-  echo "Stripping pg-helper binary success"
 
 serve: build
   #!/usr/bin/env bash
@@ -94,12 +34,5 @@ serve: build
   {{ env('DOCKER_CMD', 'podman')}} compose up --force-recreate --build
   {{ env('DOCKER_CMD', 'podman')}} compose stop
   
-_clean-protos:
-  rm -rf api/proto/*.pb.go
-
-_clean-sqlc:
-  rm -rf internal/db/db.go internal/db/models.go internal/db/*.sql.go
-
-clean: _clean-sqlc _clean-protos
+clean: clean-sqlc clean-protos
   rm -rf dist/
-

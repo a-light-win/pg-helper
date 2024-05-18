@@ -33,6 +33,10 @@ func (k *JwtVerifyKey) LoadVerifyKey(token *jwt.Token) (interface{}, error) {
 }
 
 func (k *JwtVerifyKey) loadKey(index int) (interface{}, error) {
+	if k.keys == nil {
+		k.keys = make(map[string]interface{})
+	}
+
 	type_ := k.Types[index]
 	if key, ok := k.keys[type_]; ok {
 		return key, nil

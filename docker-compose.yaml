@@ -26,7 +26,7 @@ services:
       - ./db/migrations:/usr/share/pg-helper/migrations
       - ./backups:/var/lib/pg-helper/backups
     environment:
-      PG_HELPER_DB_HOST: pg-13
+      PG_HELPER_DB_INSTANCE: pg-13
       PG_HELPER_DB_PASSWORD_FILE: /run/secrets/pg_admin_password
       PG_HELPER_GRPC_AUTH_TOKEN_FILE: /run/secrets/auth_token_pg_13
     secrets:
@@ -57,7 +57,7 @@ services:
       - ./backups:/var/lib/pg-helper/backups
     environment:
       PG_HELPER_DB_PASSWORD_FILE: /run/secrets/pg_admin_password
-      PG_HELPER_DB_HOST: pg-14
+      PG_HELPER_DB_INSTANCE: pg-14
       PG_HELPER_GRPC_AUTH_TOKEN_FILE: /run/secrets/auth_token_pg_14
     secrets:
       - pg_admin_password

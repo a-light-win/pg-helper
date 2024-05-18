@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS dbs (
     created_at TIMESTAMP NOT NULL DEFAULT timezone('utc', now()),
     updated_at TIMESTAMP NOT NULL DEFAULT timezone('utc', now()),
     expired_at TIMESTAMP,
-    migrate_from string NOT NULL DEFAULT '',
-    migrate_to string NOT NULL DEFAULT '',
+    migrate_from VARCHAR(255) NOT NULL DEFAULT '',
+    migrate_to VARCHAR(255) NOT NULL DEFAULT '',
     status int4 NOT NULL DEFAULT 0,
     stage int4 NOT NULL DEFAULT 0
   );

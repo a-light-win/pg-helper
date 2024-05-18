@@ -9,7 +9,7 @@ import (
 
 type DbTaskSvcHandler struct {
 	proto.UnimplementedDbTaskSvcServer
-	DbInstanceManager
+	*DbInstanceManager
 
 	GrpcConfig *config.GrpcConfig
 
@@ -17,5 +17,5 @@ type DbTaskSvcHandler struct {
 }
 
 func NewDbTaskSvcHandler(config *config.GrpcConfig, quitCtx context.Context) *DbTaskSvcHandler {
-	return &DbTaskSvcHandler{GrpcConfig: config, QuitCtx: quitCtx}
+	return &DbTaskSvcHandler{GrpcConfig: config, QuitCtx: quitCtx, DbInstanceManager: NewDbInstanceManager()}
 }

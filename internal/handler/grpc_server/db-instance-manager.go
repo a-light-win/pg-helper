@@ -18,6 +18,12 @@ type DbInstanceManager struct {
 	instLock sync.Mutex
 }
 
+func NewDbInstanceManager() *DbInstanceManager {
+	return &DbInstanceManager{
+		Instances: make(map[string]*DbInstance),
+	}
+}
+
 func (m *DbInstanceManager) GetInstance(instName string) *DbInstance {
 	m.instLock.Lock()
 	defer m.instLock.Unlock()

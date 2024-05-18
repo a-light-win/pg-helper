@@ -61,6 +61,7 @@ func (a *Agent) initGrpc() error {
 
 func (a *Agent) loadRegisterAgent() (*proto.RegisterInstance, error) {
 	registerAgent := &proto.RegisterInstance{
+		Name:      a.Config.Db.InstanceName,
 		PgVersion: a.Config.Db.CurrentVersion,
 	}
 

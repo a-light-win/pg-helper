@@ -26,12 +26,12 @@ type AuthInfo struct {
 }
 
 func (auth *AuthInfo) FromClaims(claims jwt.MapClaims) {
-	var ok bool
-	if auth.Subject, ok = claims["sub"].(string); !ok {
+	var err error
+	if auth.Subject, err = claims.GetSubject(); err != nil {
 		return
 	}
 
-	if auth.Audiences, ok = claims["aud"].(jwt.ClaimStrings); !ok {
+	if auth.Audiences, err = claims.GetAudience(); err != nil {
 		return
 	}
 

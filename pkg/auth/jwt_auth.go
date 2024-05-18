@@ -17,7 +17,8 @@ type JwtAuth struct {
 
 func NewJwtAuth(config *JwtAuthConfig, tokenFunc JwtTokenFunc) *JwtAuth {
 	return &JwtAuth{
-		Config: config,
+		Config:    config,
+		TokenFunc: tokenFunc,
 	}
 }
 

@@ -1,4 +1,6 @@
 
+mod secrets "just.d/secrets.just"
+
 _install-goose:
   #!/usr/bin/env bash
   which goose &> /dev/null

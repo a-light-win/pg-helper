@@ -20,7 +20,7 @@ func NewGinAuth(config *auth.AuthConfig) *GinAuth {
 }
 
 func (a *GinAuth) AuthMiddleware(c *gin.Context) {
-	authInfo, err := a.Parse(c.Request.Context())
+	authInfo, err := a.Parse(c)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return

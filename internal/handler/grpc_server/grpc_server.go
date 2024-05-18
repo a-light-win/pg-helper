@@ -39,7 +39,7 @@ func NewGrpcServer(config *config.GrpcConfig, quitCtx context.Context) *GrpcServ
 	s.SvcHandler = NewDbTaskSvcHandler(config, s.QuitCtx)
 
 	s.GrpcServer = grpc.NewServer(opts...)
-	proto.RegisterDbTaskSvcServer(s.GrpcServer, &DbTaskSvcHandler{})
+	proto.RegisterDbTaskSvcServer(s.GrpcServer, s.SvcHandler)
 
 	return s
 }

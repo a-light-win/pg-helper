@@ -17,5 +17,8 @@ type DbTaskSvcHandler struct {
 }
 
 func NewDbTaskSvcHandler(config *config.GrpcConfig, quitCtx context.Context) *DbTaskSvcHandler {
-	return &DbTaskSvcHandler{GrpcConfig: config, QuitCtx: quitCtx, DbInstanceManager: NewDbInstanceManager()}
+	return &DbTaskSvcHandler{
+		GrpcConfig: config, QuitCtx: quitCtx,
+		DbInstanceManager: NewDbInstanceManager(),
+	}
 }

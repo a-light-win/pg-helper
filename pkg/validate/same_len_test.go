@@ -36,6 +36,19 @@ func TestValidateSameLen(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "empty",
+			fields: TestStruct{
+				Field1: []int{},
+				Field2: []int{},
+			},
+			want: true,
+		},
+		{
+			name:   "nil",
+			fields: TestStruct{},
+			want:   true,
+		},
 	}
 
 	for _, tc := range testCases {

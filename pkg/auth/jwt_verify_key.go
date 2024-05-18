@@ -10,7 +10,7 @@ import (
 
 type JwtVerifyKey struct {
 	Types []string `enum:"ES256,ES384,ES512,EdDSA" help:"The type of the key to use for verification"`
-	Files []string `validate:"samelen=Type" type:"file" help:"The path to the key file to use for verification"`
+	Files []string `validate:"samelen=Types" type:"file" help:"The path to the key file to use for verification"`
 
 	keyLock sync.Mutex
 	keys    map[string]interface{}

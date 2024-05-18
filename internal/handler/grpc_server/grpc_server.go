@@ -3,12 +3,14 @@ package grpc_server
 import (
 	"context"
 	"net"
+	"time"
 
 	"github.com/a-light-win/pg-helper/api/proto"
 	config "github.com/a-light-win/pg-helper/internal/config/server"
 	grpcAuth "github.com/a-light-win/pg-helper/pkg/auth/grpc"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 )
 
 type GrpcServer struct {
@@ -35,6 +37,12 @@ func NewGrpcServer(config *config.GrpcConfig, quitCtx context.Context) *GrpcServ
 
 	opts = append(opts, grpc.UnaryInterceptor(s.Auth.Interceptor))
 	opts = append(opts, grpc.StreamInterceptor(s.Auth.StreamInterceptor))
+
+	keepalivePolicy := keepalive.EnforcementPolicy{
+		MinTime:             10 * time.Second,
+		PermitWithoutStream: false,
+	}
+	opts = append(opts, grpc.KeepaliveEnforcementPolicy(keepalivePolicy))
 
 	s.SvcHandler = NewDbTaskSvcHandler(config, s.QuitCtx)
 

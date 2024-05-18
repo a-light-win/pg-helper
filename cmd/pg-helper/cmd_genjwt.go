@@ -44,6 +44,7 @@ func (g *GenJwtCmd) Run(ctx *Context) error {
 		Scope:    strings.Join(g.Scopes, " "),
 		Resource: strings.Join(g.Resources, " "),
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        uuid.New().String(),
 			Subject:   g.Subject,
 			Audience:  g.Audiences,
 			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),

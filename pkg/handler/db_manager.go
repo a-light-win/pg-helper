@@ -6,13 +6,13 @@ import (
 
 type InstanceFilter struct {
 	// The Instance Name
-	Name string `binding:"max=63,id"`
+	Name string `form:"name" json:"name" binding:"max=63"`
 	// The Postgres major version
-	Version int32 `binding:"pg_ver"`
+	Version int32 `form:"version" json:"version" binding:"pg_ver"`
 	// The database name
-	DbName string `binding:"required,max=63,id"`
+	DbName string `form:"db_name" json:"db_name" binding:"required,max=63,id"`
 	// Database must be in the instance
-	MustExist bool `binding:""`
+	MustExist bool `form:"must_exist" json:"must_exist" binding:""`
 }
 
 type DbVO struct {

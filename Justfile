@@ -33,6 +33,9 @@ serve: build
   export PG_HELPER_VERSION=$(./dist/pg-helper version|awk '{print $2}')
   {{ env('DOCKER_CMD', 'podman')}} compose up --force-recreate --build
   {{ env('DOCKER_CMD', 'podman')}} compose stop
+
+clean-serve:
+  {{ env('DOCKER_CMD', 'podman')}} compose down
   
-clean: clean-sqlc clean-protos
+clean: clean-sqlc clean-protos clean-serve
   rm -rf dist/

@@ -1,6 +1,7 @@
 
 mod secrets "just.d/mods/secrets.just"
 mod migration "just.d/mods/migration.just"
+mod db "just.d/mods/db.just"
 
 import "just.d/lib.just"
 import "just.d/sqlc.just"

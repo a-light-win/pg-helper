@@ -121,7 +121,7 @@ func (a *DbInstance) IsDbReady(dbName string) bool {
 	return db != nil && db.Ready()
 }
 
-func (a *DbInstance) CreateDb(vo *handler.CreateDbVO) (*Database, error) {
+func (a *DbInstance) CreateDb(vo *handler.CreateDbRequest) (*Database, error) {
 	a.dbLock.Lock()
 	defer a.dbLock.Unlock()
 

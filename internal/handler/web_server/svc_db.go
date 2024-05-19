@@ -8,20 +8,20 @@ import (
 )
 
 func (h *Handler) CreateDb(c *gin.Context) {
-	var vo handler.CreateDbVO
-	if err := c.ShouldBind(&vo); err != nil {
+	var request handler.CreateDbRequest
+	if err := c.ShouldBind(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	scopes := []string{"db:write"}
-	resources := []string{"db:" + vo.DbName}
+	resources := []string{"db:" + request.DbName}
 	if err := h.authCheck(c, scopes, resources); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
-	db, err := h.DbManager.CreateDb(&vo)
+	db, err := h.DbManager.CreateDb(&request)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -30,19 +30,19 @@ func (h *Handler) CreateDb(c *gin.Context) {
 }
 
 func (h *Handler) IsDbReady(c *gin.Context) {
-	var vo handler.DbVO
-	if err := c.ShouldBind(&vo); err != nil {
+	var request handler.DbRequest
+	if err := c.ShouldBind(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	scopes := []string{"db:read"}
-	resources := []string{"db:" + vo.DbName}
+	resources := []string{"db:" + request.DbName}
 	if err := h.authCheck(c, scopes, resources); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
-	ready := h.DbManager.IsDbReady(&vo)
+	ready := h.DbManager.IsDbReady(&request)
 	c.JSON(http.StatusOK, gin.H{"ready": ready})
 }

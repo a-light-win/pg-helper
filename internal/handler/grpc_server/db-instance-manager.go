@@ -121,15 +121,15 @@ func (m *DbInstanceManager) filterInstances(filter *handler.InstanceFilter) []*D
 	return result
 }
 
-func (m *DbInstanceManager) IsDbReady(vo *handler.DbVO) bool {
-	inst := m.FirstMatchedInstance(&vo.InstanceFilter)
+func (m *DbInstanceManager) IsDbReady(request *handler.DbRequest) bool {
+	inst := m.FirstMatchedInstance(&request.InstanceFilter)
 	if inst == nil {
 		return false
 	}
-	return inst.IsDbReady(vo.DbName)
+	return inst.IsDbReady(request.DbName)
 }
 
-func (m *DbInstanceManager) GetDb(vo *handler.DbVO) (*proto.Database, error) {
+func (m *DbInstanceManager) GetDb(vo *handler.DbRequest) (*proto.Database, error) {
 	inst := m.FirstMatchedInstance(&vo.InstanceFilter)
 	if inst == nil {
 		return nil, errors.New("instance not found")
@@ -141,18 +141,18 @@ func (m *DbInstanceManager) GetDb(vo *handler.DbVO) (*proto.Database, error) {
 	return db.Database, nil
 }
 
-func (m *DbInstanceManager) CreateDb(vo *handler.CreateDbVO) (*proto.Database, error) {
-	inst := m.FirstMatchedInstance(&vo.InstanceFilter)
+func (m *DbInstanceManager) CreateDb(request *handler.CreateDbRequest) (*proto.Database, error) {
+	inst := m.FirstMatchedInstance(&request.InstanceFilter)
 	if inst == nil {
 		return nil, errors.New("instance not found")
 	}
-	if vo.MigrateFrom != "" {
-		if m.GetInstance(vo.MigrateFrom) == nil {
+	if request.MigrateFrom != "" {
+		if m.GetInstance(request.MigrateFrom) == nil {
 			return nil, errors.New("instance migrate from not found")
 		}
 	}
 
-	db, err := inst.CreateDb(vo)
+	db, err := inst.CreateDb(request)
 	if err != nil {
 		return nil, err
 	}

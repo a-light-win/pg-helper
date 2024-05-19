@@ -15,11 +15,11 @@ type InstanceFilter struct {
 	MustExist bool `form:"must_exist" json:"must_exist" binding:""`
 }
 
-type DbVO struct {
+type DbRequest struct {
 	InstanceFilter
 }
 
-type CreateDbVO struct {
+type CreateDbRequest struct {
 	InstanceFilter
 	DbOwner     string `json:"db_owner" binding:"max=63,id"`
 	DbPassword  string `json:"db_password" binding:"required,min=8,max=256"`
@@ -27,7 +27,14 @@ type CreateDbVO struct {
 	MigrateFrom string `json:"migrate_from" binding:"max=63,iname"`
 }
 
+type CreateDbResponse struct {
+	// TODO:implement
+}
+
 type DbManager interface {
-	IsDbReady(vo *DbVO) bool
-	CreateDb(vo *CreateDbVO) (*proto.Database, error)
+	IsDbReady(request *DbRequest) bool
+	CreateDb(request *CreateDbRequest) (*proto.Database, error)
+}
+
+func NewCreateDbResponse(db *proto.Database) {
 }

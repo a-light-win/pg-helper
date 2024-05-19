@@ -146,6 +146,11 @@ func (m *DbInstanceManager) CreateDb(vo *handler.CreateDbVO) (*proto.Database, e
 	if inst == nil {
 		return nil, errors.New("instance not found")
 	}
+	if vo.MigrateFrom != "" {
+		if m.GetInstance(vo.MigrateFrom) == nil {
+			return nil, errors.New("instance migrate from not found")
+		}
+	}
 
 	db, err := inst.CreateDb(vo)
 	if err != nil {

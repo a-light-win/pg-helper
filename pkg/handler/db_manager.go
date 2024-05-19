@@ -6,7 +6,7 @@ import (
 
 type InstanceFilter struct {
 	// The Instance Name
-	Name string `form:"name" json:"name" binding:"max=63"`
+	Name string `form:"name" json:"name" binding:"max=63,iname"`
 	// The Postgres major version
 	Version int32 `form:"version" json:"version" binding:"pg_ver"`
 	// The database name
@@ -24,7 +24,7 @@ type CreateDbVO struct {
 	DbOwner     string `json:"db_owner" binding:"max=63,id"`
 	DbPassword  string `json:"db_password" binding:"required,min=8,max=256"`
 	Reason      string `json:"reason" binding:"max=1024"`
-	MigrateFrom string `json:"migrate_from" binding:"max=63"`
+	MigrateFrom string `json:"migrate_from" binding:"max=63,iname"`
 }
 
 type DbManager interface {

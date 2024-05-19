@@ -18,16 +18,19 @@ func (h *DbTaskSvcHandler) NotifyDbStatus(ctx context.Context, db *proto.Databas
 		return nil, status.Error(codes.Unauthenticated, "no auth info")
 	}
 	if !authInfo.ValidateScope("agent") {
-		return nil, status.Error(codes.PermissionDenied, "no agent scope")
+		return nil, status.Error(codes.PermissionDenied, "no scope permission")
+	}
+	if !authInfo.ValidateResource("dbInstance:" + authInfo.Subject) {
+		return nil, status.Error(codes.PermissionDenied, "no resource permission")
 	}
 
-	agent := h.GetInstance(authInfo.Subject)
-	if agent == nil {
-		err := errors.New("agent not found")
+	instance := h.GetInstance(authInfo.Subject)
+	if instance == nil {
+		err := errors.New("db instance not found")
 		log.Warn().Err(err).Str("InstanceName", authInfo.Subject).Msg("")
 		return nil, err
 	}
 
-	agent.UpdateDatabase(h.QuitCtx, db)
+	instance.UpdateDatabase(db)
 	return &emptypb.Empty{}, nil
 }

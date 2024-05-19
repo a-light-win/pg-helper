@@ -1,7 +1,6 @@
 package grpc_server
 
 import (
-	"context"
 	"errors"
 	"sync"
 
@@ -36,17 +35,30 @@ func NewDbInstance(name string, pgVersion int32, logger *zerolog.Logger) *DbInst
 	}
 }
 
-func (a *DbInstance) UpdateDatabases(ctx context.Context, databases []*proto.Database) {
+func (a *DbInstance) UpdateDatabases(databases []*proto.Database) {
 	a.dbLock.Lock()
 	defer a.dbLock.Unlock()
 
 	for _, db := range databases {
+
+		a.logger.Debug().
+			Str("DbName", db.Name).
+			Str("Stage", db.Stage.String()).
+			Str("Status", db.Status.String()).
+			Msg("Init database")
+
 		oldDb := a.mustGetDb(db.Name)
 		oldDb.Update(db)
 	}
 }
 
-func (a *DbInstance) UpdateDatabase(ctx context.Context, db *proto.Database) {
+func (a *DbInstance) UpdateDatabase(db *proto.Database) {
+	a.logger.Debug().
+		Str("DbName", db.Name).
+		Str("Stage", db.Stage.String()).
+		Str("Status", db.Status.String()).
+		Msg("Update database")
+
 	oldDb := a.MustGetDb(db.Name)
 	oldDb.Update(db)
 }

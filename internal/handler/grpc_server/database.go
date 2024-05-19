@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/a-light-win/pg-helper/api/proto"
+	"github.com/rs/zerolog/log"
 )
 
 type Database struct {
@@ -39,6 +40,13 @@ func (d *Database) Update(db *proto.Database) {
 		return
 	}
 
+	log.Log().Str("DbName", db.Name).
+		Str("OldStage", d.Stage.String()).
+		Str("OldStatus", d.Status.String()).
+		Str("Stage", db.Stage.String()).
+		Str("Status", db.Status.String()).
+		Msg("database status changed")
+
 	d.Database = db
 	d.NotifyChanged()
 }
@@ -47,10 +55,6 @@ func (d *Database) retry(sender proto.DbTaskSvc_RegisterServer) {
 	// TODO: retry logic
 	// If backup failed, resend create database task later
 	// If restore failed, reset the database and then resend create database task later
-}
-
-func (d *Database) ProtoDatabase() *proto.Database {
-	return d.Database
 }
 
 func (d *Database) WaitReady(timeoutCtx context.Context) bool {
@@ -63,9 +67,7 @@ func (d *Database) WaitReady(timeoutCtx context.Context) bool {
 		go func() {
 			<-timeoutCtx.Done()
 			once.Do(func() {
-				d.Lock.Lock()
-				defer d.Lock.Unlock()
-				d.Cond.Broadcast()
+				d.NotifyChanged()
 			})
 		}()
 	}

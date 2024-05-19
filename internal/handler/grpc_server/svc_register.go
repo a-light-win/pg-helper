@@ -41,7 +41,7 @@ func (h *DbTaskSvcHandler) Register(m *proto.RegisterInstance, s proto.DbTaskSvc
 
 	logger.Log().Msg("Instance registered.")
 
-	instance.UpdateDatabases(h.QuitCtx, m.Databases)
+	instance.UpdateDatabases(m.Databases)
 
 	instance.ServeDbTask(s)
 

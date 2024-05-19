@@ -82,8 +82,14 @@ func (a *DbInstance) mustGetDb(name string) *Database {
 func (a *DbInstance) ServeDbTask(s proto.DbTaskSvc_RegisterServer) {
 	if a.nonSentDbTask != nil {
 		if err := s.Send(a.nonSentDbTask); err != nil {
+			a.logger.Error().Err(err).
+				Str("request_id", a.nonSentDbTask.RequestId).
+				Msg("Resent non-sent db task failed")
 			return
 		}
+		a.logger.Debug().
+			Str("request_id", a.nonSentDbTask.RequestId).
+			Msg("Resend non-sent db task success")
 		a.nonSentDbTask = nil
 	}
 
@@ -93,9 +99,15 @@ func (a *DbInstance) ServeDbTask(s proto.DbTaskSvc_RegisterServer) {
 			return
 		case task := <-a.DbTaskChan:
 			if err := s.Send(task); err != nil {
+				a.logger.Error().Err(err).
+					Str("request_id", task.RequestId).
+					Msg("Sent db task failed")
 				a.nonSentDbTask = task
 				return
 			}
+			a.logger.Debug().
+				Str("request_id", task.RequestId).
+				Msg("Sent db task success")
 		}
 	}
 }
@@ -114,7 +126,7 @@ func (a *DbInstance) CreateDb(vo *handler.CreateDbVO) (*Database, error) {
 	defer a.dbLock.Unlock()
 
 	db := a.mustGetDb(vo.DbName)
-	if db.Status == proto.DbStatus_Processing || db.Status == proto.DbStatus_Done {
+	if db.IsProcessing() {
 		return db, nil
 	}
 	if db.Stage == proto.DbStage_Dropping {
@@ -137,6 +149,7 @@ func (a *DbInstance) CreateDb(vo *handler.CreateDbVO) (*Database, error) {
 			},
 		},
 	}
+	a.logger.Debug().Str("DbName", vo.DbName).Msg("Creatte Database")
 	a.Send(task)
 
 	return db, nil

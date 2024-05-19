@@ -54,8 +54,21 @@ func (d *Database) ProtoDatabase() *proto.Database {
 }
 
 func (d *Database) WaitReady(timeoutCtx context.Context) bool {
+	var once sync.Once
+
 	d.Lock.Lock()
 	defer d.Lock.Unlock()
+
+	if timeoutCtx != nil {
+		go func() {
+			<-timeoutCtx.Done()
+			once.Do(func() {
+				d.Lock.Lock()
+				defer d.Lock.Unlock()
+				d.Cond.Broadcast()
+			})
+		}()
+	}
 
 	for {
 		if d.Ready() {
@@ -76,4 +89,8 @@ func (d *Database) Ready() bool {
 	return d.Database != nil &&
 		d.Stage == proto.DbStage_Running &&
 		d.Status == proto.DbStatus_Done
+}
+
+func (d *Database) IsProcessing() bool {
+	return d.Database != nil && (d.Stage == proto.DbStage_Creating || d.Stage == proto.DbStage_Backuping || d.Stage == proto.DbStage_Restoring)
 }

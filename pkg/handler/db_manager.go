@@ -21,10 +21,10 @@ type DbVO struct {
 
 type CreateDbVO struct {
 	InstanceFilter
-	DbOwner     string `binding:"max=63,id"`
-	DbPassword  string `binding:"required,min=8,max=256"`
-	Reason      string `binding:"max=1024"`
-	MigrateFrom string `binding:"max=63,id"`
+	DbOwner     string `json:"db_owner" binding:"max=63,id"`
+	DbPassword  string `json:"db_password" binding:"required,min=8,max=256"`
+	Reason      string `json:"reason" binding:"max=1024"`
+	MigrateFrom string `json:"migrate_from" binding:"max=63"`
 }
 
 type DbManager interface {

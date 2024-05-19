@@ -149,7 +149,7 @@ func (a *DbInstance) CreateDb(vo *handler.CreateDbVO) (*Database, error) {
 			},
 		},
 	}
-	a.logger.Debug().Str("DbName", vo.DbName).Msg("Creatte Database")
+	a.logger.Debug().Str("DbName", vo.DbName).Msg("Task to create database")
 	a.Send(task)
 
 	return db, nil

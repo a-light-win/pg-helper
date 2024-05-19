@@ -15,7 +15,7 @@ type Database struct {
 }
 
 func NewDatabase() *Database {
-	newDb := &Database{}
+	newDb := &Database{Database: &proto.Database{}}
 	newDb.Cond = sync.NewCond(&newDb.Lock)
 	return newDb
 }

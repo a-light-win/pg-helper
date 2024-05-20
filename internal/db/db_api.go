@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/a-light-win/pg-helper/api/proto"
 	migrate "github.com/a-light-win/pg-helper/db"
 	config "github.com/a-light-win/pg-helper/internal/config/agent"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/rs/zerolog/log"
@@ -72,11 +72,88 @@ func (api *DbApi) UpdateTaskStatus(taskId uuid.UUID, status DbTaskStatus, reason
 	})
 }
 
-func (api *DbApi) UpdateDbStatus(dbId int64, stage proto.DbStage, status proto.DbStatus) error {
-	dbStatusParams := SetDbStatusParams{ID: dbId, Stage: stage, Status: status}
-	return api.Query(func(q *Queries) error {
-		return q.SetDbStatus(api.ConnCtx, dbStatusParams)
-	})
+func (api *DbApi) UpdateDbStatus(db_ *Db, q *Queries) error {
+	if q == nil {
+		return api.Query(func(q *Queries) error {
+			return api.UpdateDbStatus(db_, q)
+		})
+	}
+
+	dbStatusParams := SetDbStatusParams{
+		ID:        db_.ID,
+		Stage:     db_.Stage,
+		Status:    db_.Status,
+		UpdatedAt: db_.UpdatedAt,
+	}
+
+	newDb, err := q.SetDbStatus(api.ConnCtx, dbStatusParams)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil
+		}
+		return err
+	}
+
+	db_ = &newDb
+
+	// TODO: notify the status change
+
+	return nil
+}
+
+func (api *DbApi) GetDb(dbId int64, q *Queries) (*Db, error) {
+	if q == nil {
+		var db *Db
+		var err error
+		api.Query(func(q *Queries) error {
+			db, err = api.GetDb(dbId, q)
+			return err
+		})
+		return db, err
+	}
+
+	db, err := q.GetDbByID(api.ConnCtx, dbId)
+	if err != nil {
+		return nil, err
+	}
+	return &db, nil
+}
+
+func (api *DbApi) GetDbByName(name string, q *Queries) (*Db, error) {
+	if q == nil {
+		var db *Db
+		var err error
+		api.Query(func(q *Queries) error {
+			db, err = api.GetDbByName(name, q)
+			return err
+		})
+		return db, err
+	}
+
+	db, err := q.GetDbByName(api.ConnCtx, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &db, nil
+}
+
+func (api *DbApi) CreateDb(params *CreateDbParams, q *Queries) (*Db, error) {
+	if q == nil {
+		var db *Db
+		var err error
+		api.Query(func(q *Queries) error {
+			db, err = api.CreateDb(params, q)
+			return err
+		})
+		return db, err
+	}
+
+	db, err := q.CreateDb(api.ConnCtx, *params)
+	if err != nil {
+		return nil, err
+	}
+	return &db, err
 }
 
 func (api *DbApi) MigrateDB(quitCtx context.Context) error {

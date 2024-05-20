@@ -125,14 +125,15 @@ func (h *GrpcAgentHandler) createUser(conn *pgxpool.Conn, request *CreateOwnerRe
 func (h *GrpcAgentHandler) createDb(conn *pgxpool.Conn, request *CreateDatabaseRequest) (*db.Db, error) {
 	q := db.New(conn)
 	connCtx := h.DbApi.ConnCtx
-	database, err := q.GetDbByName(connCtx, request.Name)
+
+	database, err := h.DbApi.GetDbByName(request.Name, q)
 	if err != nil {
 		if err != pgx.ErrNoRows {
 			log.Warn().Err(err).Msg("Failed to check if database exists")
 			return nil, err
 		}
 
-		database, err = q.CreateDb(connCtx, db.CreateDbParams{Name: request.Name, Owner: request.Owner})
+		database, err = h.DbApi.CreateDb(&db.CreateDbParams{Name: request.Name, Owner: request.Owner}, q)
 		if err != nil {
 			log.Warn().Err(err).Msg("Failed to create database")
 			return nil, err
@@ -151,9 +152,7 @@ func (h *GrpcAgentHandler) createDb(conn *pgxpool.Conn, request *CreateDatabaseR
 
 		database.Stage = proto.DbStage_Creating
 		database.Status = proto.DbStatus_Processing
-
-		dbStatusParams := db.SetDbStatusParams{ID: database.ID, Status: database.Status, Stage: database.Stage}
-		if err := q.SetDbStatus(connCtx, dbStatusParams); err != nil {
+		if err := h.DbApi.UpdateDbStatus(database, q); err != nil {
 			log.Warn().Err(err).Msg("Failed to set database status")
 			return nil, err
 		}
@@ -167,9 +166,7 @@ func (h *GrpcAgentHandler) createDb(conn *pgxpool.Conn, request *CreateDatabaseR
 		}
 
 		database.Status = proto.DbStatus_Done
-
-		dbStatusParams.Status = database.Status
-		if err := q.SetDbStatus(connCtx, dbStatusParams); err != nil {
+		if err := h.DbApi.UpdateDbStatus(database, q); err != nil {
 			log.Warn().Err(err).Msg("Failed to set database status")
 			return nil, err
 		}
@@ -179,13 +176,17 @@ func (h *GrpcAgentHandler) createDb(conn *pgxpool.Conn, request *CreateDatabaseR
 
 	if database.Stage == proto.DbStage_Creating && database.Status == proto.DbStatus_Done {
 		if request.MigrateFrom == "" {
-			database.Stage = proto.DbStage_Running
-			q.SetDbStatus(connCtx, db.SetDbStatusParams{ID: database.ID, Status: database.Status, Stage: database.Stage})
 			log.Debug().Msg("Database is ready because no migration is needed")
+
+			database.Stage = proto.DbStage_Running
+			if err := h.DbApi.UpdateDbStatus(database, q); err != nil {
+				log.Warn().Err(err).Msg("Failed to set database status")
+				return nil, err
+			}
 		}
 	}
 
-	return &database, nil
+	return database, nil
 }
 
 func (h *GrpcAgentHandler) createBackgroundJob(conn *pgxpool.Conn, request *CreateDatabaseRequest, database *db.Db) error {

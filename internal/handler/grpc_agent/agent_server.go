@@ -39,7 +39,7 @@ func NewGrpcAgentServer(grpcConfig *config.GrpcClientConfig, quitCtx context.Con
 	return server
 }
 
-func (s *GrpcAgentServer) InitGrpcClient() error {
+func (s *GrpcAgentServer) initGrpcClient() error {
 	dialOptions := []grpc.DialOption{}
 
 	creds, err := s.GrpcConfig.Tls.Credentials()
@@ -81,7 +81,7 @@ func (s *GrpcAgentServer) InitGrpcClient() error {
 }
 
 func (s *GrpcAgentServer) Init(setter handler.GlobalSetter) error {
-	if err := s.InitGrpcClient(); err != nil {
+	if err := s.initGrpcClient(); err != nil {
 		return err
 	}
 	setter.Set("grpc_client", s.GrpcClient)

@@ -18,8 +18,25 @@ func (j *DbJobHandler) BackupDb(job *DbJob) error {
 	os.MkdirAll(j.DbConfig.BackupDbDir(job.DbName), 0750)
 
 	// TODO: Check current db status before execute backup
+	db_, err := j.DbApi.GetDb(job.DbID, nil)
+	if err != nil {
+		return err
+	}
 
-	j.DbApi.UpdateDbStatus(job.DbID, proto.DbStage_Backuping, proto.DbStatus_Processing)
+	var initial bool
+	if db_.Stage == proto.DbStage_None || db_.Stage == proto.DbStage_Backuping {
+		initial = true
+	}
+
+	if initial {
+		db_.Stage = proto.DbStage_Backuping
+		db_.Status = proto.DbStatus_Processing
+		if err := j.DbApi.UpdateDbStatus(db_, nil); err != nil {
+			log.Warn().Err(err).
+				Str("DbName", db_.Name).
+				Msg("Failed to update db status")
+		}
+	}
 
 	// Backup the database here
 	args := []string{
@@ -42,7 +59,8 @@ func (j *DbJobHandler) BackupDb(job *DbJob) error {
 
 		os.Remove(filepath.Join(j.DbConfig.BackupRootPath, job.Data.BackupPath+".tmp"))
 
-		j.DbApi.UpdateDbStatus(job.DbID, proto.DbStage_Backuping, proto.DbStatus_Failed)
+		db_.Status = proto.DbStatus_Failed
+		j.DbApi.UpdateDbStatus(db_, nil)
 		j.DbApi.UpdateTaskStatus(job.ID(), db.DbTaskStatusFailed, err.Error())
 		return nil
 	}
@@ -54,7 +72,9 @@ func (j *DbJobHandler) BackupDb(job *DbJob) error {
 		Str("BackupPath", job.Data.BackupPath).
 		Msg("Database backup completed")
 
-	j.DbApi.UpdateDbStatus(job.DbID, proto.DbStage_Backuping, proto.DbStatus_Done)
+	db_.Status = proto.DbStatus_Done
+	j.DbApi.UpdateDbStatus(db_, nil)
+
 	j.DbApi.UpdateTaskStatus(job.ID(), db.DbTaskStatusCompleted, "")
 	return nil
 }

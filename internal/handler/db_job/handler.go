@@ -72,13 +72,13 @@ func (j *DbJobHandler) Cancel(job job.Job, reason string) error {
 	return j.DbApi.UpdateTaskStatus(dbJob.ID(), db.DbTaskStatusCancelled, reason)
 }
 
-func (j *DbJobHandler) Init(setter handler.GlobalSetter) error {
-	dbApi, err := db.NewDbApi(j.DbConfig)
+func (j *DbJobHandler) Init(setter handler.GlobalSetter) (err error) {
+	j.DbApi, err = db.NewDbApi(j.DbConfig)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create db api")
 		return err
 	}
-	setter.Set("db_api", dbApi)
+	setter.Set("db_api", j.DbApi)
 
 	return nil
 }

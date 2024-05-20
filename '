@@ -11,24 +11,15 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func (a *Agent) initDb() error {
-	err := a.initConnPool()
-	if err != nil {
-		return err
-	}
-	return a.migrateDb()
-}
-
-func (a *Agent) initConnPool() error {
+func initConnPool(dbConfig *config.DbConfig) (*pgxpool.Pool, error) {
 	// Initialize the database connection pool.
-	poolConfig := a.Config.Db.NewPoolConfig()
+	poolConfig := dbConfig.NewPoolConfig()
 	pool, err := pgxpool.NewWithConfig(context.Background(), poolConfig)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create a pool")
-		return err
+		return nil, err
 	}
-	a.DbPool = pool
-	return nil
+	return pool, nil
 }
 
 func (a *Agent) migrateDb() error {

@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/a-light-win/pg-helper/pkg/handler"
 )
 
 type SignalServer struct {
@@ -31,5 +33,14 @@ func (s *SignalServer) Run() {
 
 func (s *SignalServer) Shutdown(ctx context.Context) error {
 	s.Quit()
+	return nil
+}
+
+func (s *SignalServer) Init(setter handler.GlobalSetter) error {
+	setter.Set("quit_ctx", s.QuitCtx)
+	return nil
+}
+
+func (s *SignalServer) PostInit(getter handler.GlobalGetter) error {
 	return nil
 }

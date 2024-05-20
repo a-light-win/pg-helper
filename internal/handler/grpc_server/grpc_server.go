@@ -8,6 +8,7 @@ import (
 	"github.com/a-light-win/pg-helper/api/proto"
 	config "github.com/a-light-win/pg-helper/internal/config/server"
 	grpcAuth "github.com/a-light-win/pg-helper/pkg/auth/grpc"
+	"github.com/a-light-win/pg-helper/pkg/handler"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
@@ -71,5 +72,13 @@ func (s *GrpcServer) Run() {
 
 func (s *GrpcServer) Shutdown(ctx context.Context) error {
 	s.GrpcServer.GracefulStop()
+	return nil
+}
+
+func (s *GrpcServer) Init(setter handler.GlobalSetter) error {
+	return nil
+}
+
+func (s *GrpcServer) PostInit(getter handler.GlobalGetter) error {
 	return nil
 }

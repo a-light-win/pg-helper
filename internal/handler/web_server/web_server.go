@@ -78,3 +78,11 @@ func (w *WebServer) Run() {
 func (w *WebServer) Shutdown(ctx context.Context) error {
 	return w.Server.Shutdown(ctx)
 }
+
+func (w *WebServer) Init(setter handler.GlobalSetter) error {
+	return nil
+}
+
+func (w *WebServer) PostInit(getter handler.GlobalGetter) error {
+	return nil
+}

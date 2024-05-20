@@ -7,9 +7,6 @@ type Job interface {
 	Name() string
 	Requires() []uuid.UUID
 
-	Run()
-	Cancel(reason string) error
-
 	IsPending() bool
 	IsRunning() bool
 	IsDone() bool

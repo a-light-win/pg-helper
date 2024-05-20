@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/a-light-win/pg-helper/pkg/handler"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
@@ -29,20 +30,24 @@ type JobScheduler struct {
 	wg sync.WaitGroup
 	// Protects PendingJobs
 	pendingLock sync.Mutex
+
+	handler JobHandler
 }
 
-func NewJobScheduler(ctx context.Context, max int) *JobScheduler {
-	return &JobScheduler{
+func NewJobScheduler(ctx context.Context, handler JobHandler, max int) *JobScheduler {
+	scheduler := &JobScheduler{
 		PendingJobs:    make(map[uuid.UUID][]*PendingJob),
 		ReadytoRunJobs: make(chan Job),
 		DoneJobs:       make(chan Job),
 		AddJobs:        make(chan Job),
 		QuitCtx:        ctx,
+		handler:        handler,
 		MaxConcurrency: max,
 	}
+	return scheduler
 }
 
-func (js *JobScheduler) Init(jobs []Job) {
+func (js *JobScheduler) InitJobs(jobs []Job) {
 	js.pendingLock.Lock()
 	defer js.pendingLock.Unlock()
 
@@ -137,7 +142,7 @@ func (js *JobScheduler) CancelJob(job Job, reason string) error {
 
 func (js *JobScheduler) cancelJob(job Job, reason string) error {
 	log.Debug().Msgf("Job %s is canceld because %s", job.Name(), reason)
-	if err := job.Cancel(reason); err != nil {
+	if err := js.handler.Cancel(job, reason); err != nil {
 		log.Error().Err(err).Str("Name", job.Name()).Msg("Cancel job failed")
 		return err
 	}
@@ -153,6 +158,31 @@ func removeUUID(uuids []uuid.UUID, target uuid.UUID) []uuid.UUID {
 		}
 	}
 	return uuids
+}
+
+func (js *JobScheduler) Init(setter handler.GlobalSetter) error {
+	if err := js.handler.Init(setter); err != nil {
+		return err
+	}
+
+	setter.Set("job_producer", &JobProducer{AddJobs: js.AddJobs})
+
+	return nil
+}
+
+func (js *JobScheduler) PostInit(getter handler.GlobalGetter) error {
+	if err := js.handler.PostInit(getter); err != nil {
+		return err
+	}
+
+	if jobs, err := js.handler.RecoverJobs(); err == nil {
+		js.InitJobs(jobs)
+	} else {
+		log.Error().Err(err).Msg("Failed to recover jobs")
+		return err
+	}
+
+	return nil
 }
 
 func (js *JobScheduler) Run() {
@@ -173,7 +203,9 @@ func (js *JobScheduler) Run() {
 			go func(job Job) {
 				log.Debug().Msgf("Job %s is running", job.Name())
 
-				job.Run()
+				if err := js.handler.Run(job); err != nil {
+					log.Error().Err(err).Str("Name", job.Name()).Msg("Run job failed")
+				}
 
 				js.DoneJobs <- job
 				<-sem
@@ -185,7 +217,7 @@ func (js *JobScheduler) Run() {
 	}
 }
 
-func (js *JobScheduler) WaitGracefulShutdown() {
+func (js *JobScheduler) Shutdown(ctx context.Context) error {
 	log.Log().Msg("Job scheduler is waiting for graceful shutdown")
 
 	<-js.QuitCtx.Done()
@@ -196,4 +228,6 @@ func (js *JobScheduler) WaitGracefulShutdown() {
 	close(js.ReadytoRunJobs)
 	close(js.DoneJobs)
 	close(js.AddJobs)
+
+	return nil
 }

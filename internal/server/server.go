@@ -4,10 +4,10 @@ import (
 	"context"
 
 	config "github.com/a-light-win/pg-helper/internal/config/server"
-	"github.com/a-light-win/pg-helper/internal/handler"
 	"github.com/a-light-win/pg-helper/internal/handler/grpc_server"
 	"github.com/a-light-win/pg-helper/internal/handler/signal_server"
 	"github.com/a-light-win/pg-helper/internal/handler/web_server"
+	"github.com/a-light-win/pg-helper/pkg/handler"
 	"github.com/rs/zerolog/log"
 )
 
@@ -18,6 +18,8 @@ type Server struct {
 
 	QuitCtx context.Context
 	Quit    context.CancelFunc
+
+	globalVars map[string]interface{}
 }
 
 func New(config *config.ServerConfig) *Server {
@@ -35,6 +37,18 @@ func New(config *config.ServerConfig) *Server {
 }
 
 func (s *Server) Init() error {
+	for _, server := range s.Servers {
+		if err := server.Init(s); err != nil {
+			return err
+		}
+	}
+
+	for _, server := range s.Servers {
+		if err := server.PostInit(s); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -62,4 +76,12 @@ func (s *Server) Shutdown() {
 	}
 
 	log.Log().Msg("Server is shutting down.")
+}
+
+func (s *Server) Set(key string, value interface{}) {
+	s.globalVars[key] = value
+}
+
+func (s *Server) Get(key string) interface{} {
+	return s.globalVars[key]
 }

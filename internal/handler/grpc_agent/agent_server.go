@@ -9,6 +9,7 @@ import (
 
 	"github.com/a-light-win/pg-helper/api/proto"
 	config "github.com/a-light-win/pg-helper/internal/config/agent"
+	"github.com/a-light-win/pg-helper/internal/constants"
 	"github.com/a-light-win/pg-helper/internal/db"
 	"github.com/a-light-win/pg-helper/internal/job"
 	"github.com/a-light-win/pg-helper/internal/utils"
@@ -84,14 +85,14 @@ func (s *GrpcAgentServer) Init(setter handler.GlobalSetter) error {
 	if err := s.initGrpcClient(); err != nil {
 		return err
 	}
-	setter.Set("grpc_client", s.GrpcClient)
+	setter.Set(constants.AgentKeyGrpcClient, s.GrpcClient)
 
 	return nil
 }
 
 func (s *GrpcAgentServer) PostInit(getter handler.GlobalGetter) error {
-	s.DbApi = getter.Get("db_api").(*db.DbApi)
-	jobProducer := getter.Get("job_producer").(*job.JobProducer)
+	s.DbApi = getter.Get(constants.AgentKeyDbApi).(*db.DbApi)
+	jobProducer := getter.Get(constants.AgentKeyJobProducer).(*job.JobProducer)
 
 	s.handler = NewGrpcAgentHandler(s.DbApi, s.GrpcClient, jobProducer)
 

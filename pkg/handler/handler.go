@@ -1,5 +1,7 @@
 package handler
 
 type Handler interface {
-	Handle(msg any) error
+	Handle(msg NamedElement) error
+
+	Initialization
 }

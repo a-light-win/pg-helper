@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"github.com/a-light-win/pg-helper/api/proto"
 	config "github.com/a-light-win/pg-helper/internal/config/agent"
 	"github.com/a-light-win/pg-helper/internal/handler/db_job"
 	"github.com/a-light-win/pg-helper/internal/handler/grpc_agent"
@@ -16,20 +17,27 @@ type Agent struct {
 }
 
 func New(config *config.AgentConfig) *Agent {
-	ss := signal_server.NewSignalServer()
+	signalServer := signal_server.NewSignalServer()
+
+	dbStatusConsumer := handler.NewBaseConsumer[*proto.Database]("notify_db_status", &grpc_agent.DbStatusSender{}, 1)
 
 	dbJobHandler := db_job.NewDbJobHandler(&config.Db)
-	js := job.NewJobScheduler(ss.QuitCtx, dbJobHandler, 8)
+	jobScheduler := job.NewJobScheduler(signalServer.QuitCtx, dbJobHandler, 8)
 
-	gs := grpc_agent.NewGrpcAgentServer(&config.Grpc, ss.QuitCtx)
+	grpcAgentServer := grpc_agent.NewGrpcAgentServer(&config.Grpc, signalServer.QuitCtx)
 
 	agent := Agent{
 		Config: config,
 		BaseServer: handler.BaseServer{
-			Name:    "Agent",
-			Servers: []handler.Server{ss, js, gs},
-			QuitCtx: ss.QuitCtx,
-			Quit:    ss.Quit,
+			Name: "Agent",
+			Servers: []handler.Server{
+				signalServer,
+				dbStatusConsumer,
+				jobScheduler,
+				grpcAgentServer,
+			},
+			QuitCtx: signalServer.QuitCtx,
+			Quit:    signalServer.Quit,
 		},
 	}
 	return &agent

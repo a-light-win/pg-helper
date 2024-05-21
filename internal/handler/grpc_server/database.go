@@ -25,6 +25,10 @@ func (d *Database) NotifyChanged() {
 	d.Lock.Lock()
 	defer d.Lock.Unlock()
 
+	d.notifyChanged()
+}
+
+func (d *Database) notifyChanged() {
 	d.Cond.Broadcast()
 }
 
@@ -37,6 +41,15 @@ func (d *Database) Update(db *proto.Database) {
 	defer d.Lock.Unlock()
 
 	if d.Database != nil && db.UpdatedAt == d.UpdatedAt {
+		log.Warn().Str("DbName", db.Name).
+			Str("OldStage", d.Stage.String()).
+			Str("OldStatus", d.Status.String()).
+			Interface("OldUpdatedAt", d.UpdatedAt).
+			Str("Stage", db.Stage.String()).
+			Str("Status", db.Status.String()).
+			Interface("UpdatedAt", db.UpdatedAt).
+			Msg("database status not changed")
+
 		return
 	}
 
@@ -48,7 +61,7 @@ func (d *Database) Update(db *proto.Database) {
 		Msg("database status changed")
 
 	d.Database = db
-	d.NotifyChanged()
+	d.notifyChanged()
 }
 
 func (d *Database) retry(sender proto.DbTaskSvc_RegisterServer) {
@@ -58,17 +71,13 @@ func (d *Database) retry(sender proto.DbTaskSvc_RegisterServer) {
 }
 
 func (d *Database) WaitReady(timeoutCtx context.Context) bool {
-	var once sync.Once
-
 	d.Lock.Lock()
 	defer d.Lock.Unlock()
 
 	if timeoutCtx != nil {
 		go func() {
 			<-timeoutCtx.Done()
-			once.Do(func() {
-				d.NotifyChanged()
-			})
+			d.NotifyChanged()
 		}()
 	}
 

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/a-light-win/pg-helper/api/proto"
 	config "github.com/a-light-win/pg-helper/internal/config/agent"
+	"github.com/a-light-win/pg-helper/internal/constants"
 	"github.com/a-light-win/pg-helper/internal/db"
 	"github.com/a-light-win/pg-helper/internal/job"
 	"github.com/a-light-win/pg-helper/pkg/handler"
@@ -17,8 +17,6 @@ import (
 type DbJobHandler struct {
 	DbApi    *db.DbApi
 	DbConfig *config.DbConfig
-
-	GrpcClient proto.DbTaskSvcClient
 }
 
 func NewDbJobHandler(dbConfig *config.DbConfig) *DbJobHandler {
@@ -78,15 +76,16 @@ func (j *DbJobHandler) Init(setter handler.GlobalSetter) (err error) {
 		log.Error().Err(err).Msg("Failed to create db api")
 		return err
 	}
-	setter.Set("db_api", j.DbApi)
+	setter.Set(constants.AgentKeyDbApi, j.DbApi)
+	setter.Set(constants.AgentKeyConnCtx, j.DbApi.ConnCtx)
 
 	return nil
 }
 
 func (j *DbJobHandler) PostInit(getter handler.GlobalGetter) error {
-	j.GrpcClient = getter.Get("grpc_client").(proto.DbTaskSvcClient)
+	j.DbApi.DbStatusNotifier = getter.Get(constants.AgentKeyNotifyDbStatusProducer).(handler.Producer)
 
-	quitCtx := getter.Get("quit_ctx").(context.Context)
+	quitCtx := getter.Get(constants.AgentKeyQuitCtx).(context.Context)
 	if err := j.DbApi.MigrateDB(quitCtx); err != nil {
 		return err
 	}

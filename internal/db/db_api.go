@@ -6,6 +6,7 @@ import (
 
 	migrate "github.com/a-light-win/pg-helper/db"
 	config "github.com/a-light-win/pg-helper/internal/config/agent"
+	"github.com/a-light-win/pg-helper/pkg/handler"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,6 +20,8 @@ type DbApi struct {
 
 	ConnCtx context.Context
 	Cancel  context.CancelFunc
+
+	DbStatusNotifier handler.Producer
 }
 
 func NewDbApi(config *config.DbConfig) (*DbApi, error) {
@@ -89,16 +92,31 @@ func (api *DbApi) UpdateDbStatus(db_ *Db, q *Queries) error {
 	newDb, err := q.SetDbStatus(api.ConnCtx, dbStatusParams)
 	if err != nil {
 		if err == pgx.ErrNoRows {
+			log.Warn().Str("DbName", db_.Name).
+				Str("Stage", db_.Stage.String()).
+				Str("Status", db_.Status.String()).
+				Interface("UpdatedAt", db_.UpdatedAt).
+				Msg("Can not change db status to database")
+
 			return nil
 		}
 		return err
 	}
 
-	db_ = &newDb
-
-	// TODO: notify the status change
+	db_.UpdatedAt = newDb.UpdatedAt
+	api.NotifyDbStatusChanged(db_)
 
 	return nil
+}
+
+func (api *DbApi) NotifyDbStatusChanged(db *Db) {
+	log.Debug().Str("DbName", db.Name).
+		Str("Stage", db.Stage.String()).
+		Str("Status", db.Status.String()).
+		Interface("UpdatedAt", db.UpdatedAt).
+		Msg("Db status changed")
+
+	api.DbStatusNotifier.Send(db.ToProto())
 }
 
 func (api *DbApi) GetDb(dbId int64, q *Queries) (*Db, error) {

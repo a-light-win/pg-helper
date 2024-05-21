@@ -84,6 +84,8 @@ func (c *BaseConsumer[T]) Run() {
 	for {
 		element, ok := <-c.Elements
 		if !ok {
+			log.Log().Str("Name", c.Name).
+				Msg("Consumer is closed")
 			break
 		}
 
@@ -114,11 +116,19 @@ func (c *BaseConsumer[T]) Shutdown(ctx context.Context) error {
 }
 
 func (c *BaseConsumer[T]) Init(setter GlobalSetter) error {
+	if err := c.Handler.Init(setter); err != nil {
+		return err
+	}
+
 	setter.Set(c.Name+"_producer", c.Producer())
 
 	return nil
 }
 
 func (c *BaseConsumer[T]) PostInit(getter GlobalGetter) error {
+	if err := c.Handler.PostInit(getter); err != nil {
+		return err
+	}
+
 	return nil
 }

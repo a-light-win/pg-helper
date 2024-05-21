@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/a-light-win/pg-helper/internal/constants"
 	"github.com/a-light-win/pg-helper/pkg/handler"
 )
 
@@ -37,7 +38,7 @@ func (s *SignalServer) Shutdown(ctx context.Context) error {
 }
 
 func (s *SignalServer) Init(setter handler.GlobalSetter) error {
-	setter.Set("quit_ctx", s.QuitCtx)
+	setter.Set(constants.AgentKeyQuitCtx, s.QuitCtx)
 	return nil
 }
 

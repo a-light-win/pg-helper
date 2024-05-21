@@ -36,6 +36,9 @@ type BaseServer struct {
 }
 
 func (s *BaseServer) Set(key string, value interface{}) {
+	if s.globalVars == nil {
+		s.globalVars = make(map[string]interface{})
+	}
 	s.globalVars[key] = value
 }
 
@@ -44,8 +47,6 @@ func (s *BaseServer) Get(key string) interface{} {
 }
 
 func (s *BaseServer) Init() error {
-	s.globalVars = make(map[string]interface{})
-
 	for _, server := range s.Servers {
 		if err := server.Init(s); err != nil {
 			return err

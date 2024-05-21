@@ -25,9 +25,9 @@ func New(config *config.AgentConfig) *Agent {
 	dbJobHandler := db_job.NewDbJobHandler(&config.Db)
 	dbJobConsumer := handler.NewBaseConsumer[job.Job]("Db Job Handler", dbJobHandler, 4)
 
-	pendingJobHandler := &job.PendingJobHandler{}
+	pendingJobHandler := &job.PendingJobHandler{InitJobProvider: dbJobHandler}
 	pendingJobConsumer := handler.NewBaseConsumer[job.Job]("Pending Job Handler", pendingJobHandler, 1)
-	doneJobConsumer := handler.NewBaseConsumer[job.Job]("Done Job Handler", &job.DoneJobHandler{pendingJobHandler}, 1)
+	doneJobConsumer := handler.NewBaseConsumer[job.Job]("Done Job Handler", &job.DoneJobHandler{PendingJobHandler: pendingJobHandler}, 1)
 
 	grpcAgentServer := grpc_agent.NewGrpcAgentServer(&config.Grpc, signalServer.QuitCtx)
 

@@ -16,3 +16,12 @@ type Job interface {
 	Requires() []uuid.UUID
 	Cancelling(reason string)
 }
+
+type PendingJob struct {
+	Job
+	WaitingFor []uuid.UUID
+}
+
+type InitJobProvider interface {
+	RecoverJobs() (jobs []Job, err error)
+}

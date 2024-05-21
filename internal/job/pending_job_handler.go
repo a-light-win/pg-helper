@@ -10,11 +10,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type PendingJob struct {
-	Job
-	WaitingFor []uuid.UUID
-}
-
 type PendingJobHandler struct {
 	// THe key is the job that not done yet,
 	// the value is the list of jobs that are waiting for the key job
@@ -22,6 +17,7 @@ type PendingJobHandler struct {
 	pendingLock sync.Mutex
 
 	readyToRunJobProducer handler.Producer
+	InitJobProvider       InitJobProvider
 }
 
 func (h *PendingJobHandler) Init(setter handler.GlobalSetter) error {
@@ -32,8 +28,12 @@ func (h *PendingJobHandler) Init(setter handler.GlobalSetter) error {
 func (h *PendingJobHandler) PostInit(getter handler.GlobalGetter) error {
 	h.readyToRunJobProducer = getter.Get(constants.AgentKeyReadyToRunJobProducer).(handler.Producer)
 
-	// TODO: init jobs
-	// dbApi := getter.Get(constants.AgentKeyDbApi).(proto.DbTaskSvcClient)
+	if jobs, err := h.InitJobProvider.RecoverJobs(); err != nil {
+		log.Error().Err(err).Msg("Failed to recover jobs")
+		return err
+	} else {
+		h.initJobs(jobs)
+	}
 
 	return nil
 }

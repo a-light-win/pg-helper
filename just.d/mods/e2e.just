@@ -31,5 +31,5 @@ update-venom: download-venom
 
 
 [no-cd]
-test-all: update-venom
+test: update-venom
 

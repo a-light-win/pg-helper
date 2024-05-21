@@ -141,7 +141,7 @@ func (m *DbInstanceManager) GetDb(vo *handler.DbRequest) (*proto.Database, error
 	return db.Database, nil
 }
 
-func (m *DbInstanceManager) CreateDb(request *handler.CreateDbRequest) (*proto.Database, error) {
+func (m *DbInstanceManager) CreateDb(request *handler.CreateDbRequest) (*handler.CreateDbResponse, error) {
 	inst := m.FirstMatchedInstance(&request.InstanceFilter)
 	if inst == nil {
 		return nil, errors.New("instance not found")
@@ -160,5 +160,17 @@ func (m *DbInstanceManager) CreateDb(request *handler.CreateDbRequest) (*proto.D
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	db.WaitReady(timeoutCtx)
-	return db.Database, nil
+
+	response := &handler.CreateDbResponse{
+		Name:    inst.Name,
+		Version: inst.PgVersion,
+
+		DbName: db.Name,
+		Stage:  db.Stage.String(),
+		Status: db.Status.String(),
+
+		UpdatedAt: db.UpdatedAt.AsTime(),
+	}
+
+	return response, nil
 }

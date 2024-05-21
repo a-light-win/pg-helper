@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"time"
+
 	"github.com/a-light-win/pg-helper/api/proto"
 )
 
@@ -28,12 +30,19 @@ type CreateDbRequest struct {
 }
 
 type CreateDbResponse struct {
-	// TODO:implement
+	Name    string `json:"name"`
+	Version int32  `json:"version"`
+
+	DbName string `json:"db_name"`
+	Stage  string `json:"stage"`
+	Status string `json:"status"`
+
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type DbManager interface {
 	IsDbReady(request *DbRequest) bool
-	CreateDb(request *CreateDbRequest) (*proto.Database, error)
+	CreateDb(request *CreateDbRequest) (*CreateDbResponse, error)
 }
 
 func NewCreateDbResponse(db *proto.Database) {

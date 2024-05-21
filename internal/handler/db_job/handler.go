@@ -17,6 +17,8 @@ import (
 type DbJobHandler struct {
 	DbApi    *db.DbApi
 	DbConfig *config.DbConfig
+
+	doneJobProducer handler.Producer
 }
 
 func NewDbJobHandler(dbConfig *config.DbConfig) *DbJobHandler {
@@ -25,27 +27,45 @@ func NewDbJobHandler(dbConfig *config.DbConfig) *DbJobHandler {
 	}
 }
 
-func (j *DbJobHandler) Run(job job.Job) error {
-	dbJob, ok := job.(*DbJob)
+func (h *DbJobHandler) Handle(msg handler.NamedElement) error {
+	dbJob, ok := msg.(*DbJob)
 	if !ok {
 		return errors.New("invalid job type")
 	}
 
+	err := h.handle(dbJob)
+	if err != nil {
+		log.Error().Err(err).
+			Str("JobName", dbJob.GetName()).
+			Msg("Failed to handle job")
+	}
+
+	h.doneJobProducer.Send(dbJob)
+	return err
+}
+
+func (h *DbJobHandler) handle(dbJob *DbJob) error {
+	if dbJob.Status == db.DbTaskStatusCancelling {
+		dbJob.Status = db.DbTaskStatusCancelled
+		h.DbApi.UpdateTaskStatus(dbJob.UUID(), db.DbTaskStatusCancelled, dbJob.Reason)
+		return nil
+	}
+
 	switch dbJob.Action {
 	case db.DbActionBackup:
-		return j.BackupDb(dbJob)
+		return h.BackupDb(dbJob)
 	case db.DbActionRestore:
-		return j.RestoreDb(dbJob)
+		return h.RestoreDb(dbJob)
 	case db.DbActionWaitReady:
-		return j.WaitReadyDb(dbJob)
+		return h.WaitReadyDb(dbJob)
 	default:
 		return fmt.Errorf("invalid db action %s", dbJob.Action)
 	}
 }
 
-func (j *DbJobHandler) RecoverJobs() (jobs []job.Job, err error) {
-	err = j.DbApi.Query(func(q *db.Queries) error {
-		activeTasks, err := q.ListActiveDbTasks(j.DbApi.ConnCtx)
+func (h *DbJobHandler) RecoverJobs() (jobs []job.Job, err error) {
+	err = h.DbApi.Query(func(q *db.Queries) error {
+		activeTasks, err := q.ListActiveDbTasks(h.DbApi.ConnCtx)
 		if err != nil {
 			if err != pgx.ErrNoRows {
 				return err
@@ -62,31 +82,24 @@ func (j *DbJobHandler) RecoverJobs() (jobs []job.Job, err error) {
 	return
 }
 
-func (j *DbJobHandler) Cancel(job job.Job, reason string) error {
-	dbJob, ok := job.(*DbJob)
-	if !ok {
-		return errors.New("invalid job type")
-	}
-	return j.DbApi.UpdateTaskStatus(dbJob.ID(), db.DbTaskStatusCancelled, reason)
-}
-
-func (j *DbJobHandler) Init(setter handler.GlobalSetter) (err error) {
-	j.DbApi, err = db.NewDbApi(j.DbConfig)
+func (h *DbJobHandler) Init(setter handler.GlobalSetter) (err error) {
+	h.DbApi, err = db.NewDbApi(h.DbConfig)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create db api")
 		return err
 	}
-	setter.Set(constants.AgentKeyDbApi, j.DbApi)
-	setter.Set(constants.AgentKeyConnCtx, j.DbApi.ConnCtx)
+	setter.Set(constants.AgentKeyDbApi, h.DbApi)
+	setter.Set(constants.AgentKeyConnCtx, h.DbApi.ConnCtx)
 
 	return nil
 }
 
-func (j *DbJobHandler) PostInit(getter handler.GlobalGetter) error {
-	j.DbApi.DbStatusNotifier = getter.Get(constants.AgentKeyNotifyDbStatusProducer).(handler.Producer)
+func (h *DbJobHandler) PostInit(getter handler.GlobalGetter) error {
+	h.DbApi.DbStatusNotifier = getter.Get(constants.AgentKeyNotifyDbStatusProducer).(handler.Producer)
+	h.doneJobProducer = getter.Get(constants.AgentKeyDoneJobProducer).(handler.Producer)
 
 	quitCtx := getter.Get(constants.AgentKeyQuitCtx).(context.Context)
-	if err := j.DbApi.MigrateDB(quitCtx); err != nil {
+	if err := h.DbApi.MigrateDB(quitCtx); err != nil {
 		return err
 	}
 

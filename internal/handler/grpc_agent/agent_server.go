@@ -11,7 +11,6 @@ import (
 	config "github.com/a-light-win/pg-helper/internal/config/agent"
 	"github.com/a-light-win/pg-helper/internal/constants"
 	"github.com/a-light-win/pg-helper/internal/db"
-	"github.com/a-light-win/pg-helper/internal/job"
 	"github.com/a-light-win/pg-helper/internal/utils"
 	"github.com/a-light-win/pg-helper/pkg/handler"
 	"github.com/rs/zerolog/log"
@@ -92,7 +91,7 @@ func (s *GrpcAgentServer) Init(setter handler.GlobalSetter) error {
 
 func (s *GrpcAgentServer) PostInit(getter handler.GlobalGetter) error {
 	s.DbApi = getter.Get(constants.AgentKeyDbApi).(*db.DbApi)
-	jobProducer := getter.Get(constants.AgentKeyJobProducer).(*job.JobProducer)
+	jobProducer := getter.Get(constants.AgentKeyJobProducer).(handler.Producer)
 
 	s.handler = NewGrpcAgentHandler(s.DbApi, s.GrpcClient, jobProducer)
 
@@ -137,7 +136,7 @@ func (s *GrpcAgentServer) Run() {
 			continue
 		}
 
-		go s.handler.Run(task)
+		go s.handler.handle(task)
 	}
 }
 

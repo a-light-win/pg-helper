@@ -1,14 +1,18 @@
 package job
 
-import "github.com/google/uuid"
+import (
+	"github.com/a-light-win/pg-helper/pkg/handler"
+	"github.com/google/uuid"
+)
 
 type Job interface {
-	ID() uuid.UUID
-	Name() string
-	Requires() []uuid.UUID
+	handler.NamedElement
 
+	UUID() uuid.UUID
 	IsPending() bool
 	IsRunning() bool
-	IsDone() bool
 	IsFailed() bool
+
+	Requires() []uuid.UUID
+	Cancelling(reason string)
 }

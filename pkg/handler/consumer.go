@@ -120,8 +120,6 @@ func (c *BaseConsumer[T]) Init(setter GlobalSetter) error {
 		return err
 	}
 
-	setter.Set(c.Name+"_producer", c.Producer())
-
 	return nil
 }
 

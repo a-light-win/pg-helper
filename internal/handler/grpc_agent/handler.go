@@ -3,29 +3,23 @@ package grpc_agent
 import (
 	"github.com/a-light-win/pg-helper/api/proto"
 	"github.com/a-light-win/pg-helper/internal/db"
-	"github.com/a-light-win/pg-helper/internal/job"
+	"github.com/a-light-win/pg-helper/pkg/handler"
 	"github.com/go-playground/validator/v10"
 )
 
 type GrpcAgentHandler struct {
 	DbApi       *db.DbApi
 	GrpcClient  proto.DbTaskSvcClient
-	JobProducer *job.JobProducer
+	JobProducer handler.Producer
 	Validator   *validator.Validate
 }
 
-func NewGrpcAgentHandler(dbApi *db.DbApi, grpcClient proto.DbTaskSvcClient, jobProducer *job.JobProducer) *GrpcAgentHandler {
+func NewGrpcAgentHandler(dbApi *db.DbApi, grpcClient proto.DbTaskSvcClient, jobProducer handler.Producer) *GrpcAgentHandler {
 	return &GrpcAgentHandler{
 		DbApi:       dbApi,
 		GrpcClient:  grpcClient,
 		JobProducer: jobProducer,
 		Validator:   NewValidator(),
-	}
-}
-
-func (h *GrpcAgentHandler) Run(task *proto.DbTask) {
-	if err := h.handle(task); err != nil {
-		// TODO: log here?
 	}
 }
 

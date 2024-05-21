@@ -4,6 +4,7 @@
 CREATE TYPE DB_TASK_STATUS AS ENUM (
   'pending',
   'running',
+  'cancelling',
   'completed',
   'failed',
   'cancelled'

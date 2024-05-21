@@ -14,12 +14,12 @@ func NewDbJob(task *db.DbTask) job.Job {
 	return &DbJob{DbTask: task}
 }
 
-func (j *DbJob) ID() uuid.UUID {
-	return j.DbTask.ID
+func (j *DbJob) UUID() uuid.UUID {
+	return j.ID
 }
 
-func (j *DbJob) Name() string {
-	return j.ID().String()
+func (j *DbJob) GetName() string {
+	return j.ID.String()
 }
 
 func (j *DbJob) Requires() []uuid.UUID {
@@ -50,4 +50,9 @@ func (j *DbJob) IsFailed() bool {
 	default:
 		return false
 	}
+}
+
+func (j *DbJob) Cancelling(reason string) {
+	j.Status = db.DbTaskStatusCancelling
+	j.Reason = reason
 }

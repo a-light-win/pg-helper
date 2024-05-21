@@ -5,12 +5,12 @@ import (
 )
 
 type DoneJobHandler struct {
-	*PendingJobHandler
+	PendingJobHandler *PendingJobHandler
 }
 
-func (h *DoneJobHandler) handle(msg handler.NamedElement) error {
+func (h *DoneJobHandler) Handle(msg handler.NamedElement) error {
 	job := msg.(Job)
-	h.OnJobDone(job)
+	h.PendingJobHandler.OnJobDone(job)
 	return nil
 }
 

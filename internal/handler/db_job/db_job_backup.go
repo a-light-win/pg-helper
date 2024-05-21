@@ -24,7 +24,7 @@ func (j *DbJobHandler) BackupDb(job *DbJob) error {
 	}
 
 	var initial bool
-	if db_.Stage == proto.DbStage_None || db_.Stage == proto.DbStage_Backuping {
+	if db_.Stage == proto.DbStage_None || db_.Stage == proto.DbStage_Creating || db_.Stage == proto.DbStage_Backuping {
 		initial = true
 	}
 
@@ -53,6 +53,7 @@ func (j *DbJobHandler) BackupDb(job *DbJob) error {
 
 	if err := cmd.Run(); err != nil {
 		log.Error().Err(err).
+			Strs("Args", args).
 			Str("DbName", job.DbName).
 			Str("BackupPath", job.Data.BackupPath).
 			Msg("Failed to backup database")

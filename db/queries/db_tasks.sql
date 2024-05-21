@@ -3,7 +3,7 @@
 INSERT INTO db_tasks (db_id, db_name, action, reason, status, data) VALUES (@db_id, @db_name, @action, @reason, @status, @data) RETURNING *;
 
 -- name: SetDbTaskStatus :exec
-UPDATE db_tasks SET status = @status, data = jsonb_set(data, '{err_reason}', @err_reason::TEXT), updated_at = timezone('utc', now()) WHERE id = @id;
+UPDATE db_tasks SET status = @status, data = jsonb_set(data, '{err_reason}'::TEXT[], to_jsonb(@err_reason::TEXT), true), updated_at = timezone('utc', now()) WHERE id = @id;
 
 -- name: SetDbTaskData :exec
 UPDATE db_tasks SET data = @data WHERE id = @id;

@@ -9,7 +9,7 @@ import (
 )
 
 type Producer interface {
-	Send(msg any)
+	Send(msg NamedElement)
 	Close()
 }
 
@@ -24,13 +24,17 @@ type NamedElement interface {
 
 type BaseProducer[T NamedElement] struct {
 	Elements chan T
-	closed   utils.AtomicBool
+
+	closed utils.AtomicBool
+	wg     sync.WaitGroup
 }
 
-func (p *BaseProducer[T]) Send(msg any) {
+func (p *BaseProducer[T]) Send(msg NamedElement) {
 	if element, ok := msg.(T); ok {
 		if !p.closed.Get() {
+			p.wg.Add(1)
 			p.Elements <- element
+			p.wg.Done()
 		} else {
 			log.Warn().Str("Name", element.GetName()).
 				Msg("Producer is closed, discard element")
@@ -43,6 +47,7 @@ func (p *BaseProducer[T]) Send(msg any) {
 
 func (p *BaseProducer[T]) Close() {
 	if p.closed.CompareAndSwap(false, true) {
+		p.wg.Wait()
 		close(p.Elements)
 	}
 }

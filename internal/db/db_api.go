@@ -7,7 +7,6 @@ import (
 	migrate "github.com/a-light-win/pg-helper/db"
 	config "github.com/a-light-win/pg-helper/internal/config/agent"
 	"github.com/a-light-win/pg-helper/pkg/handler"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -68,11 +67,35 @@ func (api *DbApi) Query(queryFunc QueryFunc) error {
 	return queryFunc(q)
 }
 
-func (api *DbApi) UpdateTaskStatus(taskId uuid.UUID, status DbTaskStatus, reason string) error {
-	dbTaskParams := SetDbTaskStatusParams{ID: taskId, Status: status, ErrReason: reason}
-	return api.Query(func(q *Queries) error {
-		return q.SetDbTaskStatus(api.ConnCtx, dbTaskParams)
-	})
+func (api *DbApi) UpdateTaskStatus(task *DbTask, q *Queries) error {
+	if q == nil {
+		return api.Query(func(q *Queries) error {
+			return api.UpdateTaskStatus(task, q)
+		})
+	}
+
+	dbTaskParams := SetDbTaskStatusParams{
+		ID:        task.ID,
+		Status:    task.Status,
+		ErrReason: task.Data.ErrReason,
+		UpdatedAt: task.UpdatedAt,
+	}
+
+	newTask, err := q.SetDbTaskStatus(api.ConnCtx, dbTaskParams)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			log.Warn().Interface("TaskID", task.ID).
+				Str("Status", string(task.Status)).
+				Time("UpdatedAt", task.UpdatedAt.Time).
+				Msg("can not update task status")
+			return nil
+		}
+		return err
+	}
+
+	task.UpdatedAt = newTask.UpdatedAt
+
+	return nil
 }
 
 func (api *DbApi) UpdateDbStatus(db_ *Db, q *Queries) error {

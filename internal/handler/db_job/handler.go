@@ -47,8 +47,7 @@ func (h *DbJobHandler) Handle(msg handler.NamedElement) error {
 func (h *DbJobHandler) handle(dbJob *DbJob) error {
 	if dbJob.Status == db.DbTaskStatusCancelling {
 		dbJob.Status = db.DbTaskStatusCancelled
-		h.DbApi.UpdateTaskStatus(dbJob.UUID(), db.DbTaskStatusCancelled, dbJob.Reason)
-		return nil
+		return h.DbApi.UpdateTaskStatus(dbJob.DbTask, nil)
 	}
 
 	switch dbJob.Action {

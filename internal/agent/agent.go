@@ -49,9 +49,9 @@ func New(config *config.AgentConfig) *Agent {
 	}
 
 	agent.Set(constants.AgentKeyNotifyDbStatusProducer, dbStatusConsumer.Producer())
-	agent.Set(constants.AgentKeyJobProducer, pendingJobConsumer.Producer())
-	agent.Set(constants.AgentKeyDoneJobProducer, doneJobConsumer.Producer())
 	agent.Set(constants.AgentKeyReadyToRunJobProducer, dbJobConsumer.Producer())
+	agent.Set(constants.AgentKeyDoneJobProducer, doneJobConsumer.Producer())
+	agent.Set(constants.AgentKeyJobProducer, pendingJobConsumer.Producer())
 
 	return &agent
 }

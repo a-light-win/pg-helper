@@ -62,7 +62,10 @@ func (j *DbJobHandler) BackupDb(job *DbJob) error {
 
 		db_.Status = proto.DbStatus_Failed
 		j.DbApi.UpdateDbStatus(db_, nil)
-		j.DbApi.UpdateTaskStatus(job.UUID(), db.DbTaskStatusFailed, err.Error())
+
+		job.Status = db.DbTaskStatusFailed
+		job.Data.ErrReason = err.Error()
+		j.DbApi.UpdateTaskStatus(job.DbTask, nil)
 		return nil
 	}
 
@@ -76,6 +79,8 @@ func (j *DbJobHandler) BackupDb(job *DbJob) error {
 	db_.Status = proto.DbStatus_Done
 	j.DbApi.UpdateDbStatus(db_, nil)
 
-	j.DbApi.UpdateTaskStatus(job.UUID(), db.DbTaskStatusCompleted, "")
+	job.Status = db.DbTaskStatusCompleted
+	job.Data.ErrReason = ""
+	j.DbApi.UpdateTaskStatus(job.DbTask, nil)
 	return nil
 }

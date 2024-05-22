@@ -23,12 +23,14 @@ func (j *DbJobHandler) BackupDb(job *DbJob) error {
 	}
 
 	var initial bool
-	if db_.Stage == proto.DbStage_None || db_.Stage == proto.DbStage_Creating || db_.Stage == proto.DbStage_Backuping {
+	if db_.Stage == proto.DbStage_Creating ||
+		db_.Stage == proto.DbStage_CreateCompleted ||
+		db_.Stage == proto.DbStage_BackingUp {
 		initial = true
 	}
 
 	if initial {
-		db_.Stage = proto.DbStage_Backuping
+		db_.Stage = proto.DbStage_BackingUp
 		db_.Status = proto.DbStatus_Processing
 		if err := j.DbApi.UpdateDbStatus(db_, nil); err != nil {
 			log.Warn().Err(err).
@@ -75,6 +77,7 @@ func (j *DbJobHandler) BackupDb(job *DbJob) error {
 		Str("BackupPath", job.Data.BackupPath).
 		Msg("Database backup completed")
 
+	db_.Stage = proto.DbStage_BackupCompleted
 	db_.Status = proto.DbStatus_Done
 	j.DbApi.UpdateDbStatus(db_, nil)
 

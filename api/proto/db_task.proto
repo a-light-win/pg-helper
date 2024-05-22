@@ -54,21 +54,23 @@ enum DbStatus {
 enum DbStage {
   // The database is not in any stage.
   None = 0;
-  // Drop the database before creating.
-  // We may need it if we failed to restore the database.
-  Reseting = 1;
   // The database is in the process of creating.
-  Creating = 2;
+  Creating = 1;
+  CreateCompleted = 2;
   // The database is in the process of backuping.
-  Backuping = 3;
+  BackingUp = 3;
+  BackupCompleted = 4;
   // The database is in the process of restoring.
-  Restoring = 4;
-  // The database is in the running state.
-  Running = 5;
+  Restoring = 5;
+  RestoreCompleted = 6;
+  // The database is ready to use.
+  Ready = 7;
   // The database is migrated to another pg instance.
-  MigrateOut = 6;
+  // so now it's in idle state.
+  Idle = 8;
   // The database is in the process of dropping.
-  Dropping = 7;
+  Dropping = 9;
+  DropCompleted = 10;
 }
 
 message DbTask {

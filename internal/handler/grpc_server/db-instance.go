@@ -138,15 +138,17 @@ func (a *DbInstance) CreateDb(vo *handler.CreateDbRequest) (*Database, error) {
 	defer a.dbLock.Unlock()
 
 	db := a.mustGetDb(vo.DbName)
-	if db.IsProcessing() {
-		return db, nil
-	}
-	if db.Stage == proto.DbStage_Dropping {
+
+	if db.Stage == proto.DbStage_Dropping || db.Stage == proto.DbStage_DropCompleted {
 		return nil, errors.New("database is dropping")
 	}
-	if db.Stage == proto.DbStage_MigrateOut {
+	if db.Stage == proto.DbStage_Idle {
 		// TODO: rollback to previous version here?
 		return nil, errors.New("database is migrating out")
+	}
+
+	if db.Stage != proto.DbStage_None && !db.IsFailed() {
+		return db, nil
 	}
 
 	task := &proto.DbTask{

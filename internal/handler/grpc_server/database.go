@@ -98,10 +98,13 @@ func (d *Database) WaitReady(timeoutCtx context.Context) bool {
 
 func (d *Database) Ready() bool {
 	return d.Database != nil &&
-		d.Stage == proto.DbStage_Running &&
+		d.Stage == proto.DbStage_Ready &&
 		d.Status == proto.DbStatus_Done
 }
 
-func (d *Database) IsProcessing() bool {
-	return d.Database != nil && (d.Stage == proto.DbStage_Creating || d.Stage == proto.DbStage_Backuping || d.Stage == proto.DbStage_Restoring)
+func (d *Database) IsFailed() bool {
+	return d.Database != nil &&
+		(d.Status == proto.DbStatus_Failed ||
+			d.Status == proto.DbStatus_Cancelled ||
+			d.Status == proto.DbStatus_Expired)
 }

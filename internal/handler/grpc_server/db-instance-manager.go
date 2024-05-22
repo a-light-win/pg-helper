@@ -99,7 +99,11 @@ func (m *DbInstanceManager) filterInstances(filter *handler.InstanceFilter) []*D
 			if db == nil && filter.MustExist {
 				continue
 			}
-			if db != nil && db.Stage != proto.DbStage_MigrateOut && db.Stage != proto.DbStage_Dropping && db.Stage != proto.DbStage_None {
+			if db != nil &&
+				db.Stage != proto.DbStage_Idle &&
+				db.Stage != proto.DbStage_Dropping &&
+				db.Stage != proto.DbStage_DropCompleted &&
+				db.Stage != proto.DbStage_None {
 				matched = true
 			}
 		}

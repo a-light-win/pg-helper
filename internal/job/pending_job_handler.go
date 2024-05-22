@@ -116,7 +116,11 @@ func (h *PendingJobHandler) removeJob(jobId uuid.UUID) {
 				pendingJob.LiveDependsOn = removeUUID(pendingJob.LiveDependsOn, jobId)
 				if job.IsFailed() {
 					reason := fmt.Sprintf("the dependency job %s is failed/canceled", job.GetName())
-					log.Debug().Msg(reason)
+
+					log.Debug().Str("JobName", pendingJob.GetName()).
+						Str("Reason", reason).
+						Msg("Job is canceled")
+
 					pendingJob.Cancelling(reason)
 				}
 				h.checkReadyToRun(pendingJob)

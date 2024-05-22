@@ -171,9 +171,14 @@ func (h *GrpcAgentHandler) createDb(logger zerolog.Logger, conn *pgxpool.Conn, r
 			request.Name, request.Owner))
 		if err != nil {
 			logger.Warn().Err(err).Msg("Failed to create database")
+
+			database.Status = proto.DbStatus_Failed
+			h.DbApi.UpdateDbStatus(database, q)
+
 			return nil, err
 		}
 
+		database.Stage = proto.DbStage_CreateCompleted
 		database.Status = proto.DbStatus_Done
 		if err := h.DbApi.UpdateDbStatus(database, q); err != nil {
 			logger.Warn().Err(err).Msg("Failed to set database status")
@@ -183,11 +188,12 @@ func (h *GrpcAgentHandler) createDb(logger zerolog.Logger, conn *pgxpool.Conn, r
 		logger.Log().Msg("Database created successfully")
 	}
 
-	if database.Stage == proto.DbStage_Creating && database.Status == proto.DbStatus_Done {
+	if database.Stage == proto.DbStage_CreateCompleted {
 		if request.MigrateFrom == "" {
 			logger.Debug().Msg("Database is ready because no migration is needed")
 
-			database.Stage = proto.DbStage_Running
+			database.Stage = proto.DbStage_Ready
+			database.Status = proto.DbStatus_Done
 			if err := h.DbApi.UpdateDbStatus(database, q); err != nil {
 				logger.Warn().Err(err).Msg("Failed to set database status")
 				return nil, err
@@ -210,14 +216,14 @@ func (h *GrpcAgentHandler) createMigrateJob(logger zerolog.Logger, conn *pgxpool
 			logger.Warn().Err(err).Msg("")
 			return err
 		}
-	case proto.DbStage_Running:
+	case proto.DbStage_Ready:
 		logger.Debug().Msg("Database is already running")
 		return nil
-	case proto.DbStage_MigrateOut:
+	case proto.DbStage_Idle:
 		err := errors.New("database is already migrate to another instance")
 		logger.Warn().Err(err).Msg("")
 		return err
-	case proto.DbStage_Dropping:
+	case proto.DbStage_Dropping, proto.DbStage_DropCompleted:
 		err := errors.New("database is dropping")
 		logger.Warn().Err(err).Msg("")
 		return err

@@ -17,6 +17,7 @@ type PendingJobHandler struct {
 	pendingLock sync.Mutex
 
 	readyToRunJobProducer handler.Producer
+	doneJobProducer       handler.Producer
 	InitJobProvider       InitJobProvider
 }
 
@@ -27,6 +28,7 @@ func (h *PendingJobHandler) Init(setter handler.GlobalSetter) error {
 
 func (h *PendingJobHandler) PostInit(getter handler.GlobalGetter) error {
 	h.readyToRunJobProducer = getter.Get(constants.AgentKeyReadyToRunJobProducer).(handler.Producer)
+	h.doneJobProducer = getter.Get(constants.AgentKeyDoneJobProducer).(handler.Producer)
 
 	if jobs, err := h.InitJobProvider.RecoverJobs(); err != nil {
 		log.Error().Err(err).Msg("Failed to recover jobs")

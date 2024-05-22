@@ -60,6 +60,7 @@ type BaseConsumer[T NamedElement] struct {
 
 	MaxConcurrency int
 	wg             sync.WaitGroup
+	exited         chan struct{}
 }
 
 func NewBaseConsumer[T NamedElement](name string, handler Handler, maxConcurrency int) *BaseConsumer[T] {
@@ -68,6 +69,7 @@ func NewBaseConsumer[T NamedElement](name string, handler Handler, maxConcurrenc
 		Elements:       make(chan T),
 		Handler:        handler,
 		MaxConcurrency: max(maxConcurrency, 1),
+		exited:         make(chan struct{}),
 	}
 }
 
@@ -103,12 +105,20 @@ func (c *BaseConsumer[T]) Run() {
 			c.wg.Done()
 		}()
 	}
+
+	c.exited <- struct{}{}
 }
 
 func (c *BaseConsumer[T]) Shutdown(ctx context.Context) error {
 	log.Log().Str("Name", c.Name).Msg("Consumer is waiting for gracefule shutdown")
 
+	close(c.Elements)
+	<-c.exited
 	c.wg.Wait()
+
+	if shutdowner, ok := c.Handler.(Shutdowner); ok {
+		shutdowner.Shutdown(ctx)
+	}
 
 	log.Log().Str("Name", c.Name).Msg("Consumer is shutdown gracefully")
 

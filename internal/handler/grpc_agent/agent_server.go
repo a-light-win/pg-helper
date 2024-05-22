@@ -28,13 +28,17 @@ type GrpcAgentServer struct {
 
 	DbApi *db.DbApi
 
-	handler *GrpcAgentHandler
+	handler     *GrpcAgentHandler
+	jobProducer handler.Producer
+
+	exited chan struct{}
 }
 
 func NewGrpcAgentServer(grpcConfig *config.GrpcClientConfig, quitCtx context.Context) *GrpcAgentServer {
 	server := &GrpcAgentServer{
 		GrpcConfig: grpcConfig,
 		QuitCtx:    quitCtx,
+		exited:     make(chan struct{}),
 	}
 	return server
 }
@@ -91,14 +95,18 @@ func (s *GrpcAgentServer) Init(setter handler.GlobalSetter) error {
 
 func (s *GrpcAgentServer) PostInit(getter handler.GlobalGetter) error {
 	s.DbApi = getter.Get(constants.AgentKeyDbApi).(*db.DbApi)
-	jobProducer := getter.Get(constants.AgentKeyJobProducer).(handler.Producer)
+	s.jobProducer = getter.Get(constants.AgentKeyJobProducer).(handler.Producer)
 
-	s.handler = NewGrpcAgentHandler(s.DbApi, s.GrpcClient, jobProducer)
+	s.handler = NewGrpcAgentHandler(s.DbApi, s.GrpcClient, s.jobProducer)
 
 	return nil
 }
 
 func (s *GrpcAgentServer) Run() {
+	defer func() {
+		s.exited <- struct{}{}
+	}()
+
 	service := s.registerService()
 	if service == nil {
 		return
@@ -115,6 +123,9 @@ func (s *GrpcAgentServer) Run() {
 		task, err := service.Recv()
 		if err != nil {
 			status, ok := status.FromError(err)
+			if ok && status.Code() == codes.Canceled {
+				return
+			}
 			if ok && status.Code() == codes.Unauthenticated {
 				log.Error().Err(err).Msg("Failed to receive task")
 				return
@@ -141,7 +152,11 @@ func (s *GrpcAgentServer) Run() {
 }
 
 func (s *GrpcAgentServer) Shutdown(ctx context.Context) error {
-	// TODO: wait all task ready
+	log.Log().Msg("Shutting down gRPC agent server")
+
+	<-s.exited
+
+	log.Log().Msg("gRPC agent server is down")
 	return nil
 }
 
@@ -229,7 +244,7 @@ type grpcServiceLoader struct {
 }
 
 func (g *grpcServiceLoader) Run() bool {
-	service, err := g.agent.GrpcClient.Register(g.agent.DbApi.ConnCtx, g.registerAgent)
+	service, err := g.agent.GrpcClient.Register(g.agent.QuitCtx, g.registerAgent)
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to register service")
 		return false

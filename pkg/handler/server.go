@@ -8,7 +8,15 @@ import (
 
 type Server interface {
 	Initialization
+	Runner
+	Shutdowner
+}
+
+type Runner interface {
 	Run()
+}
+
+type Shutdowner interface {
 	Shutdown(ctx context.Context) error
 }
 

@@ -83,13 +83,11 @@ func (api *DbApi) UpdateTaskStatus(task *DbTask, q *Queries) error {
 
 	newTask, err := q.SetDbTaskStatus(api.ConnCtx, dbTaskParams)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			log.Warn().Interface("TaskID", task.ID).
-				Str("Status", string(task.Status)).
-				Time("UpdatedAt", task.UpdatedAt.Time).
-				Msg("can not update task status")
-			return nil
-		}
+		log.Warn().Err(err).
+			Interface("TaskID", task.ID).
+			Str("Status", string(task.Status)).
+			Time("UpdatedAt", task.UpdatedAt.Time).
+			Msg("can not update task status")
 		return err
 	}
 

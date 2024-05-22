@@ -17,7 +17,6 @@ func (j *DbJobHandler) BackupDb(job *DbJob) error {
 	// Ensuere backup dir is exists
 	os.MkdirAll(j.DbConfig.BackupDbDir(job.DbName), 0750)
 
-	// TODO: Check current db status before execute backup
 	db_, err := j.DbApi.GetDb(job.DbID, nil)
 	if err != nil {
 		return err

@@ -13,7 +13,7 @@ import (
 type PendingJobHandler struct {
 	// THe key is the job that not done yet,
 	// the value is the list of jobs that are waiting for the key job
-	pendingJobs map[uuid.UUID][]*PendingJob
+	pendingJobs map[uuid.UUID]*PendingJob
 	pendingLock sync.Mutex
 
 	readyToRunJobProducer handler.Producer
@@ -21,7 +21,7 @@ type PendingJobHandler struct {
 }
 
 func (h *PendingJobHandler) Init(setter handler.GlobalSetter) error {
-	h.pendingJobs = make(map[uuid.UUID][]*PendingJob)
+	h.pendingJobs = make(map[uuid.UUID]*PendingJob)
 	return nil
 }
 
@@ -32,7 +32,7 @@ func (h *PendingJobHandler) PostInit(getter handler.GlobalGetter) error {
 		log.Error().Err(err).Msg("Failed to recover jobs")
 		return err
 	} else {
-		h.initJobs(jobs)
+		h.InitJobs(jobs)
 	}
 
 	return nil
@@ -48,47 +48,54 @@ func (h *PendingJobHandler) Handle(msg handler.NamedElement) error {
 	return nil
 }
 
-func (h *PendingJobHandler) initJobs(jobs []Job) {
+func (h *PendingJobHandler) InitJobs(jobs []Job) {
 	h.pendingLock.Lock()
 	defer h.pendingLock.Unlock()
 
-	pendingJobs := []*PendingJob{}
 	for _, job := range jobs {
-		h.pendingJobs[job.UUID()] = []*PendingJob{}
-
-		pendingJob := &PendingJob{Job: job}
-		pendingJobs = append(pendingJobs, pendingJob)
+		h.pendingJobs[job.UUID()] = &PendingJob{Job: job}
 	}
 
-	log.Info().Int("Job Count", len(pendingJobs)).
+	log.Info().Int("Job Count", len(h.pendingJobs)).
 		Msg("Load jobs from db")
 
-	for _, pendingJob := range pendingJobs {
-		h.addJob(pendingJob)
+	for _, job := range h.pendingJobs {
+		h.updateDepends(job)
+		h.checkReadyToRun(job)
+	}
+}
+
+func (h *PendingJobHandler) updateDepends(job *PendingJob) {
+	for _, requiredJobID := range job.Requires() {
+		if pendingJob, ok := h.pendingJobs[requiredJobID]; ok {
+			job.LiveDependsOn = append(job.LiveDependsOn, pendingJob.UUID())
+			pendingJob.RequiredBy = append(pendingJob.RequiredBy, job.UUID())
+		}
+	}
+}
+
+func (h *PendingJobHandler) checkReadyToRun(job *PendingJob) {
+	if job.LiveDependsOn == nil || len(job.LiveDependsOn) == 0 || job.IsFailed() {
+		log.Debug().Str("JobName", job.GetName()).Msg("Job is ready to run")
+		h.readyToRunJobProducer.Send(job.Job)
 	}
 }
 
 func (h *PendingJobHandler) addJob(job *PendingJob) {
 	if !job.IsPending() && !job.IsRunning() {
 		log.Error().Str("JobName", job.GetName()).Msg("Job is ignored because it is not in pending statues")
+		if pendingJob, ok := h.pendingJobs[job.UUID()]; ok {
+			h.removeJob(pendingJob.UUID())
+		}
 		return
 	}
 
 	if _, ok := h.pendingJobs[job.UUID()]; !ok {
-		h.pendingJobs[job.UUID()] = []*PendingJob{}
-	}
-
-	for _, requiredJobID := range job.Requires() {
-		if pendingJobs, ok := h.pendingJobs[requiredJobID]; ok {
-			h.pendingJobs[requiredJobID] = append(pendingJobs, job)
-			// job is waiting for rqeuiredJobID
-			job.WaitingFor = append(job.WaitingFor, requiredJobID)
-		}
-	}
-
-	if job.WaitingFor == nil || len(job.WaitingFor) == 0 {
-		log.Debug().Str("JobName", job.GetName()).Msg("Job is ready to run")
-		h.readyToRunJobProducer.Send(job.Job)
+		h.pendingJobs[job.UUID()] = job
+		h.updateDepends(job)
+		h.checkReadyToRun(job)
+	} else {
+		log.Warn().Str("JobName", job.GetName()).Msg("Job already exists")
 	}
 }
 
@@ -98,20 +105,23 @@ func (h *PendingJobHandler) OnJobDone(job Job) {
 	h.pendingLock.Lock()
 	defer h.pendingLock.Unlock()
 
-	if pendingJobs, ok := h.pendingJobs[job.UUID()]; ok {
-		for _, pendingJob := range pendingJobs {
-			pendingJob.WaitingFor = removeUUID(pendingJob.WaitingFor, job.UUID())
-			if job.IsFailed() {
-				reason := fmt.Sprintf("the dependency job %s is failed/canceled", job.GetName())
-				log.Debug().Msg(reason)
-				pendingJob.Cancelling(reason)
-				h.readyToRunJobProducer.Send(pendingJob.Job)
-			} else if len(pendingJob.WaitingFor) == 0 {
-				log.Debug().Msgf("Job %s is ready to run", pendingJob.GetName())
-				h.readyToRunJobProducer.Send(pendingJob.Job)
+	h.removeJob(job.UUID())
+}
+
+func (h *PendingJobHandler) removeJob(jobId uuid.UUID) {
+	if job, ok := h.pendingJobs[jobId]; !ok {
+		for _, requiredByID := range job.RequiredBy {
+			if pendingJob, ok := h.pendingJobs[requiredByID]; ok {
+				pendingJob.LiveDependsOn = removeUUID(pendingJob.LiveDependsOn, jobId)
+				if job.IsFailed() {
+					reason := fmt.Sprintf("the dependency job %s is failed/canceled", job.GetName())
+					log.Debug().Msg(reason)
+					pendingJob.Cancelling(reason)
+				}
+				h.checkReadyToRun(pendingJob)
 			}
 		}
-		delete(h.pendingJobs, job.UUID())
+		delete(h.pendingJobs, jobId)
 	}
 }
 

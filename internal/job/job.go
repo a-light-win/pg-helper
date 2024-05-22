@@ -19,7 +19,8 @@ type Job interface {
 
 type PendingJob struct {
 	Job
-	WaitingFor []uuid.UUID
+	LiveDependsOn []uuid.UUID
+	RequiredBy    []uuid.UUID
 }
 
 type InitJobProvider interface {

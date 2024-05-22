@@ -60,12 +60,12 @@ func (h *PendingJobHandler) InitJobs(jobs []Job) {
 		Msg("Load jobs from db")
 
 	for _, job := range h.pendingJobs {
-		h.updateDepends(job)
+		h.initDepends(job)
 		h.checkReadyToRun(job)
 	}
 }
 
-func (h *PendingJobHandler) updateDepends(job *PendingJob) {
+func (h *PendingJobHandler) initDepends(job *PendingJob) {
 	for _, requiredJobID := range job.Requires() {
 		if pendingJob, ok := h.pendingJobs[requiredJobID]; ok {
 			job.LiveDependsOn = append(job.LiveDependsOn, pendingJob.UUID())
@@ -91,8 +91,9 @@ func (h *PendingJobHandler) addJob(job *PendingJob) {
 	}
 
 	if _, ok := h.pendingJobs[job.UUID()]; !ok {
+		log.Debug().Str("JobName", job.GetName()).Msg("Job is added")
 		h.pendingJobs[job.UUID()] = job
-		h.updateDepends(job)
+		h.initDepends(job)
 		h.checkReadyToRun(job)
 	} else {
 		log.Warn().Str("JobName", job.GetName()).Msg("Job already exists")
@@ -109,7 +110,7 @@ func (h *PendingJobHandler) OnJobDone(job Job) {
 }
 
 func (h *PendingJobHandler) removeJob(jobId uuid.UUID) {
-	if job, ok := h.pendingJobs[jobId]; !ok {
+	if job, ok := h.pendingJobs[jobId]; ok {
 		for _, requiredByID := range job.RequiredBy {
 			if pendingJob, ok := h.pendingJobs[requiredByID]; ok {
 				pendingJob.LiveDependsOn = removeUUID(pendingJob.LiveDependsOn, jobId)
@@ -121,7 +122,10 @@ func (h *PendingJobHandler) removeJob(jobId uuid.UUID) {
 				h.checkReadyToRun(pendingJob)
 			}
 		}
+		log.Debug().Str("JobName", job.GetName()).Msg("Job is removed")
 		delete(h.pendingJobs, jobId)
+	} else {
+		log.Debug().Str("JobName", job.GetName()).Msg("Job is not found")
 	}
 }
 

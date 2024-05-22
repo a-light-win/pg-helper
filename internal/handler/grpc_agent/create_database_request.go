@@ -256,6 +256,7 @@ func (h *GrpcAgentHandler) createMigrateJob(logger zerolog.Logger, conn *pgxpool
 
 	dbTaskParams := db.CreateDbTaskParams{
 		DbID:   database.ID,
+		DbName: database.Name,
 		Action: db.DbActionBackup,
 		Reason: request.Reason,
 		Status: db.DbTaskStatusPending,

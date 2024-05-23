@@ -4,9 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/a-light-win/pg-helper/internal/config/server"
+	config "github.com/a-light-win/pg-helper/internal/config/server"
 	ginAuth "github.com/a-light-win/pg-helper/pkg/auth/gin"
 	"github.com/a-light-win/pg-helper/pkg/handler"
+	"github.com/a-light-win/pg-helper/pkg/server"
 	"github.com/a-light-win/pg-helper/pkg/validate"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -15,7 +16,7 @@ import (
 )
 
 type WebServer struct {
-	Config *server.WebConfig
+	Config *config.WebConfig
 
 	Server *http.Server
 	Router *gin.Engine
@@ -24,7 +25,7 @@ type WebServer struct {
 	Handler *Handler
 }
 
-func NewWebServer(config *server.WebConfig, dbManager handler.DbManager) *WebServer {
+func NewWebServer(config *config.WebConfig, dbManager handler.DbManager) *WebServer {
 	w := &WebServer{
 		Config: config,
 		Router: gin.Default(),
@@ -81,10 +82,10 @@ func (w *WebServer) Shutdown(ctx context.Context) {
 	}
 }
 
-func (w *WebServer) Init(setter handler.GlobalSetter) error {
+func (w *WebServer) Init(setter server.GlobalSetter) error {
 	return nil
 }
 
-func (w *WebServer) PostInit(getter handler.GlobalGetter) error {
+func (w *WebServer) PostInit(getter server.GlobalGetter) error {
 	return nil
 }

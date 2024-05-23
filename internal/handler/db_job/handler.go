@@ -9,7 +9,7 @@ import (
 	"github.com/a-light-win/pg-helper/internal/constants"
 	"github.com/a-light-win/pg-helper/internal/db"
 	"github.com/a-light-win/pg-helper/internal/job"
-	"github.com/a-light-win/pg-helper/pkg/handler"
+	"github.com/a-light-win/pg-helper/pkg/server"
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
 )
@@ -18,7 +18,7 @@ type DbJobHandler struct {
 	DbApi    *db.DbApi
 	DbConfig *config.DbConfig
 
-	doneJobProducer handler.Producer
+	doneJobProducer server.Producer
 }
 
 func NewDbJobHandler(dbConfig *config.DbConfig) *DbJobHandler {
@@ -27,7 +27,7 @@ func NewDbJobHandler(dbConfig *config.DbConfig) *DbJobHandler {
 	}
 }
 
-func (h *DbJobHandler) Handle(msg handler.NamedElement) error {
+func (h *DbJobHandler) Handle(msg server.NamedElement) error {
 	dbJob, ok := msg.(*DbJob)
 	if !ok {
 		return errors.New("invalid job type")
@@ -75,7 +75,7 @@ func (h *DbJobHandler) RecoverJobs() (jobs []job.Job, err error) {
 	return
 }
 
-func (h *DbJobHandler) Init(setter handler.GlobalSetter) (err error) {
+func (h *DbJobHandler) Init(setter server.GlobalSetter) (err error) {
 	h.DbApi, err = db.NewDbApi(h.DbConfig)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create db api")
@@ -87,9 +87,9 @@ func (h *DbJobHandler) Init(setter handler.GlobalSetter) (err error) {
 	return nil
 }
 
-func (h *DbJobHandler) PostInit(getter handler.GlobalGetter) error {
-	h.DbApi.DbStatusNotifier = getter.Get(constants.AgentKeyNotifyDbStatusProducer).(handler.Producer)
-	h.doneJobProducer = getter.Get(constants.AgentKeyDoneJobProducer).(handler.Producer)
+func (h *DbJobHandler) PostInit(getter server.GlobalGetter) error {
+	h.DbApi.DbStatusNotifier = getter.Get(constants.AgentKeyNotifyDbStatusProducer).(server.Producer)
+	h.doneJobProducer = getter.Get(constants.AgentKeyDoneJobProducer).(server.Producer)
 
 	quitCtx := getter.Get(constants.AgentKeyQuitCtx).(context.Context)
 	if err := h.DbApi.MigrateDB(quitCtx); err != nil {

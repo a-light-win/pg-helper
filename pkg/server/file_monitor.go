@@ -1,4 +1,4 @@
-package handler
+package server
 
 import (
 	"context"
@@ -12,13 +12,6 @@ type NamedFileEvent struct{ fsnotify.Event }
 
 func (e *NamedFileEvent) GetName() string {
 	return e.Name
-}
-
-type FileChangedHandler interface {
-	Handler
-
-	FilesToWatch() []string
-	OnWatchError(error)
 }
 
 type FileMonitor struct {

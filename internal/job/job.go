@@ -1,12 +1,12 @@
 package job
 
 import (
-	"github.com/a-light-win/pg-helper/pkg/handler"
+	"github.com/a-light-win/pg-helper/pkg/server"
 	"github.com/google/uuid"
 )
 
 type Job interface {
-	handler.NamedElement
+	server.NamedElement
 
 	UUID() uuid.UUID
 	IsPending() bool

@@ -6,7 +6,7 @@ import (
 
 	migrate "github.com/a-light-win/pg-helper/db"
 	config "github.com/a-light-win/pg-helper/internal/config/agent"
-	"github.com/a-light-win/pg-helper/pkg/handler"
+	"github.com/a-light-win/pg-helper/pkg/server"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/rs/zerolog/log"
@@ -19,7 +19,7 @@ type DbApi struct {
 	ConnCtx context.Context
 	Cancel  context.CancelFunc
 
-	DbStatusNotifier handler.Producer
+	DbStatusNotifier server.Producer
 }
 
 func NewDbApi(config *config.DbConfig) (*DbApi, error) {

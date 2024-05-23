@@ -1,4 +1,4 @@
-package handler
+package server
 
 import (
 	"context"
@@ -7,50 +7,6 @@ import (
 	"github.com/a-light-win/pg-helper/pkg/utils"
 	"github.com/rs/zerolog/log"
 )
-
-type Producer interface {
-	Send(msg NamedElement)
-	Close()
-}
-
-type Consumer interface {
-	Producer() Producer
-	Server
-}
-
-type NamedElement interface {
-	GetName() string
-}
-
-type BaseProducer[T NamedElement] struct {
-	Elements chan T
-
-	closed utils.AtomicBool
-	wg     sync.WaitGroup
-}
-
-func (p *BaseProducer[T]) Send(msg NamedElement) {
-	if element, ok := msg.(T); ok {
-		if !p.closed.Get() {
-			p.wg.Add(1)
-			p.Elements <- element
-			p.wg.Done()
-		} else {
-			log.Warn().Str("Name", element.GetName()).
-				Msg("Producer is closed, discard element")
-		}
-	} else {
-		log.Error().Interface("Element", msg).
-			Msg("Invalid element type")
-	}
-}
-
-func (p *BaseProducer[T]) Close() {
-	if p.closed.CompareAndSwap(false, true) {
-		p.wg.Wait()
-		close(p.Elements)
-	}
-}
 
 type BaseConsumer[T NamedElement] struct {
 	Name string
@@ -137,4 +93,34 @@ func (c *BaseConsumer[T]) PostInit(getter GlobalGetter) error {
 	}
 
 	return nil
+}
+
+type BaseProducer[T NamedElement] struct {
+	Elements chan T
+
+	closed utils.AtomicBool
+	wg     sync.WaitGroup
+}
+
+func (p *BaseProducer[T]) Send(msg NamedElement) {
+	if element, ok := msg.(T); ok {
+		if !p.closed.Get() {
+			p.wg.Add(1)
+			p.Elements <- element
+			p.wg.Done()
+		} else {
+			log.Warn().Str("Name", element.GetName()).
+				Msg("Producer is closed, discard element")
+		}
+	} else {
+		log.Error().Interface("Element", msg).
+			Msg("Invalid element type")
+	}
+}
+
+func (p *BaseProducer[T]) Close() {
+	if p.closed.CompareAndSwap(false, true) {
+		p.wg.Wait()
+		close(p.Elements)
+	}
 }

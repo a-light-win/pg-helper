@@ -1,4 +1,4 @@
-package signal_server
+package server
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"syscall"
 
 	"github.com/a-light-win/pg-helper/internal/constants"
-	"github.com/a-light-win/pg-helper/pkg/handler"
 )
 
 type SignalServer struct {
@@ -36,11 +35,11 @@ func (s *SignalServer) Shutdown(ctx context.Context) {
 	s.Quit()
 }
 
-func (s *SignalServer) Init(setter handler.GlobalSetter) error {
+func (s *SignalServer) Init(setter GlobalSetter) error {
 	setter.Set(constants.AgentKeyQuitCtx, s.QuitCtx)
 	return nil
 }
 
-func (s *SignalServer) PostInit(getter handler.GlobalGetter) error {
+func (s *SignalServer) PostInit(getter GlobalGetter) error {
 	return nil
 }

@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/a-light-win/pg-helper/internal/constants"
-	"github.com/a-light-win/pg-helper/pkg/handler"
+	"github.com/a-light-win/pg-helper/pkg/server"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
@@ -16,19 +16,19 @@ type PendingJobHandler struct {
 	pendingJobs map[uuid.UUID]*PendingJob
 	pendingLock sync.Mutex
 
-	readyToRunJobProducer handler.Producer
-	doneJobProducer       handler.Producer
+	readyToRunJobProducer server.Producer
+	doneJobProducer       server.Producer
 	InitJobProvider       InitJobProvider
 }
 
-func (h *PendingJobHandler) Init(setter handler.GlobalSetter) error {
+func (h *PendingJobHandler) Init(setter server.GlobalSetter) error {
 	h.pendingJobs = make(map[uuid.UUID]*PendingJob)
 	return nil
 }
 
-func (h *PendingJobHandler) PostInit(getter handler.GlobalGetter) error {
-	h.readyToRunJobProducer = getter.Get(constants.AgentKeyReadyToRunJobProducer).(handler.Producer)
-	h.doneJobProducer = getter.Get(constants.AgentKeyDoneJobProducer).(handler.Producer)
+func (h *PendingJobHandler) PostInit(getter server.GlobalGetter) error {
+	h.readyToRunJobProducer = getter.Get(constants.AgentKeyReadyToRunJobProducer).(server.Producer)
+	h.doneJobProducer = getter.Get(constants.AgentKeyDoneJobProducer).(server.Producer)
 
 	if jobs, err := h.InitJobProvider.RecoverJobs(); err != nil {
 		log.Error().Err(err).Msg("Failed to recover jobs")
@@ -40,7 +40,7 @@ func (h *PendingJobHandler) PostInit(getter handler.GlobalGetter) error {
 	return nil
 }
 
-func (h *PendingJobHandler) Handle(msg handler.NamedElement) error {
+func (h *PendingJobHandler) Handle(msg server.NamedElement) error {
 	job := msg.(Job)
 
 	h.pendingLock.Lock()

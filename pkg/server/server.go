@@ -1,37 +1,10 @@
-package handler
+package server
 
 import (
 	"context"
 
 	"github.com/rs/zerolog/log"
 )
-
-type Server interface {
-	Initialization
-	Runner
-	Shutdowner
-}
-
-type Runner interface {
-	Run()
-}
-
-type Shutdowner interface {
-	Shutdown(ctx context.Context)
-}
-
-type Initialization interface {
-	Init(setter GlobalSetter) error
-	PostInit(getter GlobalGetter) error
-}
-
-type GlobalSetter interface {
-	Set(key string, value interface{})
-}
-
-type GlobalGetter interface {
-	Get(key string) interface{}
-}
 
 type BaseServer struct {
 	Name    string

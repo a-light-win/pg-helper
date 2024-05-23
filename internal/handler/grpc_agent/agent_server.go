@@ -12,7 +12,7 @@ import (
 	"github.com/a-light-win/pg-helper/internal/constants"
 	"github.com/a-light-win/pg-helper/internal/db"
 	"github.com/a-light-win/pg-helper/internal/utils"
-	"github.com/a-light-win/pg-helper/pkg/handler"
+	"github.com/a-light-win/pg-helper/pkg/server"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -29,7 +29,7 @@ type GrpcAgentServer struct {
 	DbApi *db.DbApi
 
 	handler     *GrpcAgentHandler
-	jobProducer handler.Producer
+	jobProducer server.Producer
 
 	exited chan struct{}
 }
@@ -84,7 +84,7 @@ func (s *GrpcAgentServer) initGrpcClient() error {
 	return nil
 }
 
-func (s *GrpcAgentServer) Init(setter handler.GlobalSetter) error {
+func (s *GrpcAgentServer) Init(setter server.GlobalSetter) error {
 	if err := s.initGrpcClient(); err != nil {
 		return err
 	}
@@ -93,9 +93,9 @@ func (s *GrpcAgentServer) Init(setter handler.GlobalSetter) error {
 	return nil
 }
 
-func (s *GrpcAgentServer) PostInit(getter handler.GlobalGetter) error {
+func (s *GrpcAgentServer) PostInit(getter server.GlobalGetter) error {
 	s.DbApi = getter.Get(constants.AgentKeyDbApi).(*db.DbApi)
-	s.jobProducer = getter.Get(constants.AgentKeyJobProducer).(handler.Producer)
+	s.jobProducer = getter.Get(constants.AgentKeyJobProducer).(server.Producer)
 
 	s.handler = NewGrpcAgentHandler(s.DbApi, s.GrpcClient, s.jobProducer)
 

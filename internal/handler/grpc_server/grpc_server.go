@@ -70,9 +70,8 @@ func (s *GrpcServer) Run() {
 	}
 }
 
-func (s *GrpcServer) Shutdown(ctx context.Context) error {
+func (s *GrpcServer) Shutdown(ctx context.Context) {
 	s.GrpcServer.GracefulStop()
-	return nil
 }
 
 func (s *GrpcServer) Init(setter handler.GlobalSetter) error {

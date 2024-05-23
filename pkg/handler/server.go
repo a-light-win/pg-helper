@@ -17,7 +17,7 @@ type Runner interface {
 }
 
 type Shutdowner interface {
-	Shutdown(ctx context.Context) error
+	Shutdown(ctx context.Context)
 }
 
 type Initialization interface {

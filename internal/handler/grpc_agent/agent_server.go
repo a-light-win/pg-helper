@@ -151,13 +151,12 @@ func (s *GrpcAgentServer) Run() {
 	}
 }
 
-func (s *GrpcAgentServer) Shutdown(ctx context.Context) error {
+func (s *GrpcAgentServer) Shutdown(ctx context.Context) {
 	log.Log().Msg("Shutting down gRPC agent server")
 
 	<-s.exited
 
 	log.Log().Msg("gRPC agent server is down")
-	return nil
 }
 
 func (s *GrpcAgentServer) registerService() proto.DbTaskSvc_RegisterClient {

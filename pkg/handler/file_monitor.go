@@ -87,7 +87,7 @@ func (m *FileMonitor) Run() {
 	}
 }
 
-func (m *FileMonitor) Shutdown(ctx context.Context) error {
+func (m *FileMonitor) Shutdown(ctx context.Context) {
 	log.Log().Msgf("%s is shuting down", m.Name)
 
 	m.watcher.Close()
@@ -98,5 +98,4 @@ func (m *FileMonitor) Shutdown(ctx context.Context) error {
 	}
 
 	log.Log().Msgf("%s is shutdown", m.Name)
-	return nil
 }

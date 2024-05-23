@@ -32,9 +32,8 @@ func (s *SignalServer) Run() {
 	}
 }
 
-func (s *SignalServer) Shutdown(ctx context.Context) error {
+func (s *SignalServer) Shutdown(ctx context.Context) {
 	s.Quit()
-	return nil
 }
 
 func (s *SignalServer) Init(setter handler.GlobalSetter) error {

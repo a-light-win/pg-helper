@@ -6,6 +6,8 @@ import (
 	"github.com/a-light-win/pg-helper/api/proto"
 )
 
+// TODO: move from this package
+
 type InstanceFilter struct {
 	// The Instance Name
 	Name string `form:"name" json:"name" binding:"max=63,iname"`

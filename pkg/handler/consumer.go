@@ -109,7 +109,7 @@ func (c *BaseConsumer[T]) Run() {
 	c.exited <- struct{}{}
 }
 
-func (c *BaseConsumer[T]) Shutdown(ctx context.Context) error {
+func (c *BaseConsumer[T]) Shutdown(ctx context.Context) {
 	log.Log().Str("Name", c.Name).Msg("Consumer is waiting for gracefule shutdown")
 
 	close(c.Elements)
@@ -121,8 +121,6 @@ func (c *BaseConsumer[T]) Shutdown(ctx context.Context) error {
 	}
 
 	log.Log().Str("Name", c.Name).Msg("Consumer is shutdown gracefully")
-
-	return nil
 }
 
 func (c *BaseConsumer[T]) Init(setter GlobalSetter) error {

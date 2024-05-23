@@ -7,7 +7,6 @@ import (
 	migrate "github.com/a-light-win/pg-helper/db"
 	config "github.com/a-light-win/pg-helper/internal/config/agent"
 	"github.com/a-light-win/pg-helper/pkg/handler"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/rs/zerolog/log"
@@ -96,46 +95,43 @@ func (api *DbApi) UpdateTaskStatus(task *DbTask, q *Queries) error {
 	return nil
 }
 
-func (api *DbApi) UpdateDbStatus(db_ *Db, q *Queries) error {
+func (api *DbApi) UpdateDbStatus(db *Db, q *Queries) error {
 	if q == nil {
 		return api.Query(func(q *Queries) error {
-			return api.UpdateDbStatus(db_, q)
+			return api.UpdateDbStatus(db, q)
 		})
 	}
 
 	dbStatusParams := SetDbStatusParams{
-		ID:        db_.ID,
-		Stage:     db_.Stage,
-		Status:    db_.Status,
-		UpdatedAt: db_.UpdatedAt,
+		ID:        db.ID,
+		Stage:     db.Stage,
+		Status:    db.Status,
+		UpdatedAt: db.UpdatedAt,
 	}
 
 	newDb, err := q.SetDbStatus(api.ConnCtx, dbStatusParams)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			log.Warn().Str("DbName", db_.Name).
-				Str("Stage", db_.Stage.String()).
-				Str("Status", db_.Status.String()).
-				Interface("UpdatedAt", db_.UpdatedAt).
-				Msg("Can not change db status to database")
-
-			return nil
-		}
+		log.Warn().Err(err).
+			Str("DbName", db.Name).
+			Str("Stage", db.Stage.String()).
+			Str("Status", db.Status.String()).
+			Interface("UpdatedAt", db.UpdatedAt).
+			Msg("Can not change db status to database")
 		return err
 	}
 
-	db_.UpdatedAt = newDb.UpdatedAt
-	api.NotifyDbStatusChanged(db_)
+	db.UpdatedAt = newDb.UpdatedAt
+	api.NotifyDbStatusChanged(db)
 
 	return nil
 }
 
 func (api *DbApi) NotifyDbStatusChanged(db *Db) {
-	log.Debug().Str("DbName", db.Name).
+	log.Info().Str("DbName", db.Name).
 		Str("Stage", db.Stage.String()).
 		Str("Status", db.Status.String()).
 		Interface("UpdatedAt", db.UpdatedAt).
-		Msg("Db status changed")
+		Msg("Database status changed")
 
 	api.DbStatusNotifier.Send(db.ToProto())
 }

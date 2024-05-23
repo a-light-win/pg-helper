@@ -34,12 +34,6 @@ func (h *DbJobHandler) Handle(msg handler.NamedElement) error {
 	}
 
 	err := h.handle(dbJob)
-	if err != nil {
-		log.Error().Err(err).
-			Str("JobName", dbJob.GetName()).
-			Msg("Failed to handle job")
-	}
-
 	h.doneJobProducer.Send(dbJob)
 	return err
 }

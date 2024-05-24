@@ -72,7 +72,9 @@ func (w *WebServer) Run() {
 
 	err := w.Server.ListenAndServe()
 	if err != nil {
-		log.Error().Err(err).Msg("Web server exit with error")
+		if err != http.ErrServerClosed {
+			log.Error().Err(err).Msg("Web server exit with error")
+		}
 	}
 }
 

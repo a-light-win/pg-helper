@@ -63,5 +63,5 @@ func (s *BaseServer) Shutdown() {
 		s.Servers[i].Shutdown(waitExitCtx)
 	}
 
-	log.Log().Msgf("%s is shutting down.", s.Name)
+	log.Log().Msgf("%s is down", s.Name)
 }

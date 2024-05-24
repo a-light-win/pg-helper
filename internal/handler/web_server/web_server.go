@@ -79,9 +79,11 @@ func (w *WebServer) Run() {
 }
 
 func (w *WebServer) Shutdown(ctx context.Context) {
+	log.Log().Msg("Web server is shutting down")
 	if err := w.Server.Shutdown(ctx); err != nil {
 		log.Error().Err(err).Msg("Web server shutdown with error")
 	}
+	log.Log().Msg("Web server is down")
 }
 
 func (w *WebServer) Init(setter server.GlobalSetter) error {

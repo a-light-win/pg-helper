@@ -28,7 +28,7 @@ func New(config *config.ServerConfig) *Server {
 	pgServer := Server{
 		Config: config,
 		BaseServer: server.BaseServer{
-			Name: "Server",
+			Name: "PG Helper Server",
 			Servers: []server.Server{
 				signalServer,
 				cronServer,

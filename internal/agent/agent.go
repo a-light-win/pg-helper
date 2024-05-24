@@ -33,7 +33,7 @@ func New(config *config.AgentConfig) *Agent {
 	agent := Agent{
 		Config: config,
 		BaseServer: server.BaseServer{
-			Name: "Agent",
+			Name: "PG Helper Agent",
 			Servers: []server.Server{
 				signalServer,
 				dbStatusConsumer,

@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/a-light-win/pg-helper/internal/constants"
+	"github.com/rs/zerolog/log"
 )
 
 type SignalServer struct {
@@ -26,6 +27,7 @@ func (s *SignalServer) Run() {
 
 	select {
 	case <-signalChan:
+		log.Log().Msg("Received signal, shutting down")
 		s.Quit()
 	case <-s.QuitCtx.Done():
 	}

@@ -45,8 +45,6 @@ func (c *BaseConsumer[T]) Run() {
 	for {
 		element, ok := <-c.Elements
 		if !ok {
-			log.Log().Str("Name", c.Name).
-				Msg("Consumer is closed")
 			break
 		}
 

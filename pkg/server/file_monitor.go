@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/rs/zerolog/log"
@@ -22,6 +21,14 @@ type FileMonitor struct {
 	exited  chan struct{}
 }
 
+func NewFileMonitor(name string, handler FileChangedHandler) *FileMonitor {
+	return &FileMonitor{
+		Name:    name,
+		Handler: handler,
+		exited:  make(chan struct{}),
+	}
+}
+
 func (m *FileMonitor) Init(setter GlobalSetter) error {
 	if err := m.Handler.Init(setter); err != nil {
 		return err
@@ -33,7 +40,6 @@ func (m *FileMonitor) Init(setter GlobalSetter) error {
 		log.Error().Err(err).Msg("Failed to create watcher")
 		return err
 	}
-	m.exited = make(chan struct{})
 
 	return nil
 }
@@ -44,10 +50,6 @@ func (m *FileMonitor) PostInit(getter GlobalGetter) error {
 	}
 
 	watchList := m.Handler.FilesToWatch()
-	if len(watchList) == 0 {
-		err := errors.New("no files to watch")
-		return err
-	}
 	for _, file := range watchList {
 		if err := m.watcher.Add(file); err != nil {
 			return err

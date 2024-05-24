@@ -2,8 +2,10 @@ package server
 
 import (
 	config "github.com/a-light-win/pg-helper/internal/config/server"
+	"github.com/a-light-win/pg-helper/internal/constants"
 	"github.com/a-light-win/pg-helper/internal/handler/grpc_server"
 	"github.com/a-light-win/pg-helper/internal/handler/web_server"
+	"github.com/a-light-win/pg-helper/internal/source"
 	"github.com/a-light-win/pg-helper/pkg/server"
 )
 
@@ -13,18 +15,35 @@ type Server struct {
 }
 
 func New(config *config.ServerConfig) *Server {
-	ss := server.NewSignalServer()
-	gs := grpc_server.NewGrpcServer(&config.Grpc, ss.QuitCtx)
-	ws := web_server.NewWebServer(&config.Web, gs.SvcHandler)
+	signalServer := server.NewSignalServer()
+	grpcServer := grpc_server.NewGrpcServer(&config.Grpc, signalServer.QuitCtx)
+	webServer := web_server.NewWebServer(&config.Web, grpcServer.SvcHandler)
+	cronServer := server.NewCronServer()
 
-	server := Server{
+	sourceHandler := source.NewSourceHandler(&config.Source)
+	sourceConsumer := server.NewBaseConsumer[server.NamedElement]("Source Manager", sourceHandler, 8)
+	fileSourceHandler := source.NewFileSourceHandler(sourceHandler)
+	fileSourceMonitor := server.NewFileMonitor("File Source Monitor", fileSourceHandler)
+
+	pgServer := Server{
 		Config: config,
 		BaseServer: server.BaseServer{
-			Name:    "Server",
-			Servers: []server.Server{ss, gs, ws},
-			QuitCtx: ss.QuitCtx,
-			Quit:    ss.Quit,
+			Name: "Server",
+			Servers: []server.Server{
+				signalServer,
+				cronServer,
+				grpcServer,
+				sourceConsumer,
+				fileSourceMonitor,
+				webServer,
+			},
+			QuitCtx: signalServer.QuitCtx,
+			Quit:    signalServer.Quit,
 		},
 	}
-	return &server
+
+	pgServer.Set(constants.ServerKeyCronProducer, cronServer.Producer())
+	pgServer.Set(constants.ServerKeySourceProducer, sourceConsumer.Producer())
+
+	return &pgServer
 }

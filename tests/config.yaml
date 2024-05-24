@@ -41,6 +41,11 @@ serve:
             - EdDSA
           files:
             - "/run/secrets/auth_public_key"
+  source:
+    file:
+      enabled: true
+      file-paths:
+        - "/databases-source/"
 
 agent:
   db:

@@ -12,14 +12,17 @@ type BaseConsumer[T NamedElement] struct {
 	Name string
 
 	Elements chan T
-	Handler  Handler
+	Handler  InitializableHandler
 
 	MaxConcurrency int
 	wg             sync.WaitGroup
 	exited         chan struct{}
+
+	chanClosed utils.AtomicBool
+	addingWg   sync.WaitGroup
 }
 
-func NewBaseConsumer[T NamedElement](name string, handler Handler, maxConcurrency int) *BaseConsumer[T] {
+func NewBaseConsumer[T NamedElement](name string, handler InitializableHandler, maxConcurrency int) *BaseConsumer[T] {
 	return &BaseConsumer[T]{
 		Name:           name,
 		Elements:       make(chan T),
@@ -30,7 +33,7 @@ func NewBaseConsumer[T NamedElement](name string, handler Handler, maxConcurrenc
 }
 
 func (c *BaseConsumer[T]) Producer() Producer {
-	return &BaseProducer[T]{Elements: c.Elements}
+	return c
 }
 
 func (c *BaseConsumer[T]) Run() {
@@ -68,7 +71,7 @@ func (c *BaseConsumer[T]) Run() {
 func (c *BaseConsumer[T]) Shutdown(ctx context.Context) {
 	log.Log().Str("Name", c.Name).Msg("Consumer is waiting for gracefule shutdown")
 
-	close(c.Elements)
+	c.Close()
 	<-c.exited
 	c.wg.Wait()
 
@@ -95,19 +98,12 @@ func (c *BaseConsumer[T]) PostInit(getter GlobalGetter) error {
 	return nil
 }
 
-type BaseProducer[T NamedElement] struct {
-	Elements chan T
-
-	closed utils.AtomicBool
-	wg     sync.WaitGroup
-}
-
-func (p *BaseProducer[T]) Send(msg NamedElement) {
+func (p *BaseConsumer[T]) Send(msg NamedElement) {
 	if element, ok := msg.(T); ok {
-		if !p.closed.Get() {
-			p.wg.Add(1)
+		if !p.chanClosed.Get() {
+			p.addingWg.Add(1)
 			p.Elements <- element
-			p.wg.Done()
+			p.addingWg.Done()
 		} else {
 			log.Warn().Str("Name", element.GetName()).
 				Msg("Producer is closed, discard element")
@@ -118,9 +114,9 @@ func (p *BaseProducer[T]) Send(msg NamedElement) {
 	}
 }
 
-func (p *BaseProducer[T]) Close() {
-	if p.closed.CompareAndSwap(false, true) {
-		p.wg.Wait()
+func (p *BaseConsumer[T]) Close() {
+	if p.chanClosed.CompareAndSwap(false, true) {
+		p.addingWg.Wait()
 		close(p.Elements)
 	}
 }

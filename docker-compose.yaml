@@ -72,6 +72,7 @@ services:
       - "127.0.0.1:8080:8080"
     volumes:
       - ./tests/config.yaml:/etc/pg-helper/config.yaml
+      - ./tests/sources:/databases-source
     secrets:
       - auth_public_key
 

@@ -3,14 +3,13 @@ package server
 import "context"
 
 type Server interface {
-	Initialization
+	Initialize
 	Runner
 	Shutdowner
 }
 
 type Producer interface {
 	Send(msg NamedElement)
-	Close()
 }
 
 type Consumer interface {
@@ -30,7 +29,7 @@ type Shutdowner interface {
 	Shutdown(ctx context.Context)
 }
 
-type Initialization interface {
+type Initialize interface {
 	Init(setter GlobalSetter) error
 	PostInit(getter GlobalGetter) error
 }
@@ -45,12 +44,15 @@ type GlobalGetter interface {
 
 type Handler interface {
 	Handle(msg NamedElement) error
+}
 
-	Initialization
+type InitializableHandler interface {
+	Handler
+	Initialize
 }
 
 type FileChangedHandler interface {
-	Handler
+	InitializableHandler
 
 	FilesToWatch() []string
 	OnWatchError(error)

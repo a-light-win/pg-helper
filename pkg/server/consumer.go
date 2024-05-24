@@ -69,7 +69,7 @@ func (c *BaseConsumer[T]) Run() {
 }
 
 func (c *BaseConsumer[T]) Shutdown(ctx context.Context) {
-	log.Log().Str("Name", c.Name).Msg("Consumer is waiting for gracefule shutdown")
+	log.Log().Msgf("%s is shutting down", c.Name)
 
 	c.Close()
 	<-c.exited
@@ -79,7 +79,7 @@ func (c *BaseConsumer[T]) Shutdown(ctx context.Context) {
 		shutdowner.Shutdown(ctx)
 	}
 
-	log.Log().Str("Name", c.Name).Msg("Consumer is shutdown gracefully")
+	log.Log().Msgf("%s is down", c.Name)
 }
 
 func (c *BaseConsumer[T]) Init(setter GlobalSetter) error {

@@ -40,16 +40,18 @@ func (h *FileSourceHandler) Init(setter server.GlobalSetter) error {
 		return errors.New("no file paths provided")
 	}
 
-	for _, path := range h.Config.FilePaths {
-		if err := h.loadDatabaseSources(path); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
 func (h *FileSourceHandler) PostInit(getter server.GlobalGetter) error {
+	if h.Config.Enabled {
+		for _, path := range h.Config.FilePaths {
+			if err := h.loadDatabaseSources(path); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -104,7 +106,7 @@ func (h *FileSourceHandler) loadDatabaseSourcesFromDir(path string) error {
 			continue
 		} else {
 			if err := h.loadDatabaseSourceFromFile(path + "/" + file.Name()); err != nil {
-				return err
+				continue
 			}
 		}
 	}

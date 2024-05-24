@@ -22,6 +22,7 @@ func New(config *config.ServerConfig) *Server {
 
 	sourceHandler := source.NewSourceHandler(&config.Source)
 	sourceConsumer := server.NewBaseConsumer[server.NamedElement]("Source Manager", sourceHandler, 8)
+
 	fileSourceHandler := source.NewFileSourceHandler(sourceHandler)
 	fileSourceMonitor := server.NewFileMonitor("File Source Monitor", fileSourceHandler)
 

@@ -64,6 +64,9 @@ func (h *SourceHandler) AddDatabaseSource(source *DatabaseSource) error {
 			log.Debug().Str("source", source.Name).Msg("Source not changed, skip")
 			return nil
 		}
+		log.Debug().Str("Name", source.Name).Msg("source changed")
+	} else {
+		log.Debug().Str("Name", source.Name).Msg("source added")
 	}
 
 	h.Databases[source.Name] = source

@@ -135,6 +135,25 @@ func (m *DbInstanceManager) IsDbReady(request *handler.DbRequest) bool {
 	return inst.IsDbReady(request.DbName)
 }
 
+func (m *DbInstanceManager) GetDbStatus(request *handler.DbRequest) (*handler.DbStatusResponse, error) {
+	inst := m.FirstMatchedInstance(&request.InstanceFilter)
+	if inst == nil {
+		return nil, errors.New("instance not found")
+	}
+	db := inst.GetDb(request.DbName)
+	if db == nil {
+		return nil, errors.New("database not found")
+	}
+	return &handler.DbStatusResponse{
+		InstanceName: inst.Name,
+		Version:      inst.PgVersion,
+		Name:         db.Name,
+		Stage:        db.Stage.String(),
+		Status:       db.Status.String(),
+		UpdatedAt:    db.UpdatedAt.AsTime(),
+	}, nil
+}
+
 func (m *DbInstanceManager) GetDb(vo *handler.DbRequest) (*proto.Database, error) {
 	inst := m.FirstMatchedInstance(&vo.InstanceFilter)
 	if inst == nil {

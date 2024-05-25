@@ -1,6 +1,13 @@
 package source
 
-import "time"
+import (
+	"errors"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/rs/zerolog/log"
+)
 
 type DatabaseSource struct {
 	Name         string `yaml:"name" json:"name" validate:"required,max=63,id" help:"Name of the database"`
@@ -17,17 +24,24 @@ type DatabaseSource struct {
 }
 
 type DatabaseSourceStatus struct {
-	Synced            bool      `yaml:"-"`
-	LastScheduledTime time.Time `yaml:"-"`
+	ExpectStage string    `yaml:"-"`
+	Synced      bool      `yaml:"-"`
+	UpdatedAt   time.Time `yaml:"-"`
 
-	ShouldRemove   bool      `yaml:"-"`
-	ShouldRemoveAt time.Time `yaml:"-"`
+	RetryDelay int64 `yaml:"-"`
+	RetryTimes int   `yaml:"-"`
+
+	LastScheduledTime time.Time `yaml:"-"`
+	CronScheduleAt    time.Time `yaml:"-"`
 }
 
 type SourceType string
 
 const (
 	FileSource SourceType = "file"
+
+	ExpectStageIdle  string = "Idle"
+	ExpectStageReady string = "Ready"
 )
 
 func (s *DatabaseSource) IsChanged(newSource *DatabaseSource) bool {
@@ -38,4 +52,35 @@ func (s *DatabaseSource) IsChanged(newSource *DatabaseSource) bool {
 
 func (s *DatabaseSource) GetName() string {
 	return s.Name
+}
+
+func (s *DatabaseSource) PasswordContent() (string, error) {
+	if s.PasswordFile != "" {
+		password, err := os.ReadFile(s.PasswordFile)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to read the password file")
+			return "", err
+		}
+		return strings.TrimSpace(string(password)), nil
+	}
+	return "", errors.New("password file is empty")
+}
+
+func (s *DatabaseSource) ResetRetryDelay() {
+	s.RetryTimes = 0
+	s.RetryDelay = 0
+}
+
+func (s *DatabaseSource) NextRetryDelay() time.Duration {
+	s.RetryTimes++
+	if s.RetryDelay == 0 {
+		s.RetryDelay = 2
+	} else if s.RetryDelay == 2 {
+		s.RetryDelay = 3
+	} else if s.RetryDelay == 3 {
+		s.RetryDelay = 5
+	} else if s.RetryDelay < 3600 {
+		s.RetryDelay += s.RetryDelay
+	}
+	return time.Duration(s.RetryDelay) * time.Second
 }

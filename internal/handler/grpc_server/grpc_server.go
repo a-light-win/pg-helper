@@ -7,6 +7,7 @@ import (
 
 	"github.com/a-light-win/pg-helper/api/proto"
 	config "github.com/a-light-win/pg-helper/internal/config/server"
+	"github.com/a-light-win/pg-helper/internal/constants"
 	grpcAuth "github.com/a-light-win/pg-helper/pkg/auth/grpc"
 	"github.com/a-light-win/pg-helper/pkg/server"
 	"github.com/rs/zerolog/log"
@@ -75,6 +76,7 @@ func (s *GrpcServer) Shutdown(ctx context.Context) {
 }
 
 func (s *GrpcServer) Init(setter server.GlobalSetter) error {
+	setter.Set(constants.ServerKeyDbManager, s.SvcHandler.DbInstanceManager)
 	return nil
 }
 

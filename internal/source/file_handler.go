@@ -146,7 +146,7 @@ func (h *FileSourceHandler) removeDatabaseSource(path string) error {
 
 	delete(h.sourceMap, path)
 
-	if err := h.MarkDatabaseSourceShouldRemove(name); err != nil {
+	if err := h.MarkDatabaseSourceIdle(name); err != nil {
 		return err
 	}
 

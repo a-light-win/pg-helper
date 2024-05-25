@@ -1,0 +1,51 @@
+---
+x-pg-spec: &pg-spec
+  environment:
+    POSTGRES_USER: postgres
+    POSTGRES_DB: postgres
+    POSTGRES_PASSWORD_FILE: /run/secrets/pg_admin_password
+  secrets:
+    - pg_admin_password
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d db_prod"]
+    interval: 3s
+    timeout: 5s
+    retries: 10
+
+x-pg-13: &pg-13
+  image: docker.io/library/postgres:13
+  container_name: pg-13
+  profiles:
+    - pg-13
+
+x-pg-14: &pg-14
+  image: docker.io/library/postgres:14
+  container_name: pg-14
+  profiles:
+    - pg-14
+
+x-pg-15: &pg-15
+  image: docker.io/library/postgres:15
+  container_name: pg-15
+  profiles:
+    - pg-15
+
+x-pg-16: &pg-16
+  image: docker.io/library/postgres:16
+  container_name: pg-16
+  profiles:
+    - pg-16
+
+services:
+  pg-13:
+    <<: [*pg-spec, *pg-13]
+  pg-14:
+    <<: [*pg-spec, *pg-14]
+  pg-15:
+    <<: [*pg-spec, *pg-15]
+  pg-16:
+    <<: [*pg-spec, *pg-16]
+
+secrets:
+  pg_admin_password:
+    file: ./tests/secrets/pg_admin_password

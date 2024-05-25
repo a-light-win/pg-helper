@@ -1,0 +1,106 @@
+x-pg-helper-agent-spec: &pg-helper-agent-spec
+  build:
+    context: .
+    dockerfile: Dockerfile.agent
+  volumes:
+    - ./tests/config.yaml:/etc/pg-helper/config.yaml
+    - ./db/migrations:/usr/share/pg-helper/migrations
+    - ./backups:/var/lib/pg-helper/backups
+
+x-pg-helper-agent-13: &pg-helper-agent-13
+  image: pg-helper-agent:${PG_HELPER_VERSION}-pg-13
+  container_name: pg-helper-agent-13
+  build:
+    args:
+      PG_VERSION: 13
+  environment:
+    PG_HELPER_DB_PASSWORD_FILE: /run/secrets/pg_admin_password
+    PG_HELPER_DB_INSTANCE: pg-13
+    PG_HELPER_GRPC_AUTH_TOKEN_FILE: /run/secrets/auth_token_pg_13
+  secrets:
+    - pg_admin_password
+    - auth_token_pg_13
+  depends_on:
+    pg-13:
+      condition: service_healthy
+  profiles:
+    - pg-13
+
+x-pg-helper-agent-14: &pg-helper-agent-14
+  image: pg-helper-agent:${PG_HELPER_VERSION}-pg-14
+  container_name: pg-helper-agent-14
+  build:
+    args:
+      PG_VERSION: 14
+  environment:
+    PG_HELPER_DB_PASSWORD_FILE: /run/secrets/pg_admin_password
+    PG_HELPER_DB_INSTANCE: pg-14
+    PG_HELPER_GRPC_AUTH_TOKEN_FILE: /run/secrets/auth_token_pg_14
+  secrets:
+    - pg_admin_password
+    - auth_token_pg_14
+  depends_on:
+    pg-14:
+      condition: service_healthy
+  profiles:
+    - pg-14
+
+x-pg-helper-agent-15: &pg-helper-agent-15
+  image: pg-helper-agent:${PG_HELPER_VERSION}-pg-15
+  container_name: pg-helper-agent-15
+  build:
+    args:
+      PG_VERSION: 15
+  environment:
+    PG_HELPER_DB_PASSWORD_FILE: /run/secrets/pg_admin_password
+    PG_HELPER_DB_INSTANCE: pg-15
+    PG_HELPER_GRPC_AUTH_TOKEN_FILE: /run/secrets/auth_token_pg_15
+  secrets:
+    - pg_admin_password
+    - auth_token_pg_14
+  depends_on:
+    pg-15:
+      condition: service_healthy
+  profiles:
+    - pg-15
+    - pg-stable
+
+x-pg-helper-agent-16: &pg-helper-agent-16
+  image: pg-helper-agent:${PG_HELPER_VERSION}-pg-16
+  container_name: pg-helper-agent-16
+  build:
+    args:
+      PG_VERSION: 16
+  environment:
+    PG_HELPER_DB_PASSWORD_FILE: /run/secrets/pg_admin_password
+    PG_HELPER_DB_INSTANCE: pg-16
+    PG_HELPER_GRPC_AUTH_TOKEN_FILE: /run/secrets/auth_token_pg_16
+  secrets:
+    - pg_admin_password
+    - auth_token_pg_14
+  depends_on:
+    pg-16:
+      condition: service_healthy
+  profiles:
+    - pg-16
+    - pg-latest
+
+services:
+  pg-helper-agent-13:
+    <<: [*pg-helper-agent-spec, *pg-helper-agent-13]
+  pg-helper-agent-14:
+    <<: [*pg-helper-agent-spec, *pg-helper-agent-14]
+  pg-helper-agent-15:
+    <<: [*pg-helper-agent-spec, *pg-helper-agent-15]
+  pg-helper-agent-16:
+    <<: [*pg-helper-agent-spec, *pg-helper-agent-16]
+
+secrets:
+  auth_token_pg_13:
+    file: ./tests/secrets/auth_token_pg_13
+  auth_token_pg_14:
+    file: ./tests/secrets/auth_token_pg_14
+  auth_token_pg_15:
+    file: ./tests/secrets/auth_token_pg_15
+  auth_token_pg_16:
+    file: ./tests/secrets/auth_token_pg_16

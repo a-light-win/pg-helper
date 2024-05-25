@@ -33,11 +33,14 @@ cover:
 serve: build
   #!/usr/bin/env bash
   export PG_HELPER_VERSION=$(./dist/pg-helper version|awk '{print $2}')
-  {{ env('DOCKER_CMD', 'podman')}} compose up --force-recreate --build
-  {{ env('DOCKER_CMD', 'podman')}} compose stop
+  {{ env('DOCKER_CMD', 'podman')}}-compose --profile pg-13 --profile pg-14 -f {{ env('DOCKER_CMD', 'podman') }}-compose.yaml --parallel 4 up --force-recreate --build
+  {{ env('DOCKER_CMD', 'podman')}}-compose --profile pg-13 --profile pg-14 -f {{ env('DOCKER_CMD', 'podman') }}-compose.yaml stop
 
 clean-serve:
-  {{ env('DOCKER_CMD', 'podman')}} compose down
+  #!/usr/bin/env bash
+  set -x
+  export PG_HELPER_VERSION=$(./dist/pg-helper version|awk '{print $2}')
+  {{ env('DOCKER_CMD', 'podman')}}-compose --profile pg-13 --profile pg-14 -f {{ env('DOCKER_CMD', 'podman') }}-compose.yaml down
   
 clean: clean-sqlc clean-protos clean-serve
   rm -rf dist/

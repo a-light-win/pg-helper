@@ -1,0 +1,22 @@
+---
+x-pg-helper: &pg-helper
+  image: pg-helper:${PG_HELPER_VERSION}
+  container_name: pg-helper
+  build:
+    context: .
+    dockerfile: Dockerfile
+  ports:
+    - "127.0.0.1:8080:8080"
+  volumes:
+    - ./tests/config.yaml:/etc/pg-helper/config.yaml
+    - ./tests/sources:/databases-source
+  secrets:
+    - auth_public_key
+
+services:
+  pg-helper:
+    <<: [*pg-helper]
+
+secrets:
+  auth_public_key:
+    file: ./tests/secrets/auth_public_key

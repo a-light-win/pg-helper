@@ -1,0 +1,5 @@
+---
+include:
+  - compose.d/pg-instance.yaml
+  - compose.d/pg-helper-agent.yaml
+  - compose.d/pg-helper.yaml

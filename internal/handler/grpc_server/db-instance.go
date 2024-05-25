@@ -22,16 +22,19 @@ type DbInstance struct {
 	nonSentDbTask *proto.DbTask
 
 	logger *zerolog.Logger
+
+	subcriber *DbStatusSubscriber
 }
 
-func NewDbInstance(name string, pgVersion int32, logger *zerolog.Logger) *DbInstance {
+func NewDbInstance(name string, pgVersion int32, logger *zerolog.Logger, subcriber *DbStatusSubscriber) *DbInstance {
 	return &DbInstance{
 		Name:       name,
 		PgVersion:  pgVersion,
 		Databases:  make(map[string]*Database),
 		DbTaskChan: make(chan *proto.DbTask),
 
-		logger: logger,
+		logger:    logger,
+		subcriber: subcriber,
 	}
 }
 
@@ -48,7 +51,9 @@ func (a *DbInstance) UpdateDatabases(databases []*proto.Database) {
 			Msg("Init database")
 
 		oldDb := a.mustGetDb(db.Name)
-		oldDb.Update(db)
+		if oldDb.Update(db) {
+			go a.subcriber.OnDbStatusChanged(a, oldDb)
+		}
 	}
 }
 
@@ -60,7 +65,9 @@ func (a *DbInstance) UpdateDatabase(db *proto.Database) {
 		Msg("Update database")
 
 	oldDb := a.MustGetDb(db.Name)
-	oldDb.Update(db)
+	if oldDb.Update(db) {
+		go a.subcriber.OnDbStatusChanged(a, oldDb)
+	}
 }
 
 func (a *DbInstance) GetDb(name string) *Database {

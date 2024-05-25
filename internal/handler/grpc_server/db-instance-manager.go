@@ -15,12 +15,14 @@ import (
 type DbInstanceManager struct {
 	Instances map[string]*DbInstance
 
-	instLock sync.Mutex
+	instLock   sync.Mutex
+	subscriber *DbStatusSubscriber
 }
 
 func NewDbInstanceManager() *DbInstanceManager {
 	return &DbInstanceManager{
-		Instances: make(map[string]*DbInstance),
+		Instances:  make(map[string]*DbInstance),
+		subscriber: &DbStatusSubscriber{},
 	}
 }
 
@@ -53,7 +55,7 @@ func (m *DbInstanceManager) NewInstance(instName string, pgVersion int32, logger
 		return inst, nil
 	}
 
-	inst := NewDbInstance(instName, pgVersion, logger)
+	inst := NewDbInstance(instName, pgVersion, logger, m.subscriber)
 	m.addInstance(inst)
 	return inst, nil
 }
@@ -145,7 +147,7 @@ func (m *DbInstanceManager) GetDb(vo *handler.DbRequest) (*proto.Database, error
 	return db.Database, nil
 }
 
-func (m *DbInstanceManager) CreateDb(request *handler.CreateDbRequest) (*handler.CreateDbResponse, error) {
+func (m *DbInstanceManager) CreateDb(request *handler.CreateDbRequest, waitReady bool) (*handler.DbStatusResponse, error) {
 	inst := m.FirstMatchedInstance(&request.InstanceFilter)
 	if inst == nil {
 		return nil, errors.New("instance not found")
@@ -161,20 +163,42 @@ func (m *DbInstanceManager) CreateDb(request *handler.CreateDbRequest) (*handler
 		return nil, err
 	}
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	db.WaitReady(timeoutCtx)
+	if !waitReady {
+		return nil, nil
+	}
 
-	response := &handler.CreateDbResponse{
-		Name:    inst.Name,
-		Version: inst.PgVersion,
+	if db.Stage != proto.DbStage_Ready {
+		m.waitReady(inst.Name, request.DbName)
+	}
 
-		DbName: db.Name,
+	response := &handler.DbStatusResponse{
+		InstanceName: inst.Name,
+		Version:      inst.PgVersion,
+
+		Name:   db.Name,
 		Stage:  db.Stage.String(),
 		Status: db.Status.String(),
 
 		UpdatedAt: db.UpdatedAt.AsTime(),
 	}
-
 	return response, nil
+}
+
+func (m *DbInstanceManager) SubscribeDbStatus(callback handler.SubscribeDbStatusFunc) {
+	m.subscriber.Subscribe(callback)
+}
+
+func (m *DbInstanceManager) waitReady(instName, dbName string) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	m.subscriber.Subscribe(func(dbStatus *handler.DbStatusResponse) bool {
+		if timeoutCtx.Err() != nil {
+			return false
+		}
+		if dbStatus.Stage == "Ready" && dbStatus.Name == dbName && dbStatus.InstanceName == instName {
+			cancel()
+			return true
+		}
+		return false
+	})
+	<-timeoutCtx.Done()
 }

@@ -21,7 +21,7 @@ func (h *Handler) CreateDb(c *gin.Context) {
 		return
 	}
 
-	db, err := h.DbManager.CreateDb(&request)
+	db, err := h.DbManager.CreateDb(&request, true)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

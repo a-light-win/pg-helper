@@ -2,8 +2,6 @@ package handler
 
 import (
 	"time"
-
-	"github.com/a-light-win/pg-helper/api/proto"
 )
 
 // TODO: move from this package
@@ -31,21 +29,32 @@ type CreateDbRequest struct {
 	MigrateFrom string `json:"migrate_from" binding:"max=63,iname"`
 }
 
-type CreateDbResponse struct {
-	Name    string `json:"name"`
-	Version int32  `json:"version"`
-
-	DbName string `json:"db_name"`
-	Stage  string `json:"stage"`
-	Status string `json:"status"`
-
+type DbStatusResponse struct {
+	Name      string    `json:"name"`
+	Stage     string    `json:"stage"`
+	Status    string    `json:"status"`
 	UpdatedAt time.Time `json:"updated_at"`
+
+	InstanceName string `json:"instance_name"`
+	Version      int32  `json:"version"`
 }
+
+// SubscribeDbStatusFunc is a callback function to be called when the status of the database changes
+// The function should return true if it wants to continue receiving notifications
+// and false if it wants to unsubscribe
+type SubscribeDbStatusFunc func(*DbStatusResponse) bool
 
 type DbManager interface {
 	IsDbReady(request *DbRequest) bool
-	CreateDb(request *CreateDbRequest) (*CreateDbResponse, error)
-}
+	CreateDb(request *CreateDbRequest, waitReady bool) (*DbStatusResponse, error)
 
-func NewCreateDbResponse(db *proto.Database) {
+	// Subscribe to database status changes, the callback will be called when the status changes
+	// The callback should return true if it wants to continue receiving notifications
+	// and false if it wants to unsubscribe
+	//
+	// This function will report on following stage changed:
+	// - Ready
+	// - Idle
+	// - DropCompleted
+	SubscribeDbStatus(callback SubscribeDbStatusFunc)
 }

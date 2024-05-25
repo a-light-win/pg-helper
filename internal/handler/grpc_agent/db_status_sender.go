@@ -6,7 +6,6 @@ import (
 	"github.com/a-light-win/pg-helper/api/proto"
 	"github.com/a-light-win/pg-helper/internal/constants"
 	"github.com/a-light-win/pg-helper/pkg/server"
-	"github.com/rs/zerolog/log"
 )
 
 type DbStatusSender struct {
@@ -15,9 +14,7 @@ type DbStatusSender struct {
 }
 
 func (s *DbStatusSender) Handle(msg server.NamedElement) error {
-	log.Debug().Str("Dbname", msg.GetName()).Msg("Notify server the db status changed ...")
 	_, err := s.grpcClient.NotifyDbStatus(s.connCtx, msg.(*proto.Database))
-	log.Debug().Err(err).Str("Dbname", msg.GetName()).Msg("Notify server the db status changed finish")
 	return err
 }
 

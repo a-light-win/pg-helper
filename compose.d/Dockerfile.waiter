@@ -1,4 +1,0 @@
-FROM docker.io/library/alpine:latest
-RUN apk --no-cache add curl grep
-COPY pg-waiter.sh /pg-waiter.sh
-CMD ["sh", "/pg-waiter.sh"]

@@ -1,33 +1,33 @@
 #!/bin/sh
-trap 'exit 0' TERM INT
 
-token=$(cat "$PG_HELPER_TOKEN")
+token=$(cat "$PG_HELPER_TOKEN_FILE")
+db_name="$1"
+instance_name="$2"
+
+echo "$(date): Waiting for the database ${db_name} on ${instance_name} to be ready..."
+
 check_db_ready() {
-	if [ -e /db-ready ]; then
-		return
-	fi
-
+	db_name="$1"
+	instance_name="$2"
 	db_status=$(curl -L --no-progress-meter -X GET \
 		-H "Authorization: Bearer ${token}" \
-		"${PG_HELPER_URL}/api/v1/db/ready?db_name=${DB_NAME}&&name=${PG_INSTANCE}")
+		"${PG_HELPER_URL}/api/v1/db/ready?db_name=${db_name}&&name=${instance_name}")
 
 	echo "$db_status" | grep "true" >/dev/null
 	if [ $? -eq 0 ]; then
-		echo "$(date): The database ${DB_NAME} on ${PG_INSTANCE} is ready."
-		touch /db-ready
+		echo "$(date): The database ${db_name} on ${instance_name} is ready."
+		return 0
 	fi
+	return 1
 }
 
-rm -rf /db-ready
-
 while :; do
-	check_db_ready
-	if [ -e /db-ready ]; then
+	check_db_ready "$db_name" "$instance_name"
+	if [ $? -eq 0 ]; then
 		break
 	fi
 	sleep 3
 done
 
-while :; do
-	sleep 60
-done
+shift 2
+"$@"

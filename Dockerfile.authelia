@@ -1,0 +1,3 @@
+FROM docker.io/authelia/authelia:latest
+RUN apk add --no-cache curl
+COPY compose.d/pg-waiter.sh /app/pg-waiter.sh

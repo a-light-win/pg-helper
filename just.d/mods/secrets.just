@@ -47,6 +47,7 @@ gen-all: \
   pg-admin-password \
   gen-test-jwt-key \
   (gen-test-jwt "web" "db:read,db:write" "db:test1,db:test2") \
+  (gen-test-jwt "pg_waiter" "db:read" "db") \
   (gen-test-jwt "grpc_agent" "agent" "dbInstance")
 
 
@@ -55,4 +56,5 @@ clean-all: \
   clean-pg-admin-password \
   clean-test-jwt-key \
   (clean-test-jwt "web") \
+  (clean-test-jwt "pg_waiter") \
   (clean-test-jwt "grpc_agent")

@@ -1,0 +1,35 @@
+---
+x-pg-waiter-spec: &pg-waiter-spec
+  build:
+    context: compose.d
+    dockerfile: Dockerfile.waiter
+  image: pg-waiter:${PG_HELPER_VERSION}
+  depends_on:
+    pg-helper:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD", "test", "-f", "/db-ready"]
+    interval: 3s
+    timeout: 3s
+    retries: 20
+  secrets:
+    - auth_token_pg_waiter
+
+x-environment-spec: &environment-spec
+  PG_HELPER_TOKEN: /run/secrets/auth_token_pg_waiter
+  PG_HELPER_URL: http://pg-helper:8080
+
+services:
+  pg-waiter-authelia:
+    container_naem: pg-waiter-authelia
+    <<: [*pg-waiter-spec]
+    environment:
+      <<: [*environment-spec]
+      PG_INSTANCE: pg-13
+      DB_NAME: authelia
+    profiles:
+      - authelia
+
+secrets:
+  auth_token_pg_waiter:
+    file: ./tests/secrets/auth_token_pg_waiter

@@ -55,7 +55,7 @@ func (j *DbJobHandler) RestoreDb(job *DbJob) error {
 
 	cmd := exec.Command("psql", args...)
 	cmd.Dir = j.DbConfig.BackupRootPath
-	cmd.Stdin = strings.NewReader(j.DbConfig.Password() + "\n")
+	cmd.Stdin = strings.NewReader(j.DbConfig.Password + "\n")
 	var stdErr bytes.Buffer
 	cmd.Stderr = &stdErr
 

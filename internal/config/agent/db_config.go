@@ -29,7 +29,7 @@ type DbConfig struct {
 	// The default database use by super user
 	Name string `default:"postgres"`
 	// The password of the super user.
-	Password_ string `env:"PG_HELPER_DB_PASSWORD" name:"password"`
+	Password string `env:"PG_HELPER_DB_PASSWORD" name:"password"`
 	// The file save the password
 	PasswordFile string `env:"PG_HELPER_DB_PASSWORD_FILE"`
 	// The max connections to the database.
@@ -47,20 +47,23 @@ type InstanceInfo struct {
 	InstanceName string
 }
 
+func (c *DbConfig) AfterApply() error {
+	if c.InstanceName == "" {
+		c.InstanceName = fmt.Sprintf("pg-%d", c.CurrentVersion)
+	}
+	if err := c.setTmpl(); err != nil {
+		return err
+	}
+	if err := c.setPassword(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *DbConfig) Host(info *InstanceInfo) string {
 	if info == nil {
 		info = &InstanceInfo{InstanceName: c.InstanceName}
-	}
-	if c.HostTemplate == "" {
-		return info.InstanceName
-	}
-
-	if c.tmpl == nil {
-		tmpl, err := template.New("host").Parse(c.HostTemplate)
-		if err != nil {
-			log.Fatal().Err(err).Msg("Failed to parse the host template")
-		}
-		c.tmpl = tmpl
 	}
 
 	var tpl bytes.Buffer
@@ -76,20 +79,38 @@ func (c *DbConfig) Url(dbName string, info *InstanceInfo) string {
 	if dbName == "" {
 		dbName = c.Name
 	}
-	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", c.User, url.QueryEscape(c.Password()), c.Host(info), c.Port, dbName)
+	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", c.User, url.QueryEscape(c.Password), c.Host(info), c.Port, dbName)
 }
 
-func (c *DbConfig) Password() string {
-	if c.Password_ == "" {
+func (c *DbConfig) setPassword() error {
+	if c.Password == "" {
 		if c.PasswordFile != "" {
 			password, err := os.ReadFile(c.PasswordFile)
 			if err != nil {
-				log.Fatal().Err(err).Msg("Failed to read the password file")
+				log.Error().Err(err).Msg("Failed to read the password file")
+				return err
 			}
-			c.Password_ = strings.TrimSpace(string(password))
+			c.Password = strings.TrimSpace(string(password))
 		}
 	}
-	return c.Password_
+	if c.Password == "" {
+		return fmt.Errorf("no password provided")
+	}
+	return nil
+}
+
+func (c *DbConfig) setTmpl() error {
+	if c.HostTemplate == "" {
+		c.HostTemplate = "{{ .InstanceName }}"
+	}
+
+	tmpl, err := template.New("host").Parse(c.HostTemplate)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to parse the host template")
+		return err
+	}
+	c.tmpl = tmpl
+	return nil
 }
 
 func (c *DbConfig) NewPoolConfig() *pgxpool.Config {
@@ -102,7 +123,7 @@ func (c *DbConfig) NewPoolConfig() *pgxpool.Config {
 	dbConfig, err := pgxpool.ParseConfig(c.Url("", nil))
 	if err != nil {
 		detail := string(err.Error())
-		detail = strings.ReplaceAll(detail, fmt.Sprintf(":%s@", url.QueryEscape(c.Password())), ":******@")
+		detail = strings.ReplaceAll(detail, fmt.Sprintf(":%s@", url.QueryEscape(c.Password)), ":******@")
 		log.Fatal().Str("Error", detail).Msg("Failed to create a pool config")
 	}
 

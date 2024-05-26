@@ -13,7 +13,7 @@ type VersionCmd struct {
 	BuildInfo bool `help:"Print build information" default:"false"`
 }
 
-func (v *VersionCmd) Run(ctx *Context) error {
+func (v *VersionCmd) Run() error {
 	fmt.Println("pg-helper", Version)
 	if v.BuildInfo {
 		fmt.Println("Built by: go", GoVersion)

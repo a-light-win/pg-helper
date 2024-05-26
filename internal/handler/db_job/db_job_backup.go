@@ -50,7 +50,7 @@ func (j *DbJobHandler) BackupDb(job *DbJob) error {
 
 	cmd := exec.Command("pg_dump", args...)
 	cmd.Dir = j.DbConfig.BackupRootPath
-	cmd.Stdin = strings.NewReader(j.DbConfig.Password() + "\n")
+	cmd.Stdin = strings.NewReader(j.DbConfig.Password + "\n")
 
 	if err := cmd.Run(); err != nil {
 		log.Error().Err(err).

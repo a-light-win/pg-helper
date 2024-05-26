@@ -41,6 +41,8 @@ message Database {
   google.protobuf.Timestamp created_at = 7;
   google.protobuf.Timestamp updated_at = 8;
   google.protobuf.Timestamp expired_at = 9;
+
+  string instance_name = 10;
 }
 
 enum DbStatus {

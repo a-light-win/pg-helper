@@ -20,14 +20,14 @@ func (h *DbTaskSvcHandler) NotifyDbStatus(ctx context.Context, db *proto.Databas
 	if !authInfo.ValidateScope("agent") {
 		return nil, status.Error(codes.PermissionDenied, "no scope permission")
 	}
-	if !authInfo.ValidateResource("dbInstance:" + authInfo.Subject) {
+	if !authInfo.ValidateResource("dbInstance:" + db.InstanceName) {
 		return nil, status.Error(codes.PermissionDenied, "no resource permission")
 	}
 
-	instance := h.GetInstance(authInfo.Subject)
+	instance := h.GetInstance(db.InstanceName)
 	if instance == nil {
 		err := errors.New("db instance not found")
-		log.Warn().Err(err).Str("InstanceName", authInfo.Subject).Msg("")
+		log.Warn().Err(err).Str("InstanceName", db.InstanceName).Msg("")
 		return nil, err
 	}
 

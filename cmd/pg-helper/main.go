@@ -8,8 +8,6 @@ import (
 	kongyaml "github.com/alecthomas/kong-yaml"
 )
 
-type Context struct{}
-
 var Cli struct {
 	LogLevel utils.LogLevel  `enum:"debug,info,warn,error,fatal" help:"Set the log level" default:"info"`
 	Config   kong.ConfigFlag `help:"Load configuration from a file"`
@@ -24,7 +22,7 @@ var Cli struct {
 
 func main() {
 	ctx := kong.Parse(&Cli, kong.Configuration(kongyaml.Loader, "/etc/pg-helper/config.yaml"))
-	err := ctx.Run(&Context{})
+	err := ctx.Run()
 	if err != nil {
 		os.Exit(1)
 	}

@@ -28,7 +28,7 @@ type customClaims struct {
 	Resource string `json:"resource,omitempty"`
 }
 
-func (g *GenJwtCmd) Run(ctx *Context) error {
+func (g *GenJwtCmd) Run() error {
 	validator := validate.New()
 	if err := validator.Struct(g); err != nil {
 		log.Error().Err(err).Msg("config validation failed")

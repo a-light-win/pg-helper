@@ -18,7 +18,7 @@ type GenKeyCmd struct {
 	Force      bool   `short:"f" long:"force" default:"false" help:"Force to overwrite the existing key files"`
 }
 
-func (g *GenKeyCmd) Run(ctx *Context) error {
+func (g *GenKeyCmd) Run() error {
 	if !g.Force {
 		if _, err := os.Stat(g.PublicKey); err == nil {
 			err := errors.New("public key file already exists")

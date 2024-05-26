@@ -133,7 +133,9 @@ func (api *DbApi) NotifyDbStatusChanged(db *Db) {
 		Interface("UpdatedAt", db.UpdatedAt).
 		Msg("Database status changed")
 
-	api.DbStatusNotifier.Send(db.ToProto())
+	db_ := db.ToProto()
+	db_.InstanceName = api.DbConfig.InstanceName
+	api.DbStatusNotifier.Send(db_)
 }
 
 func (api *DbApi) GetDb(dbId int64, q *Queries) (*Db, error) {

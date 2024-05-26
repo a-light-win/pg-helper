@@ -11,6 +11,7 @@ type Job interface {
 	UUID() uuid.UUID
 	IsPending() bool
 	IsRunning() bool
+	IsCancelling() bool
 	IsFailed() bool
 
 	Requires() []uuid.UUID

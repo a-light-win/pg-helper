@@ -77,7 +77,7 @@ func (h *PendingJobHandler) initDepends(job *PendingJob) {
 }
 
 func (h *PendingJobHandler) checkReadyToRun(job *PendingJob) {
-	if job.LiveDependsOn == nil || len(job.LiveDependsOn) == 0 || job.IsFailed() {
+	if job.LiveDependsOn == nil || len(job.LiveDependsOn) == 0 || job.IsCancelling() {
 		log.Debug().Str("JobName", job.GetName()).Msg("Job is ready to run")
 		h.readyToRunJobProducer.Send(job.Job)
 	}
@@ -131,7 +131,7 @@ func (h *PendingJobHandler) removeJob(jobId uuid.UUID) {
 		log.Debug().Str("JobName", job.GetName()).Msg("Job is removed")
 		delete(h.pendingJobs, jobId)
 	} else {
-		log.Debug().Str("JobName", job.GetName()).Msg("Job is not found")
+		log.Debug().Str("JobName", jobId.String()).Msg("Job is not found")
 	}
 }
 

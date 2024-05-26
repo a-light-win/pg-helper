@@ -43,9 +43,13 @@ func (j *DbJob) IsDone() bool {
 	}
 }
 
+func (j *DbJob) IsCancelling() bool {
+	return j.Status == db.DbTaskStatusCancelling
+}
+
 func (j *DbJob) IsFailed() bool {
 	switch j.Status {
-	case db.DbTaskStatusFailed, db.DbTaskStatusCancelled, db.DbTaskStatusCancelling:
+	case db.DbTaskStatusFailed, db.DbTaskStatusCancelled:
 		return true
 	default:
 		return false

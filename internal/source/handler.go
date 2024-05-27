@@ -202,6 +202,7 @@ func (h *SourceHandler) retryNextTime(source *DatabaseSource) {
 	log.Debug().Int("RetryDelay", source.RetryDelay).
 		Int("RetryTimes", source.RetryTimes).
 		Str("DbName", source.Name).
+		Interface("CronScheduleAt", source.CronScheduleAt).
 		Msg("Retry next time")
 
 	h.cronProducer.Send(&server.CronElement{

@@ -89,7 +89,6 @@ func (h *SourceHandler) Handle(msg server.NamedElement) error {
 		return err
 	}
 
-	source.ResetRetryDelay()
 	return nil
 }
 
@@ -162,6 +161,7 @@ func (h *SourceHandler) OnDbStatusChanged(dbStatus *handler.DbStatusResponse) bo
 		if dbStatus.Stage == source.ExpectStage {
 			source.Synced = true
 			source.UpdatedAt = dbStatus.UpdatedAt
+			source.ResetRetryDelay()
 		}
 		if dbStatus.IsFailed() {
 			h.retryNextTime(source)
@@ -199,14 +199,19 @@ func (h *SourceHandler) syncDatabaseSource(source *DatabaseSource) bool {
 
 func (h *SourceHandler) retryNextTime(source *DatabaseSource) {
 	source.CronScheduleAt = time.Now().Add(source.NextRetryDelay())
+	log.Debug().Int("RetryDelay", source.RetryDelay).
+		Int("RetryTimes", source.RetryTimes).
+		Str("DbName", source.Name).
+		Msg("Retry next time")
+
 	h.cronProducer.Send(&server.CronElement{
 		TriggerAt: source.CronScheduleAt,
 		HandleFunc: func(triggerAt time.Time) {
 			h.databasesMutex.Lock()
 			defer h.databasesMutex.Unlock()
-			if source, ok := h.Databases[source.Name]; ok {
-				if source.CronScheduleAt.Equal(triggerAt) {
-					go h.sourceProducer.Send(source)
+			if source_, ok := h.Databases[source.Name]; ok {
+				if source_.CronScheduleAt.Equal(triggerAt) {
+					go h.sourceProducer.Send(source_)
 				}
 			}
 		},

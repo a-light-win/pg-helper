@@ -28,8 +28,8 @@ type DatabaseSourceStatus struct {
 	Synced      bool      `yaml:"-"`
 	UpdatedAt   time.Time `yaml:"-"`
 
-	RetryDelay int64 `yaml:"-"`
-	RetryTimes int   `yaml:"-"`
+	RetryDelay int `yaml:"-"`
+	RetryTimes int `yaml:"-"`
 
 	LastScheduledTime time.Time `yaml:"-"`
 	CronScheduleAt    time.Time `yaml:"-"`
@@ -67,6 +67,7 @@ func (s *DatabaseSource) PasswordContent() (string, error) {
 }
 
 func (s *DatabaseSource) ResetRetryDelay() {
+	log.Debug().Str("DbName", s.Name).Msg("Reset database source retry delay")
 	s.RetryTimes = 0
 	s.RetryDelay = 0
 }

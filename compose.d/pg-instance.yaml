@@ -7,7 +7,7 @@ x-pg-spec: &pg-spec
   secrets:
     - pg_admin_password
   healthcheck:
-    test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d db_prod"]
+    test: ["CMD", "pg_isready", "-U", "postgres"]
     interval: 3s
     timeout: 5s
     retries: 10

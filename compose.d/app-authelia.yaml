@@ -1,0 +1,44 @@
+---
+services:
+  authelia:
+    container_name: "authelia"
+    image: authelia:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.authelia
+    entrypoint:
+      - "/bin/sh"
+      - "/app/pg-waiter.sh"
+      - authelia
+      - pg-13
+      - /app/entrypoint.sh
+    restart: "unless-stopped"
+    secrets:
+      - JWT_SECRET
+      - SESSION_SECRET
+      - STORAGE_ENCRYPTION_KEY
+      - db_owner_authelia
+      - auth_token_pg_waiter
+    environment:
+      AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET_FILE: "/run/secrets/JWT_SECRET"
+      AUTHELIA_SESSION_SECRET_FILE: "/run/secrets/SESSION_SECRET"
+      AUTHELIA_STORAGE_POSTGRES_PASSWORD_FILE: "/run/secrets/db_owner_authelia"
+      AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE: "/run/secrets/STORAGE_ENCRYPTION_KEY"
+      PG_HELPER_TOKEN_FILE: "/run/secrets/auth_token_pg_waiter"
+      PG_HELPER_URL: "http://pg-helper:8080"
+    volumes:
+      - "./tests/authelia/config:/config"
+    profiles:
+      - authelia
+
+secrets:
+  JWT_SECRET:
+    file: "./tests/secrets/JWT_SECRET"
+  SESSION_SECRET:
+    file: "./tests/secrets/SESSION_SECRET"
+  STORAGE_ENCRYPTION_KEY:
+    file: "./tests/secrets/STORAGE_ENCRYPTION_KEY"
+  db_owner_authelia:
+    file: "./tests/sources/secrets/db_owner_authelia"
+  auth_token_pg_waiter:
+    file: "./tests/secrets/auth_token_pg_waiter"

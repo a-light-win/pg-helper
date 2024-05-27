@@ -3,8 +3,8 @@ package grpc_server
 import (
 	"context"
 
-	"github.com/a-light-win/pg-helper/api/proto"
 	config "github.com/a-light-win/pg-helper/internal/config/server"
+	"github.com/a-light-win/pg-helper/pkg/proto"
 )
 
 type DbTaskSvcHandler struct {

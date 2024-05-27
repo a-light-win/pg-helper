@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/a-light-win/pg-helper/api/proto"
 	"github.com/a-light-win/pg-helper/internal/db"
 	"github.com/a-light-win/pg-helper/internal/handler/db_job"
+	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"

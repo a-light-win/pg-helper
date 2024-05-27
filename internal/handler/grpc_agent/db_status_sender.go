@@ -3,8 +3,8 @@ package grpc_agent
 import (
 	"context"
 
-	"github.com/a-light-win/pg-helper/api/proto"
 	"github.com/a-light-win/pg-helper/internal/constants"
+	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/a-light-win/pg-helper/pkg/server"
 )
 

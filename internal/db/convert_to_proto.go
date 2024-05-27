@@ -1,7 +1,7 @@
 package db
 
 import (
-	"github.com/a-light-win/pg-helper/api/proto"
+	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/jackc/pgx/v5/pgtype"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )

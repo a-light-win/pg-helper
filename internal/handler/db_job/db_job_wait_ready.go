@@ -3,8 +3,8 @@ package db_job
 import (
 	"errors"
 
-	"github.com/a-light-win/pg-helper/api/proto"
 	"github.com/a-light-win/pg-helper/internal/db"
+	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/rs/zerolog/log"
 )
 

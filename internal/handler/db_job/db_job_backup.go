@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/a-light-win/pg-helper/api/proto"
 	config "github.com/a-light-win/pg-helper/internal/config/agent"
 	"github.com/a-light-win/pg-helper/internal/db"
+	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/rs/zerolog/log"
 )
 

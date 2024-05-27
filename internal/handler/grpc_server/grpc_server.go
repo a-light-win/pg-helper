@@ -5,10 +5,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/a-light-win/pg-helper/api/proto"
 	config "github.com/a-light-win/pg-helper/internal/config/server"
 	"github.com/a-light-win/pg-helper/internal/constants"
 	grpcAuth "github.com/a-light-win/pg-helper/pkg/auth/grpc"
+	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/a-light-win/pg-helper/pkg/server"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"

@@ -19,9 +19,9 @@ sql:
               type: "DbTaskData"
           - column: "dbs.status"
             go_type:
-              import: "github.com/a-light-win/pg-helper/api/proto"
+              import: "github.com/a-light-win/pg-helper/pkg/proto"
               type: "DbStatus"
           - column: "dbs.stage"
             go_type:
-              import: "github.com/a-light-win/pg-helper/api/proto"
+              import: "github.com/a-light-win/pg-helper/pkg/proto"
               type: "DbStage"

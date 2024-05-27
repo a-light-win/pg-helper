@@ -3,7 +3,7 @@ syntax = "proto3";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
-option go_package = "github.com/a-light-win/pg-helper/api/proto";
+option go_package = "github.com/a-light-win/pg-helper/pkg/proto";
 
 package proto;
 

@@ -3,8 +3,8 @@ package grpc_server
 import (
 	"sync"
 
-	"github.com/a-light-win/pg-helper/api/proto"
 	"github.com/a-light-win/pg-helper/pkg/handler"
+	"github.com/a-light-win/pg-helper/pkg/proto"
 )
 
 type DbStatusSubscriber struct {

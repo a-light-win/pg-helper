@@ -3,8 +3,8 @@ package grpc_server
 import (
 	"errors"
 
-	"github.com/a-light-win/pg-helper/api/proto"
 	grpcAuth "github.com/a-light-win/pg-helper/pkg/auth/grpc"
+	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

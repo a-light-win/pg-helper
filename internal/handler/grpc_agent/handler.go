@@ -1,8 +1,8 @@
 package grpc_agent
 
 import (
-	"github.com/a-light-win/pg-helper/api/proto"
 	"github.com/a-light-win/pg-helper/internal/db"
+	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/a-light-win/pg-helper/pkg/server"
 	"github.com/go-playground/validator/v10"
 )

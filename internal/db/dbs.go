@@ -3,7 +3,7 @@ package db
 import (
 	"context"
 
-	"github.com/a-light-win/pg-helper/api/proto"
+	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/jackc/pgx/v5"
 )
 

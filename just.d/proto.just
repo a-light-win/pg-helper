@@ -36,9 +36,9 @@ install-protoc-gen-go-grpc: install-protoc-gen-go
 generate-protos: install-protoc-gen-go-grpc
   #!/usr/bin/env bash
   echo "Generating protos ..."
-  protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative api/proto/*.proto
+  protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative pkg/proto/*.proto
 
 [no-cd,private]
 clean-protos:
-  rm -rf api/proto/*.pb.go
+  rm -rf pkg/proto/*.pb.go
 

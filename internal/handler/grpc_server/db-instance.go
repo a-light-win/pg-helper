@@ -4,8 +4,8 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/a-light-win/pg-helper/api/proto"
 	"github.com/a-light-win/pg-helper/pkg/handler"
+	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 )

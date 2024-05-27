@@ -1,12 +1,12 @@
 package agent
 
 import (
-	"github.com/a-light-win/pg-helper/api/proto"
 	config "github.com/a-light-win/pg-helper/internal/config/agent"
 	"github.com/a-light-win/pg-helper/internal/constants"
 	"github.com/a-light-win/pg-helper/internal/handler/db_job"
 	"github.com/a-light-win/pg-helper/internal/handler/grpc_agent"
 	"github.com/a-light-win/pg-helper/internal/job"
+	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/a-light-win/pg-helper/pkg/server"
 )
 

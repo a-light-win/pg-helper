@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	migrate "github.com/a-light-win/pg-helper/db"
 	config "github.com/a-light-win/pg-helper/internal/config/agent"
 	"github.com/a-light-win/pg-helper/pkg/server"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -215,7 +214,7 @@ func (api *DbApi) MigrateDB(quitCtx context.Context) error {
 		break
 	}
 
-	if err := migrate.MigrateUp(db_); err != nil {
+	if err := MigrateUp(db_); err != nil {
 		log.Error().Err(err).Msg("Migrate database failed")
 		return err
 	}

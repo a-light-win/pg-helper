@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/a-light-win/pg-helper/internal/agent"
 	config "github.com/a-light-win/pg-helper/internal/config/agent"
-	"github.com/a-light-win/pg-helper/internal/utils"
+	"github.com/a-light-win/pg-helper/pkg/utils/logger"
 	"github.com/a-light-win/pg-helper/pkg/validate"
 	"github.com/rs/zerolog/log"
 )
@@ -19,7 +19,7 @@ func (a *AgentCmd) Run() error {
 		return err
 	}
 
-	utils.PrintCurrentLogLevel()
+	logger.PrintCurrentLogLevel()
 	log.Log().Msgf("pg-helper agent %s is start up", Version)
 
 	agent_ := agent.New(&a.AgentConfig)

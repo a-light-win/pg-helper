@@ -3,7 +3,7 @@ package main
 import (
 	config "github.com/a-light-win/pg-helper/internal/config/server"
 	server_ "github.com/a-light-win/pg-helper/internal/server"
-	"github.com/a-light-win/pg-helper/internal/utils"
+	"github.com/a-light-win/pg-helper/pkg/utils/logger"
 	"github.com/a-light-win/pg-helper/pkg/validate"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -22,7 +22,7 @@ func (s *ServeCmd) Run() error {
 		return err
 	}
 
-	utils.PrintCurrentLogLevel()
+	logger.PrintCurrentLogLevel()
 	log.Log().Msgf("pg-helper %s is start up", Version)
 
 	server := server_.New(&s.ServerConfig)

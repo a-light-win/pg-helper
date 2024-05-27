@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/a-light-win/pg-helper/pkg/utils"
+	"github.com/a-light-win/pg-helper/pkg/utils/logger"
 	"github.com/rs/zerolog/log"
 )
 
@@ -52,11 +53,13 @@ func (c *BaseConsumer[T]) Run() {
 		sem <- struct{}{}
 		go func() {
 			if err := c.Handler.Handle(element); err != nil {
-				log.Warn().
-					Err(err).
-					Str("Name", element.GetName()).
-					Str("Consumer", c.Name).
-					Msg("Failed to handle element")
+				if _, ok := err.(*logger.AlreadyLoggedError); !ok {
+					log.Warn().
+						Err(err).
+						Str("Name", element.GetName()).
+						Str("Consumer", c.Name).
+						Msg("Failed to handle element")
+				}
 			}
 			<-sem
 			c.wg.Done()

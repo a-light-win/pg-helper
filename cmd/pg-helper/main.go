@@ -3,13 +3,13 @@ package main
 import (
 	"os"
 
-	"github.com/a-light-win/pg-helper/internal/utils"
+	"github.com/a-light-win/pg-helper/pkg/utils/logger"
 	"github.com/alecthomas/kong"
 	kongyaml "github.com/alecthomas/kong-yaml"
 )
 
 var Cli struct {
-	LogLevel utils.LogLevel  `enum:"debug,info,warn,error,fatal" help:"Set the log level" default:"info"`
+	LogLevel logger.LogLevel `enum:"debug,info,warn,error,fatal" help:"Set the log level" default:"info"`
 	Config   kong.ConfigFlag `help:"Load configuration from a file"`
 
 	Version VersionCmd `cmd:"" help:"Print the version of pg-helper"`

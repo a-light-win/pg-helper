@@ -9,8 +9,10 @@ import (
 	"github.com/a-light-win/pg-helper/internal/constants"
 	"github.com/a-light-win/pg-helper/pkg/handler"
 	"github.com/a-light-win/pg-helper/pkg/server"
+	"github.com/a-light-win/pg-helper/pkg/utils/logger"
 	"github.com/a-light-win/pg-helper/pkg/validate"
 	"github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -70,7 +72,10 @@ func (h *SourceHandler) Handle(msg server.NamedElement) error {
 
 	dbPassword, err := source.PasswordContent()
 	if err != nil {
-		return err
+		log.Warn().Err(err).
+			Str("DbName", source.Name).
+			Msg("Can not get password of the database owner")
+		return logger.NewAlreadyLoggedError(err, zerolog.WarnLevel)
 	}
 
 	request := &handler.CreateDbRequest{
@@ -85,8 +90,11 @@ func (h *SourceHandler) Handle(msg server.NamedElement) error {
 	}
 
 	if _, err := h.dbManager.CreateDb(request, false); err != nil {
+		log.Warn().Err(err).
+			Str("DbName", source.Name).
+			Msg("Failed to create database")
 		h.retryNextTime(source)
-		return err
+		return logger.NewAlreadyLoggedError(err, zerolog.WarnLevel)
 	}
 
 	return nil

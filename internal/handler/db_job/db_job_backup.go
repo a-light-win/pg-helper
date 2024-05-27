@@ -1,6 +1,7 @@
 package db_job
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -51,12 +52,15 @@ func (j *DbJobHandler) BackupDb(job *DbJob) error {
 	cmd := exec.Command("pg_dump", args...)
 	cmd.Dir = j.DbConfig.BackupRootPath
 	cmd.Stdin = strings.NewReader(j.DbConfig.Password + "\n")
+	var stdErr bytes.Buffer
+	cmd.Stderr = &stdErr
 
 	if err := cmd.Run(); err != nil {
 		log.Error().Err(err).
 			Strs("Args", args).
 			Str("DbName", job.DbName).
 			Str("BackupPath", job.Data.BackupPath).
+			Str("StdErr", stdErr.String()).
 			Msg("Failed to backup database")
 
 		os.Remove(filepath.Join(j.DbConfig.BackupRootPath, job.Data.BackupPath+".tmp"))

@@ -5,7 +5,6 @@ x-build: &build-spec
 x-pg-helper-agent-spec: &pg-helper-agent-spec
   volumes:
     - ./tests/config.yaml:/etc/pg-helper/config.yaml
-    - ./db/migrations:/usr/share/pg-helper/migrations
     - ./backups:/var/lib/pg-helper/backups
   environment:
     PG_HELPER_DB_PASSWORD_FILE: /run/secrets/pg_admin_password

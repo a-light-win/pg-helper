@@ -1,4 +1,5 @@
 
 /secrets/
 /config/pg-helper/sources/secrets/
-/dockerfile.d/dist/
+/dist/
+/output/

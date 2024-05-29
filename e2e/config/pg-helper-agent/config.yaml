@@ -1,0 +1,11 @@
+---
+log-level: debug
+
+agent:
+  db:
+    host-template: "{{ .InstanceName }}"
+    port: 5432
+  grpc:
+    url: "dns:///pg-helper:8443"
+    tls:
+      enabled: false

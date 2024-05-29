@@ -1,18 +1,6 @@
 ---
 log-level: debug
 
-gen-key:
-  public-key: "tests/secrets/auth_public_key"
-  private-key: "tests/secrets/auth_private_key"
-
-gen-jwt:
-  signer: "tests/secrets/auth_private_key"
-  duration: "2160h"
-  audiences:
-    - "pg-helper-web"
-    - "pg-helper-grpc"
-    - "pg-helper"
-
 serve:
   web:
     enabled: true
@@ -45,13 +33,4 @@ serve:
     file:
       enabled: true
       file-paths:
-        - "/databases-source/"
-
-agent:
-  db:
-    host-template: "{{ .InstanceName }}"
-    port: 5432
-  grpc:
-    url: "dns:///pg-helper:8443"
-    tls:
-      enabled: false
+        - "/etc/pg-helper/sources/"

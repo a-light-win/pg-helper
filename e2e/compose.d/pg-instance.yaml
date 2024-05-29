@@ -6,11 +6,6 @@ x-pg-spec: &pg-spec
     POSTGRES_PASSWORD_FILE: /run/secrets/pg_admin_password
   secrets:
     - pg_admin_password
-  healthcheck:
-    test: ["CMD", "pg_isready", "-U", "postgres"]
-    interval: 3s
-    timeout: 5s
-    retries: 10
 
 x-pg-13: &pg-13
   image: docker.io/library/postgres:13
@@ -48,4 +43,4 @@ services:
 
 secrets:
   pg_admin_password:
-    file: ./tests/secrets/pg_admin_password
+    file: ./secrets/common/pg_admin_password

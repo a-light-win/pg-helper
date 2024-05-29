@@ -2,16 +2,17 @@
 x-pg-helper: &pg-helper
   image: pg-helper:${PG_HELPER_VERSION}
   container_name: pg-helper
+  user: nonroot
   build:
     context: .
-    dockerfile: Dockerfile
+    dockerfile: dockerfile.d/Dockerfile
   ports:
     - "127.0.0.1:8080:8080"
   volumes:
-    - ./tests/config.yaml:/etc/pg-helper/config.yaml
-    - ./tests/sources:/databases-source
+    - ./config/pg-helper:/etc/pg-helper
   secrets:
-    - auth_public_key
+    - source: auth_public_key
+      mode: "0440"
 
 services:
   pg-helper:
@@ -19,4 +20,8 @@ services:
 
 secrets:
   auth_public_key:
-    file: ./tests/secrets/auth_public_key
+    file: ./secrets/pg-helper/auth_public_key
+  db_owner_authelia:
+    file: ./secrets/pg-helper/db_owner_authelia
+  db_owner_test2:
+    file: ./secrets/pg-helper/db_owner_test2

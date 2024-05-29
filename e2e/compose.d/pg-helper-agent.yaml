@@ -1,10 +1,10 @@
 x-build: &build-spec
   context: .
-  dockerfile: Dockerfile.agent
+  dockerfile: dockerfile.d/Dockerfile.agent
 
 x-pg-helper-agent-spec: &pg-helper-agent-spec
   volumes:
-    - ./tests/config.yaml:/etc/pg-helper/config.yaml
+    - ./config/pg-helper-agent:/etc/pg-helper
     # - ./backups:/var/lib/pg-helper/backups
   environment:
     PG_HELPER_DB_PASSWORD_FILE: /run/secrets/pg_admin_password
@@ -21,8 +21,7 @@ x-pg-helper-agent-13: &pg-helper-agent-13
     args:
       PG_VERSION: 13
   depends_on:
-    pg-13:
-      condition: service_healthy
+    - pg-13
   profiles:
     - pg-13
 
@@ -34,8 +33,7 @@ x-pg-helper-agent-14: &pg-helper-agent-14
     args:
       PG_VERSION: 14
   depends_on:
-    pg-14:
-      condition: service_healthy
+    - pg-14
   profiles:
     - pg-14
 
@@ -47,8 +45,7 @@ x-pg-helper-agent-15: &pg-helper-agent-15
     args:
       PG_VERSION: 15
   depends_on:
-    pg-15:
-      condition: service_healthy
+    - pg-15
   profiles:
     - pg-15
 
@@ -60,8 +57,7 @@ x-pg-helper-agent-16: &pg-helper-agent-16
     args:
       PG_VERSION: 16
   depends_on:
-    pg-16:
-      condition: service_healthy
+    - pg-16
   profiles:
     - pg-16
 
@@ -77,4 +73,4 @@ services:
 
 secrets:
   auth_token_grpc_agent:
-    file: ./tests/secrets/auth_token_grpc_agent
+    file: ./secrets/pg-helper-agent/auth_token_grpc_agent

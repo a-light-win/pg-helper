@@ -1,10 +1,9 @@
 
-mod secrets "just.d/mods/secrets.just"
 mod migration "just.d/mods/migration.just"
 mod db "just.d/mods/db.just"
-mod e2e "just.d/mods/e2e.just"
 mod build "just.d/mods/build.just"
 mod test "just.d/mods/test.just"
+mod e2e "just.d/mods/e2e.just"
 
 serve_compose_args := "--profile pg-13 --profile pg-14 --profile authelia -f " + env('DOCKER_CMD', 'podman') + "-compose.yaml"
 

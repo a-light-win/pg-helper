@@ -36,6 +36,7 @@ _clean_all_secrets: \
 @_password app_name secret_name: (_secrets_dir app_name)
   echo "Generating password for {{ app_name / secret_name }}"
   openssl rand -hex 32 > {{ secrets_dir / app_name / secret_name }}
+  chmod 640 {{ secrets_dir / app_name / secret_name }}
 
 [no-cd,private]
 @_clean_password app_name secret_name:
@@ -46,20 +47,22 @@ _clean_all_secrets: \
 @_pg_admin_password: (_secrets_dir 'common')
   echo "Generating pg admin password"
   echo "post\ngres" > {{ secrets_dir / 'common/pg_admin_password' }}
+  chmod 640 {{ secrets_dir / 'common/pg_admin_password' }}
 
 [no-cd,private]
 @_clean_pg_admin_password: (_clean_password 'common' 'pg_admin_password')
 
 [no-cd,private]
-_jwt_key: (_secrets_dir 'common') (_secrets_dir 'pg-helper')
+_jwt_key: (_secrets_dir 'local') (_secrets_dir 'pg-helper')
   #!/usr/bin/env bash
+  private_key="{{ secrets_dir / 'local/auth_private_key' }}"
   if [ ! -e "${private_key}" ]; then
     echo "Generating jwt auth key for testing"
     ./dist/pg-helper gen-key --config e2e/config/local/pg-helper.yaml
   fi
 
 [no-cd,private]
-@_clean_jwt_key:
+_clean_jwt_key:
   #!/usr/bin/env bash
   echo "Cleaning jwt auth key for testing"
   private_key="{{ secrets_dir / 'local/auth_private_key' }}"
@@ -67,9 +70,9 @@ _jwt_key: (_secrets_dir 'common') (_secrets_dir 'pg-helper')
   rm -rf "${private_key}" "${public_key}"
 
 [no-cd,private]
-@_jwt app_name name scopes resources: (_secrets_dir app_name)
+_jwt app_name name scopes resources: (_secrets_dir app_name)
   #!/usr/bin/env bash
-  echo "Generating JWT for {{ name }} with scope {{ scopes }} and resources {{ resources }}"
+  echo "Generating JWT for {{app_name}}/{{ name }} with scope {{ scopes }} and resources {{ resources }}"
   _jwt_file="{{ secrets_dir / app_name / 'auth_token_' + replace(name, '-', '_') }}"
   ./dist/pg-helper gen-jwt --config e2e/config/local/pg-helper.yaml \
     --output "${_jwt_file}" \
@@ -78,8 +81,8 @@ _jwt_key: (_secrets_dir 'common') (_secrets_dir 'pg-helper')
     --resources "{{ resources }}"
 
 [no-cd,private]
-@_clean_jwt app_name name:
+_clean_jwt app_name name:
   #!/usr/bin/env bash
-  echo "Cleaning JWT for {{ name }}"
+  echo "Cleaning JWT for {{app_name}}/{{ name }}"
   _jwt_file="{{ secrets_dir / app_name / 'auth_token_' + replace(name, '-', '_') }}"
   rm -rf "${_jwt_file}"

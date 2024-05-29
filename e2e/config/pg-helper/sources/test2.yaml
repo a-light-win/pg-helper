@@ -1,0 +1,6 @@
+---
+name: test2
+owner: test2
+password_file: /databases-source/secrets/db_owner_test2
+instance_name: pg-14
+migrate_from: pg-13

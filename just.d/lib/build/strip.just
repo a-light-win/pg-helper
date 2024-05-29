@@ -1,6 +1,6 @@
 
 [no-cd,private]
-strip name:
+_strip name:
   #!/usr/bin/env bash
   echo "Stripping {{ name }} ..."
 
@@ -17,3 +17,6 @@ strip name:
 
   echo "Stripping {{ name }} success"
 
+[no-cd,private]
+_clean_strip name:
+  rm -rf dist/{{ name }}.dbg

@@ -1,6 +1,6 @@
 
 [no-cd,private]
-install-protoc:
+_install_protoc:
   #!/usr/bin/env bash
   which protoc &> /dev/null
   if [ $? -eq 0 ]; then
@@ -15,7 +15,7 @@ install-protoc:
   fi 
 
 [no-cd,private]
-install-protoc-gen-go: install-protoc
+_install_protoc_gen_go: _install_protoc
   #!/usr/bin/env bash
   which protoc-gen-go &> /dev/null
   if [ $? -ne 0 ]; then
@@ -24,7 +24,7 @@ install-protoc-gen-go: install-protoc
   fi
 
 [no-cd,private]
-install-protoc-gen-go-grpc: install-protoc-gen-go
+_install_protoc_gen_go_grpc: _install_protoc_gen_go
   #!/usr/bin/env bash
   which protoc-gen-go-grpc &> /dev/null
   if [ $? -ne 0 ]; then
@@ -33,12 +33,12 @@ install-protoc-gen-go-grpc: install-protoc-gen-go
   fi
 
 [no-cd,private]
-generate-protos: install-protoc-gen-go-grpc
+_generate_protos: _install_protoc_gen_go_grpc
   #!/usr/bin/env bash
   echo "Generating protos ..."
   protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative pkg/proto/*.proto
 
 [no-cd,private]
-clean-protos:
+_clean_protos:
   rm -rf pkg/proto/*.pb.go
 

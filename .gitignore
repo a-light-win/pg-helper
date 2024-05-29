@@ -1,7 +1,4 @@
 
 /dist/
-/backups/
-/tests/secrets
-/tests/sources
 
 coverage.out

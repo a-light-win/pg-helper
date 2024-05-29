@@ -36,10 +36,7 @@ _venom name: _copy_pg_helper_to_e2e
 
   export PG_HELPER_VERSION=$(./dist/pg-helper version | awk '{print $2}')
 
-  output_dir=output/{{ name }}
-  if [ '*' == '{{ name }}' ]; then
-    output_dir=output/all
-  fi 
+  output_dir=output/{{ if name == '*' { 'all' } else { name } }}
 
   venom run --output-dir "$output_dir" --lib-dir=tests/lib tests/{{ name }}.yaml
 

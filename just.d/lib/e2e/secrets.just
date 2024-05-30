@@ -35,7 +35,7 @@ _clean_all_secrets: \
 [no-cd,private]
 @_password app_name secret_name: (_secrets_dir app_name)
   echo "Generating password for {{ app_name / secret_name }}"
-  openssl rand -hex 32 > {{ secrets_dir / app_name / secret_name }}
+  echo "{{ choose('32', HEX) }}" > {{ secrets_dir / app_name / secret_name }}
   chmod 640 {{ secrets_dir / app_name / secret_name }}
 
 [no-cd,private]

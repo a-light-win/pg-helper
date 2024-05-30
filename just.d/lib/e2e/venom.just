@@ -38,7 +38,16 @@ _venom name: _copy_pg_helper_to_e2e
 
   output_dir=output/{{ if name == '*' { 'all' } else { name } }}
 
-  venom run --output-dir "$output_dir" --lib-dir=tests/lib tests/{{ name }}.yaml
+  if [ '*' = "{{name}}" ]; then
+    for f in tests/*.yaml; do
+      testsuite=$(basename "$f" .yaml)
+      output_dir="output/${testsuite}"
+      venom run --output-dir "$output_dir" --var-from-file "tests/var/$testsuite.yaml" --lib-dir=tests/lib "$f" || exit 1
+    done
+  else
+    output_dir="output/{{ name }}"
+    venom run --output-dir "$output_dir" --var-from-file "tests/var/{{name}}.yaml" --lib-dir=tests/lib "tests/{{name}}.yaml"
+  fi
 
 # clean the output of venom
 [no-cd,private]

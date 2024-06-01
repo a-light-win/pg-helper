@@ -3,9 +3,10 @@ x-pg-spec: &pg-spec
   environment:
     POSTGRES_USER: postgres
     POSTGRES_DB: postgres
-    POSTGRES_PASSWORD_FILE: /run/secrets/pg_admin_password
+    POSTGRES_PASSWORD_FILE: /run/secrets/pg_helper_e2e_pg_admin_password
   secrets:
-    - pg_admin_password
+    - source: pg_helper_e2e_pg_admin_password
+      mode: "0440"
 
 x-pg-13: &pg-13
   image: docker.io/library/postgres:13
@@ -42,5 +43,5 @@ services:
     <<: [*pg-spec, *pg-16]
 
 secrets:
-  pg_admin_password:
-    file: ./secrets/common/pg_admin_password
+  pg_helper_e2e_pg_admin_password:
+    external: true

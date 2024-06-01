@@ -7,11 +7,13 @@ x-pg-helper-agent-spec: &pg-helper-agent-spec
     - ./config/pg-helper-agent:/etc/pg-helper
     # - ./backups:/var/lib/pg-helper/backups
   environment:
-    PG_HELPER_DB_PASSWORD_FILE: /run/secrets/pg_admin_password
-    PG_HELPER_GRPC_AUTH_TOKEN_FILE: /run/secrets/auth_token_grpc_agent
+    PG_HELPER_DB_PASSWORD_FILE: /run/secrets/pg_helper_e2e_pg_admin_password
+    PG_HELPER_GRPC_AUTH_TOKEN_FILE: /run/secrets/pg_helper_e2e_grpc_agent
   secrets:
-    - pg_admin_password
-    - auth_token_grpc_agent
+    - source: pg_helper_e2e_pg_admin_password
+      mode: "0440"
+    - source: pg_helper_e2e_grpc_agent
+      mode: "0440"
 
 x-pg-helper-agent-13: &pg-helper-agent-13
   image: pg-helper-agent:${PG_HELPER_VERSION}-pg-13
@@ -72,5 +74,5 @@ services:
     <<: [*pg-helper-agent-spec, *pg-helper-agent-16]
 
 secrets:
-  auth_token_grpc_agent:
-    file: ./secrets/pg-helper-agent/auth_token_grpc_agent
+  pg_helper_e2e_grpc_agent:
+    external: true

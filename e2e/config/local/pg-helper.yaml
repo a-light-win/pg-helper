@@ -1,9 +1,9 @@
 gen-key:
-  public-key: "e2e/secrets/pg-helper/auth_public_key"
-  private-key: "e2e/secrets/local/auth_private_key"
+  public-key: "e2e/secrets/pg_helper_e2e_pg_helper_jwt_public_key"
+  private-key: "e2e/secrets/pg_helper_e2e_pg_helper_jwt_key"
 
 gen-jwt:
-  signer: "e2e/secrets/local/auth_private_key"
+  signer: "e2e/secrets/pg_helper_e2e_pg_helper_jwt_key"
   duration: "2160h"
   audiences:
     - "pg-helper-web"

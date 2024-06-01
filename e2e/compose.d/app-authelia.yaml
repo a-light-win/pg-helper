@@ -14,17 +14,22 @@ services:
       - /app/entrypoint.sh
     restart: "unless-stopped"
     secrets:
-      - jwt_secret
-      - session_secret
-      - storage_encryption_key
-      - db_owner_authelia
-      - auth_token_pg_waiter
+      - source: pg_helper_e2e_authelia_jwt_secret
+        mode: "0440"
+      - source: pg_helper_e2e_authelia_session_secret
+        mode: "0440"
+      - source: pg_helper_e2e_authelia_storage_encryption_key
+        mode: "0440"
+      - source: pg_helper_e2e_authelia_db_owner
+        mode: "0440"
+      - source: pg_helper_e2e_authelia_pg_waiter
+        mode: "0440"
     environment:
-      AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET_FILE: "/run/secrets/jwt_secret"
-      AUTHELIA_SESSION_SECRET_FILE: "/run/secrets/session_secret"
-      AUTHELIA_STORAGE_POSTGRES_PASSWORD_FILE: "/run/secrets/db_owner_authelia"
-      AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE: "/run/secrets/storage_encryption_key"
-      PG_HELPER_TOKEN_FILE: "/run/secrets/auth_token_pg_waiter"
+      AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET_FILE: "/run/secrets/pg_helper_e2e_authelia_jwt_secret"
+      AUTHELIA_SESSION_SECRET_FILE: "/run/secrets/pg_helper_e2e_authelia_session_secret"
+      AUTHELIA_STORAGE_POSTGRES_PASSWORD_FILE: "/run/secrets/pg_helper_e2e_authelia_db_owner"
+      AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE: "/run/secrets/pg_helper_e2e_authelia_storage_encryption_key"
+      PG_HELPER_TOKEN_FILE: "/run/secrets/pg_helper_e2e_authelia_pg_waiter"
       PG_HELPER_URL: "http://pg-helper:8080"
     volumes:
       - "./config/authelia/config:/config"
@@ -32,13 +37,11 @@ services:
       - authelia
 
 secrets:
-  jwt_secret:
-    file: "./secrets/authelia/jwt_secret"
-  session_secret:
-    file: "./secrets/authelia/session_secret"
-  storage_encryption_key:
-    file: "./secrets/authelia/storage_encryption_key"
-  db_owner_authelia:
-    file: "./secrets/pg-helper/db_owner_authelia"
-  auth_token_pg_waiter:
-    file: "./secrets/authelia/auth_token_pg_waiter"
+  pg_helper_e2e_authelia_jwt_secret:
+    external: true
+  pg_helper_e2e_authelia_session_secret:
+    external: true
+  pg_helper_e2e_authelia_storage_encryption_key:
+    external: true
+  pg_helper_e2e_authelia_pg_waiter:
+    external: true

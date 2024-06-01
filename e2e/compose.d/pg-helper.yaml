@@ -11,18 +11,27 @@ x-pg-helper: &pg-helper
   volumes:
     - ./config/pg-helper:/etc/pg-helper
   secrets:
-    - auth_public_key
-    - db_owner_authelia
-    - db_owner_test2
+    - source: pg_helper_e2e_pg_helper_jwt_public_key
+      uid: 65532
+      gid: 65532
+      mode: "0440"
+    - source: pg_helper_e2e_authelia_db_owner
+      uid: 65532
+      gid: 65532
+      mode: "0440"
+    - source: pg_helper_e2e_test2_db_owner
+      uid: 65532
+      gid: 65532
+      mode: "0440"
 
 services:
   pg-helper:
     <<: [*pg-helper]
 
 secrets:
-  auth_public_key:
-    file: ./secrets/pg-helper/auth_public_key
-  db_owner_authelia:
-    file: ./secrets/pg-helper/db_owner_authelia
-  db_owner_test2:
-    file: ./secrets/pg-helper/db_owner_test2
+  pg_helper_e2e_pg_helper_jwt_public_key:
+    external: true
+  pg_helper_e2e_authelia_db_owner:
+    external: true
+  pg_helper_e2e_test2_db_owner:
+    external: true

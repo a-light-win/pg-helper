@@ -1,6 +1,6 @@
 ---
 name: test2
 owner: test2
-password_file: /run/secrets/db_owner_test2
+password_file: /run/secrets/pg_helper_e2e_test2_db_owner
 instance_name: pg-14
 migrate_from: pg-13

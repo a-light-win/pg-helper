@@ -14,7 +14,7 @@ serve:
           types:
             - EdDSA
           files:
-            - "/run/secrets/auth_public_key"
+            - "/run/secrets/pg_helper_e2e_pg_helper_jwt_public_key"
   grpc:
     port: 8443
     tls:
@@ -28,7 +28,7 @@ serve:
           types:
             - EdDSA
           files:
-            - "/run/secrets/auth_public_key"
+            - "/run/secrets/pg_helper_e2e_pg_helper_jwt_public_key"
   source:
     file:
       enabled: true

@@ -1,5 +1,5 @@
 ---
 name: authelia
 owner: authelia
-password_file: /run/secrets/db_owner_authelia
+password_file: /run/secrets/pg_helper_e2e_authelia_db_owner
 instance_name: pg-13

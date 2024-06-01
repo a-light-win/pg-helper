@@ -5,7 +5,7 @@ services:
     image: authelia:latest
     build:
       context: .
-      dockerfile: Dockerfile.authelia
+      dockerfile: dockerfile.d/Dockerfile.authelia
     entrypoint:
       - "/bin/sh"
       - "/app/pg-waiter.sh"

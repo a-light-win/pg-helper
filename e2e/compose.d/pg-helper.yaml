@@ -11,8 +11,9 @@ x-pg-helper: &pg-helper
   volumes:
     - ./config/pg-helper:/etc/pg-helper
   secrets:
-    - source: auth_public_key
-      mode: "0440"
+    - auth_public_key
+    - db_owner_authelia
+    - db_owner_test2
 
 services:
   pg-helper:

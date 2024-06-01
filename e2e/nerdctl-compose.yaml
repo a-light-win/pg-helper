@@ -1,0 +1,10 @@
+---
+include:
+  - path: compose.d/pg-instance.yaml
+    project_directory: .
+  - path: compose.d/pg-helper-agent.yaml
+    project_directory: .
+  - path: compose.d/pg-helper.yaml
+    project_directory: .
+  - path: compose.d/app-authelia.yaml
+    project_directory: .

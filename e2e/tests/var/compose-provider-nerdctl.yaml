@@ -1,0 +1,2 @@
+compose_provider: nerdctl compose
+compose_file: ../nerdctl-compose.yaml

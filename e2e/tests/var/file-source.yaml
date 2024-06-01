@@ -2,5 +2,3 @@ compose_args: >-
   --profile pg-13
   --profile pg-14
   --profile authelia
-compose_provider: podman-compose
-compose_file: ../podman-compose.yaml

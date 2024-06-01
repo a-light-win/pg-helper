@@ -1,0 +1,16 @@
+---
+executor: compose-up
+input:
+  compose_args: {}
+  compose_provider: {}
+  compose_file: {}
+steps:
+  - script: "{{.input.compose_provider}} -f {{.input.compose_file}} {{.input.compose_args}} up -d"
+    assertions:
+      - result.code ShouldEqual 0
+    vars:
+      compose_output:
+        from: result.systemout
+output:
+  display:
+    compose_output: "{{.compose_output}}"

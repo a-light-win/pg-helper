@@ -1,0 +1,10 @@
+---
+executor: compose-down
+input:
+  compose_args: {}
+  compose_provider: {}
+  compose_file: {}
+steps:
+  - script: "{{.input.compose_provider}} -f {{.input.compose_file}} {{.input.compose_args}} down"
+    assertions:
+      - result.code ShouldEqual 0

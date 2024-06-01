@@ -1,0 +1,2 @@
+compose_provider: podman-compose
+compose_file: ../podman-compose.yaml

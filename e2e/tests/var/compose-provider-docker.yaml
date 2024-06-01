@@ -1,0 +1,2 @@
+compose_provider: docker-compose
+compose_file: ../docker-compose.yaml

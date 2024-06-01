@@ -1,0 +1,19 @@
+name: File source Test Suite
+testcases:
+  - name: Start up pg-helper test environment
+    steps:
+      - type: compose-up
+        input:
+          compose_args: "{{.file.compose_args}}"
+          compose_provider: "{{.file.compose_provider}}"
+          compose_file: "{{.file.compose_file}}"
+  # { Test starts here
+
+  # } Test ends here
+  - name: Stop the pg-helper test environment
+    steps:
+      - type: compose-down
+        input:
+          compose_args: "{{.file.compose_args}}"
+          compose_provider: "{{.file.compose_provider}}"
+          compose_file: "{{.file.compose_file}}"

@@ -12,16 +12,16 @@ x-pg-helper: &pg-helper
     - ./config/pg-helper:/etc/pg-helper
   secrets:
     - source: pg_helper_e2e_pg_helper_jwt_public_key
-      uid: 65532
-      gid: 65532
+      uid: "65532"
+      gid: "65532"
       mode: "0440"
     - source: pg_helper_e2e_authelia_db_owner
-      uid: 65532
-      gid: 65532
+      uid: "65532"
+      gid: "65532"
       mode: "0440"
     - source: pg_helper_e2e_test2_db_owner
-      uid: 65532
-      gid: 65532
+      uid: "65532"
+      gid: "65532"
       mode: "0440"
 
 services:

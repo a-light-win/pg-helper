@@ -74,7 +74,8 @@ _ensure_compose_provider_exists:
 [no-cd,private]
 _compose_secret secret_name: _ensure_compose_provider_exists
   #!/usr/bin/env bash
-  if {{ compose_provider }} secret exists "{{ secret_name }}"; then
+  exists_name=$({{compose_provider }} secret ls --format '{{{{.Name}}'|grep -w "{{ secret_name }}")
+  if [ -n "$exists_name" ]; then
     echo "Secret {{ secret_name }} already exists"
     exit 0
   fi

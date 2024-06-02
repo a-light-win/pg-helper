@@ -3,12 +3,12 @@ package web_server
 import (
 	"net/http"
 
-	"github.com/a-light-win/pg-helper/pkg/handler"
+	"github.com/a-light-win/pg-helper/internal/interface/grpc_server"
 	"github.com/gin-gonic/gin"
 )
 
 func (h *Handler) CreateDb(c *gin.Context) {
-	var request handler.CreateDbRequest
+	var request grpc_server.CreateDbRequest
 	if err := c.ShouldBind(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -30,7 +30,7 @@ func (h *Handler) CreateDb(c *gin.Context) {
 }
 
 func (h *Handler) IsDbReady(c *gin.Context) {
-	var request handler.DbRequest
+	var request grpc_server.DbRequest
 	if err := c.ShouldBind(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

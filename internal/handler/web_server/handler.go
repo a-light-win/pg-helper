@@ -3,14 +3,14 @@ package web_server
 import (
 	"errors"
 
+	"github.com/a-light-win/pg-helper/internal/interface/grpc_server"
 	ginAuth "github.com/a-light-win/pg-helper/pkg/auth/gin"
-	"github.com/a-light-win/pg-helper/pkg/handler"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
 
 type Handler struct {
-	DbManager handler.DbManager
+	DbManager grpc_server.DbManager
 }
 
 func NewHandler() *Handler {

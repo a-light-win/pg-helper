@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/a-light-win/pg-helper/pkg/handler"
+	handler "github.com/a-light-win/pg-helper/internal/interface/grpc_server"
 	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -13,6 +13,7 @@ import (
 type DbInstance struct {
 	Name      string
 	PgVersion int32
+	Online    bool
 
 	Databases map[string]*Database
 	// Protects Databases
@@ -52,7 +53,7 @@ func (a *DbInstance) UpdateDatabases(databases []*proto.Database) {
 
 		oldDb := a.mustGetDb(db.Name)
 		if oldDb.Update(db) {
-			go a.subcriber.OnDbStatusChanged(a, oldDb)
+			go a.subcriber.OnStatusChanged(a, oldDb)
 		}
 	}
 }
@@ -66,7 +67,7 @@ func (a *DbInstance) UpdateDatabase(db *proto.Database) {
 
 	oldDb := a.MustGetDb(db.Name)
 	if oldDb.Update(db) {
-		go a.subcriber.OnDbStatusChanged(a, oldDb)
+		go a.subcriber.OnStatusChanged(a, oldDb)
 	}
 }
 
@@ -174,4 +175,28 @@ func (a *DbInstance) CreateDb(vo *handler.CreateDbRequest) (*Database, error) {
 	a.Send(task)
 
 	return db, nil
+}
+
+func (a *DbInstance) StatusResponse() *handler.InstanceStatusResponse {
+	a.dbLock.Lock()
+	defer a.dbLock.Unlock()
+
+	var databases []*handler.DbStatusResponse
+	if a.Online {
+		databases = make([]*handler.DbStatusResponse, 0, len(a.Databases))
+		for _, db := range a.Databases {
+			dbStatus := db.StatusResponse()
+			dbStatus.InstanceName = a.Name
+			dbStatus.Version = a.PgVersion
+			databases = append(databases, dbStatus)
+		}
+	}
+
+	return &handler.InstanceStatusResponse{
+		Name:    a.Name,
+		Version: a.PgVersion,
+		Online:  a.Online,
+
+		Databases: databases,
+	}
 }

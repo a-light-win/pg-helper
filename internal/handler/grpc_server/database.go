@@ -3,6 +3,7 @@ package grpc_server
 import (
 	"sync"
 
+	api "github.com/a-light-win/pg-helper/internal/interface/grpc_server"
 	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/rs/zerolog/log"
 )
@@ -67,4 +68,13 @@ func (d *Database) IsFailed() bool {
 		(d.Status == proto.DbStatus_Failed ||
 			d.Status == proto.DbStatus_Cancelled ||
 			d.Status == proto.DbStatus_Expired)
+}
+
+func (d *Database) StatusResponse() *api.DbStatusResponse {
+	return &api.DbStatusResponse{
+		Name:      d.Name,
+		Stage:     d.Stage.String(),
+		Status:    d.Status.String(),
+		UpdatedAt: d.UpdatedAt.AsTime(),
+	}
 }

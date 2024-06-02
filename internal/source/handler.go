@@ -7,7 +7,7 @@ import (
 
 	config "github.com/a-light-win/pg-helper/internal/config/server"
 	"github.com/a-light-win/pg-helper/internal/constants"
-	"github.com/a-light-win/pg-helper/pkg/handler"
+	"github.com/a-light-win/pg-helper/internal/interface/grpc_server"
 	"github.com/a-light-win/pg-helper/pkg/server"
 	"github.com/a-light-win/pg-helper/pkg/utils/logger"
 	"github.com/a-light-win/pg-helper/pkg/validate"
@@ -23,7 +23,7 @@ type SourceHandler struct {
 
 	cronProducer   server.Producer
 	sourceProducer server.Producer
-	dbManager      handler.DbManager
+	dbManager      grpc_server.DbManager
 
 	validator *validator.Validate
 }
@@ -48,7 +48,7 @@ func (h *SourceHandler) Init(setter server.GlobalSetter) error {
 func (h *SourceHandler) PostInit(getter server.GlobalGetter) error {
 	h.cronProducer = getter.Get(constants.ServerKeyCronProducer).(server.Producer)
 	h.sourceProducer = getter.Get(constants.ServerKeySourceProducer).(server.Producer)
-	h.dbManager = getter.Get(constants.ServerKeyDbManager).(handler.DbManager)
+	h.dbManager = getter.Get(constants.ServerKeyDbManager).(grpc_server.DbManager)
 
 	h.dbManager.SubscribeDbStatus(h.OnDbStatusChanged)
 	return nil
@@ -78,8 +78,8 @@ func (h *SourceHandler) Handle(msg server.NamedElement) error {
 		return logger.NewAlreadyLoggedError(err, zerolog.WarnLevel)
 	}
 
-	request := &handler.CreateDbRequest{
-		InstanceFilter: handler.InstanceFilter{
+	request := &grpc_server.CreateDbRequest{
+		InstanceFilter: grpc_server.InstanceFilter{
 			Name:   source.InstanceName,
 			DbName: source.Name,
 		},
@@ -156,7 +156,7 @@ func (h *SourceHandler) idleDatabaseSource(name string, triggerAt time.Time) {
 	}
 }
 
-func (h *SourceHandler) OnDbStatusChanged(dbStatus *handler.DbStatusResponse) bool {
+func (h *SourceHandler) OnDbStatusChanged(dbStatus *grpc_server.DbStatusResponse) bool {
 	h.databasesMutex.Lock()
 	defer h.databasesMutex.Unlock()
 
@@ -180,8 +180,8 @@ func (h *SourceHandler) OnDbStatusChanged(dbStatus *handler.DbStatusResponse) bo
 
 // return true if the source is synced else false
 func (h *SourceHandler) syncDatabaseSource(source *DatabaseSource) bool {
-	dbRequest := &handler.DbRequest{
-		InstanceFilter: handler.InstanceFilter{
+	dbRequest := &grpc_server.DbRequest{
+		InstanceFilter: grpc_server.InstanceFilter{
 			Name:   source.InstanceName,
 			DbName: source.Name,
 		},

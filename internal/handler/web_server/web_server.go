@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	config "github.com/a-light-win/pg-helper/internal/config/server"
+	"github.com/a-light-win/pg-helper/internal/interface/grpc_server"
 	ginAuth "github.com/a-light-win/pg-helper/pkg/auth/gin"
-	"github.com/a-light-win/pg-helper/pkg/handler"
 	"github.com/a-light-win/pg-helper/pkg/server"
 	"github.com/a-light-win/pg-helper/pkg/validate"
 	"github.com/gin-gonic/gin"
@@ -25,7 +25,7 @@ type WebServer struct {
 	Handler *Handler
 }
 
-func NewWebServer(config *config.WebConfig, dbManager handler.DbManager) *WebServer {
+func NewWebServer(config *config.WebConfig, dbManager grpc_server.DbManager) *WebServer {
 	w := &WebServer{
 		Config: config,
 		Router: gin.Default(),

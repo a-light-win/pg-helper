@@ -3,22 +3,22 @@ package grpc_server
 import (
 	"sync"
 
-	"github.com/a-light-win/pg-helper/pkg/handler"
+	handler "github.com/a-light-win/pg-helper/internal/interface/grpc_server"
 	"github.com/a-light-win/pg-helper/pkg/proto"
 )
 
 type DbStatusSubscriber struct {
-	subscribers      []handler.SubscribeDbStatusFunc
-	subscribersMutex sync.Mutex
+	subscribers []handler.SubscribeDbStatusFunc
+	mutex       sync.Mutex
 }
 
 func (s *DbStatusSubscriber) Subscribe(subscriber handler.SubscribeDbStatusFunc) {
-	s.subscribersMutex.Lock()
-	defer s.subscribersMutex.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	s.subscribers = append(s.subscribers, subscriber)
 }
 
-func (s *DbStatusSubscriber) OnDbStatusChanged(instance *DbInstance, db *Database) {
+func (s *DbStatusSubscriber) OnStatusChanged(instance *DbInstance, db *Database) {
 	if db.Stage != proto.DbStage_Ready &&
 		db.Stage != proto.DbStage_Idle &&
 		db.Stage != proto.DbStage_DropCompleted &&
@@ -28,26 +28,21 @@ func (s *DbStatusSubscriber) OnDbStatusChanged(instance *DbInstance, db *Databas
 		return
 	}
 
-	s.subscribersMutex.Lock()
-	defer s.subscribersMutex.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	if len(s.subscribers) == 0 {
 		return
 	}
 
-	dbStatus := &handler.DbStatusResponse{
-		Name:         db.Name,
-		Stage:        db.Stage.String(),
-		Status:       db.Status.String(),
-		UpdatedAt:    db.UpdatedAt.AsTime(),
-		InstanceName: instance.Name,
-		Version:      instance.PgVersion,
-	}
+	dbStatus := db.StatusResponse()
+	dbStatus.InstanceName = instance.Name
+	dbStatus.Version = instance.PgVersion
 
-	s.notifyDbStatusChanged(dbStatus)
+	s.notifyStatusChanged(dbStatus)
 }
 
-func (s *DbStatusSubscriber) notifyDbStatusChanged(dbStatus *handler.DbStatusResponse) {
+func (s *DbStatusSubscriber) notifyStatusChanged(dbStatus *handler.DbStatusResponse) {
 	for i := 0; i < len(s.subscribers); i++ {
 		if !s.subscribers[i](dbStatus) {
 			s.subscribers = append(s.subscribers[:i], s.subscribers[i+1:]...)

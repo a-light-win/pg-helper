@@ -43,7 +43,13 @@ func (h *DbTaskSvcHandler) Register(m *proto.RegisterInstance, s proto.DbTaskSvc
 
 	instance.UpdateDatabases(m.Databases)
 
+	instance.Online = true
+	h.InstSubscriber.OnStatusChanged(instance)
+
 	instance.ServeDbTask(s)
+
+	instance.Online = false
+	h.InstSubscriber.OnStatusChanged(instance)
 
 	return nil
 }

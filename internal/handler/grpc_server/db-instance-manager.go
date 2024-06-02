@@ -7,22 +7,24 @@ import (
 	"sync"
 	"time"
 
-	"github.com/a-light-win/pg-helper/pkg/handler"
+	handler "github.com/a-light-win/pg-helper/internal/interface/grpc_server"
 	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/rs/zerolog"
 )
 
 type DbInstanceManager struct {
 	Instances map[string]*DbInstance
+	instLock  sync.Mutex
 
-	instLock   sync.Mutex
-	subscriber *DbStatusSubscriber
+	dbSubscriber   *DbStatusSubscriber
+	InstSubscriber *InstanceStatusSubscriber
 }
 
 func NewDbInstanceManager() *DbInstanceManager {
 	return &DbInstanceManager{
-		Instances:  make(map[string]*DbInstance),
-		subscriber: &DbStatusSubscriber{},
+		Instances:      make(map[string]*DbInstance),
+		dbSubscriber:   &DbStatusSubscriber{},
+		InstSubscriber: &InstanceStatusSubscriber{},
 	}
 }
 
@@ -55,7 +57,7 @@ func (m *DbInstanceManager) NewInstance(instName string, pgVersion int32, logger
 		return inst, nil
 	}
 
-	inst := NewDbInstance(instName, pgVersion, logger, m.subscriber)
+	inst := NewDbInstance(instName, pgVersion, logger, m.dbSubscriber)
 	m.addInstance(inst)
 	return inst, nil
 }
@@ -204,12 +206,16 @@ func (m *DbInstanceManager) CreateDb(request *handler.CreateDbRequest, waitReady
 }
 
 func (m *DbInstanceManager) SubscribeDbStatus(callback handler.SubscribeDbStatusFunc) {
-	m.subscriber.Subscribe(callback)
+	m.dbSubscriber.Subscribe(callback)
+}
+
+func (m *DbInstanceManager) SubscribeInstanceStatus(callback handler.SubscribeInstanceStatusFunc) {
+	m.InstSubscriber.Subscribe(callback)
 }
 
 func (m *DbInstanceManager) waitReady(instName, dbName string) {
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	m.subscriber.Subscribe(func(dbStatus *handler.DbStatusResponse) bool {
+	m.dbSubscriber.Subscribe(func(dbStatus *handler.DbStatusResponse) bool {
 		if timeoutCtx.Err() != nil {
 			return false
 		}

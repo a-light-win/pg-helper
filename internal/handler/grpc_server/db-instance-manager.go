@@ -170,12 +170,12 @@ func (m *DbInstanceManager) GetDb(vo *handler.DbRequest) (*proto.Database, error
 
 func (m *DbInstanceManager) CreateDb(request *handler.CreateDbRequest, waitReady bool) (*handler.DbStatusResponse, error) {
 	inst := m.FirstMatchedInstance(&request.InstanceFilter)
-	if inst == nil {
-		return nil, errors.New("instance not found")
+	if inst == nil || !inst.Online {
+		return nil, handler.ErrInstanceOffline
 	}
 	if request.MigrateFrom != "" {
 		if m.GetInstance(request.MigrateFrom) == nil {
-			return nil, errors.New("instance migrate from not found")
+			return nil, handler.ErrInstanceOffline
 		}
 	}
 

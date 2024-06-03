@@ -5,7 +5,7 @@ type InstanceStatusResponse struct {
 	Version int32  `json:"version"`
 	Online  bool   `json:"online"`
 
-	Databases []*DbStatusResponse `json:"all_db_statuses"`
+	Databases map[string]*DbStatusResponse `json:"all_db_statuses"`
 }
 
 type SubscribeInstanceStatusFunc func(*InstanceStatusResponse) bool

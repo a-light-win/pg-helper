@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/a-light-win/pg-helper/internal/interface/grpc_server"
 	"github.com/rs/zerolog/log"
 )
 
@@ -24,27 +25,37 @@ type DatabaseSource struct {
 }
 
 type DatabaseSourceStatus struct {
-	ExpectStage string    `yaml:"-"`
-	Synced      bool      `yaml:"-"`
-	UpdatedAt   time.Time `yaml:"-"`
+	ExpectState SourceState `yaml:"-"`
+	State       SourceState `yaml:"-"`
+	UpdatedAt   time.Time   `yaml:"-"`
 
 	RetryDelay int `yaml:"-"`
 	RetryTimes int `yaml:"-"`
 
-	LastScheduledTime time.Time `yaml:"-"`
-	CronScheduleAt    time.Time `yaml:"-"`
+	LastErrorMsg    string    `yaml:"-"`
+	LastScheduledAt time.Time `yaml:"-"`
+	NextScheduleAt  time.Time `yaml:"-"`
 }
 
-type SourceType string
+type (
+	SourceType  string
+	SourceState string
+)
 
 const (
 	FileSource SourceType = "file"
 
-	ExpectStageIdle  string = "Idle"
-	ExpectStageReady string = "Ready"
+	SourceStateUnknown    SourceState = "Unknown"
+	SourceStatePending    SourceState = "Pending"
+	SourceStateScheduling SourceState = "Scheduling"
+	SourceStateProcessing SourceState = "Processing"
+	SourceStateIdle       SourceState = "Idle"
+	SourceStateReady      SourceState = "Ready"
+	SourceStateFailed     SourceState = "Failed"
+	SourceStateDropped    SourceState = "Dropped"
 )
 
-func (s *DatabaseSource) IsChanged(newSource *DatabaseSource) bool {
+func (s *DatabaseSource) IsConfigChanged(newSource *DatabaseSource) bool {
 	return s.InstanceName != newSource.InstanceName ||
 		s.MigrateFrom != newSource.MigrateFrom ||
 		s.BackupPath != newSource.BackupPath
@@ -70,6 +81,7 @@ func (s *DatabaseSource) ResetRetryDelay() {
 	log.Debug().Str("DbName", s.Name).Msg("Reset database source retry delay")
 	s.RetryTimes = 0
 	s.RetryDelay = 0
+	s.NextScheduleAt = time.Time{}
 }
 
 func (s *DatabaseSource) NextRetryDelay() time.Duration {
@@ -84,4 +96,46 @@ func (s *DatabaseSource) NextRetryDelay() time.Duration {
 		s.RetryDelay += s.RetryDelay
 	}
 	return time.Duration(s.RetryDelay) * time.Second
+}
+
+func (s *DatabaseSource) UpdateState(dbStatus *grpc_server.DbStatusResponse) bool {
+	if dbStatus.InstanceName != s.InstanceName {
+		log.Debug().
+			Str("DbName", dbStatus.Name).
+			Str("InstanceNameFromStatus", dbStatus.InstanceName).
+			Str("InstanceName", s.InstanceName).
+			Msg("Ignore the database status from another instance")
+		return false
+	}
+
+	if dbStatus.Stage == "DropCompleted" && s.ExpectState == SourceStateIdle {
+		s.State = SourceStateDropped
+		s.UpdatedAt = dbStatus.UpdatedAt
+
+		log.Info().
+			Str("DbName", dbStatus.Name).
+			Msg("Database dropped")
+
+		return true
+	}
+
+	if dbStatus.Stage == string(s.ExpectState) && s.State != s.ExpectState {
+		s.State = s.ExpectState
+		s.UpdatedAt = dbStatus.UpdatedAt
+		s.ResetRetryDelay()
+		return true
+	}
+
+	if dbStatus.IsFailed() && s.State == SourceStateProcessing {
+		s.State = SourceStateFailed
+		s.UpdatedAt = dbStatus.UpdatedAt
+		s.LastErrorMsg = dbStatus.ErrorMsg
+		return true
+	}
+
+	return false
+}
+
+func (s *DatabaseSource) Synced() bool {
+	return s.State == s.ExpectState
 }

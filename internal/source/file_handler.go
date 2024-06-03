@@ -127,7 +127,7 @@ func (h *FileSourceHandler) loadDatabaseSourceFromFile(path string) error {
 
 	h.sourceMap[path] = fileSource.Name
 	fileSource.Type = FileSource
-	fileSource.Synced = false
+	fileSource.State = SourceStateUnknown
 
 	if err := h.AddDatabaseSource(&fileSource); err != nil {
 		log.Warn().Err(err).Str("path", path).Msg("Add database source failed")

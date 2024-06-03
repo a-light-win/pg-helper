@@ -34,6 +34,7 @@ type DbStatusResponse struct {
 	Stage     string    `json:"stage"`
 	Status    string    `json:"status"`
 	UpdatedAt time.Time `json:"updated_at"`
+	ErrorMsg  string    `json:"error_msg"`
 
 	InstanceName string `json:"instance_name"`
 	Version      int32  `json:"version"`

@@ -181,14 +181,13 @@ func (a *DbInstance) StatusResponse() *handler.InstanceStatusResponse {
 	a.dbLock.Lock()
 	defer a.dbLock.Unlock()
 
-	var databases []*handler.DbStatusResponse
+	databases := make(map[string]*handler.DbStatusResponse)
 	if a.Online {
-		databases = make([]*handler.DbStatusResponse, 0, len(a.Databases))
 		for _, db := range a.Databases {
 			dbStatus := db.StatusResponse()
 			dbStatus.InstanceName = a.Name
 			dbStatus.Version = a.PgVersion
-			databases = append(databases, dbStatus)
+			databases[db.Name] = dbStatus
 		}
 	}
 

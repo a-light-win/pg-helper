@@ -106,6 +106,7 @@ func (api *DbApi) UpdateDbStatus(db *Db, q *Queries) error {
 		Stage:     db.Stage,
 		Status:    db.Status,
 		UpdatedAt: db.UpdatedAt,
+		ErrorMsg:  db.ErrorMsg,
 	}
 
 	newDb, err := q.SetDbStatus(api.ConnCtx, dbStatusParams)

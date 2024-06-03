@@ -43,6 +43,7 @@ message Database {
   google.protobuf.Timestamp expired_at = 9;
 
   string instance_name = 10;
+  string error_msg = 11;
 }
 
 enum DbStatus {

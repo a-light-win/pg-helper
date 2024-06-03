@@ -66,6 +66,7 @@ func (j *DbJobHandler) BackupDb(job *DbJob) error {
 		os.Remove(filepath.Join(j.DbConfig.BackupRootPath, job.Data.BackupPath+".tmp"))
 
 		db_.Status = proto.DbStatus_Failed
+		db_.ErrorMsg = err.Error()
 		j.DbApi.UpdateDbStatus(db_, nil)
 
 		job.Status = db.DbTaskStatusFailed

@@ -20,6 +20,7 @@ func (db *Db) ToProto() *proto.Database {
 		MigrateTo:   db.MigrateTo,
 		Status:      db.Status,
 		Stage:       db.Stage,
+		ErrorMsg:    db.ErrorMsg,
 	}
 }
 

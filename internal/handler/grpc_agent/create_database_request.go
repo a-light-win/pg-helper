@@ -173,6 +173,7 @@ func (h *GrpcAgentHandler) createDb(logger zerolog.Logger, conn *pgxpool.Conn, r
 			logger.Warn().Err(err).Msg("Failed to create database")
 
 			database.Status = proto.DbStatus_Failed
+			database.ErrorMsg = err.Error()
 			h.DbApi.UpdateDbStatus(database, q)
 
 			return nil, err

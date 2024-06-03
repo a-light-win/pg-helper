@@ -68,6 +68,7 @@ func (j *DbJobHandler) RestoreDb(job *DbJob) error {
 			Msg("Failed to restore database")
 
 		db_.Status = proto.DbStatus_Failed
+		db_.ErrorMsg = err.Error()
 		j.DbApi.UpdateDbStatus(db_, nil)
 
 		job.Status = db.DbTaskStatusFailed

@@ -222,12 +222,12 @@ func (h *SourceHandler) syncDatabaseSource(source *DatabaseSource) bool {
 }
 
 func (h *SourceHandler) retryNextTime(source *DatabaseSource) {
-	source.NextScheduleAt = time.Now().Add(source.NextRetryDelay())
 	source.State = SourceStateScheduling
+	source.NextScheduleAt = time.Now().Add(source.NextRetryDelay())
 	log.Debug().Int("RetryDelay", source.RetryDelay).
 		Int("RetryTimes", source.RetryTimes).
 		Str("DbName", source.Name).
-		Interface("CronScheduleAt", source.NextScheduleAt).
+		Interface("NextScheduleAt", source.NextScheduleAt).
 		Msg("Retry next time")
 
 	h.cronProducer.Send(&server.CronElement{
@@ -278,6 +278,7 @@ func (h *SourceHandler) handleDatabasesOnInstanceOnline(instance *grpc_server.In
 
 		if source.State == SourceStatePending {
 			source.State = SourceStateScheduling
+			source.NextScheduleAt = time.Now()
 			go h.sourceProducer.Send(source)
 		}
 	}

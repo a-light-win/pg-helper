@@ -16,9 +16,10 @@ _serve: _all_secrets _copy_pg_helper_to_e2e
   ${provider} {{ serve_compose_args }} up
   ${provider} {{ serve_compose_args }} stop
 
+[no-cd,private]
 _clean_serve:
   #!/usr/bin/env bash
-  set -x
+  cd e2e
   export PG_HELPER_VERSION=$(./dist/pg-helper version|awk '{print $2}')
   provider={{ if compose_provider == 'nerdctl' { 'nerdctl compose' } else { compose_provider + '-compose' } }}
   ${provider} {{ serve_compose_args }} down

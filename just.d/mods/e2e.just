@@ -34,3 +34,6 @@ result name:
 
 [no-cd]
 serve: _serve
+
+[no-cd]
+clean-serve: _clean_serve

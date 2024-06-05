@@ -140,7 +140,7 @@ func (a *DbInstance) CreateDb(vo *api.CreateDbRequest) (*Database, error) {
 	a.dbLock.Lock()
 	defer a.dbLock.Unlock()
 
-	db := a.mustGetDb(vo.DbName)
+	db := a.mustGetDb(vo.Name)
 
 	if db.Stage == proto.DbStage_Dropping || db.Stage == proto.DbStage_DropCompleted {
 		return nil, errors.New("database is dropping")
@@ -158,15 +158,15 @@ func (a *DbInstance) CreateDb(vo *api.CreateDbRequest) (*Database, error) {
 		RequestId: uuid.New().String(),
 		Task: &proto.DbTask_CreateDatabase{
 			CreateDatabase: &proto.CreateDatabaseTask{
-				Name:        vo.DbName,
+				Name:        vo.Name,
 				Reason:      vo.Reason,
-				Owner:       vo.DbOwner,
-				Password:    vo.DbPassword,
+				Owner:       vo.Owner,
+				Password:    vo.Password,
 				MigrateFrom: vo.MigrateFrom,
 			},
 		},
 	}
-	a.logger.Debug().Str("DbName", vo.DbName).Msg("Task to create database")
+	a.logger.Debug().Str("DbName", vo.Name).Msg("Task to create database")
 	a.Send(task)
 
 	return db, nil

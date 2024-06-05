@@ -86,8 +86,8 @@ func (m *DbInstanceManager) filterInstances(filter *api.InstanceFilter) []*DbIns
 	matched := false
 
 	for _, inst := range m.Instances {
-		if filter.Name != "" {
-			if inst.Name == filter.Name {
+		if filter.InstanceName != "" {
+			if inst.Name == filter.InstanceName {
 				matched = true
 			} else {
 				continue
@@ -98,8 +98,8 @@ func (m *DbInstanceManager) filterInstances(filter *api.InstanceFilter) []*DbIns
 			continue
 		}
 
-		if filter.DbName != "" {
-			db := inst.GetDb(filter.DbName)
+		if filter.Name != "" {
+			db := inst.GetDb(filter.Name)
 			if db == nil && filter.MustExist {
 				continue
 			}
@@ -134,7 +134,7 @@ func (m *DbInstanceManager) GetDbStatus(request *api.DbRequest) (*api.DbStatusRe
 	if inst == nil {
 		return nil, errors.New("instance not found")
 	}
-	db := inst.GetDb(request.DbName)
+	db := inst.GetDb(request.Name)
 	if db == nil {
 		return nil, errors.New("database not found")
 	}
@@ -153,7 +153,7 @@ func (m *DbInstanceManager) GetDb(vo *api.DbRequest) (*proto.Database, error) {
 	if inst == nil {
 		return nil, errors.New("instance not found")
 	}
-	db := inst.GetDb(vo.DbName)
+	db := inst.GetDb(vo.Name)
 	if db == nil {
 		return nil, errors.New("database not found")
 	}
@@ -181,7 +181,7 @@ func (m *DbInstanceManager) CreateDb(request *api.CreateDbRequest, waitReady boo
 	}
 
 	if db.Stage != proto.DbStage_Ready {
-		m.WaitReady(inst.Name, request.DbName, 5*time.Second)
+		m.WaitReady(inst.Name, request.Name, 5*time.Second)
 	}
 
 	response := &api.DbStatusResponse{

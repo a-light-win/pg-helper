@@ -83,11 +83,11 @@ func (h *BaseSourceHandler) Handle(msg server.NamedElement) error {
 
 	request := &grpcServerApi.CreateDbRequest{
 		InstanceFilter: grpcServerApi.InstanceFilter{
-			Name:   source.InstanceName,
-			DbName: source.Name,
+			InstanceName: source.InstanceName,
+			Name:         source.Name,
 		},
-		DbOwner:     source.Owner,
-		DbPassword:  dbPassword,
+		Owner:       source.Owner,
+		Password:    dbPassword,
 		MigrateFrom: source.MigrateFrom,
 		Reason:      fmt.Sprintf("Create database %s from source %s", source.Name, source.Type),
 	}
@@ -204,8 +204,8 @@ func (h *BaseSourceHandler) RemoveDatabaseSource(source *sourceApi.DatabaseSourc
 func (h *BaseSourceHandler) syncDatabaseSource(source *sourceApi.DatabaseSource) bool {
 	dbRequest := &grpcServerApi.DbRequest{
 		InstanceFilter: grpcServerApi.InstanceFilter{
-			Name:   source.InstanceName,
-			DbName: source.Name,
+			InstanceName: source.InstanceName,
+			Name:         source.Name,
 		},
 	}
 	dbStatus, err := h.dbManager.GetDbStatus(dbRequest)

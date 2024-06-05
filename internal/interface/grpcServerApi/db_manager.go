@@ -45,7 +45,6 @@ func (status *DbStatusResponse) IsFailed() bool {
 }
 
 type DbManager interface {
-	IsDbReady(request *DbRequest) bool
 	GetDbStatus(request *DbRequest) (*DbStatusResponse, error)
 	CreateDb(request *CreateDbRequest, waitReady bool) (*DbStatusResponse, error)
 

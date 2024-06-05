@@ -129,14 +129,6 @@ func (m *DbInstanceManager) filterInstances(filter *api.InstanceFilter) []*DbIns
 	return result
 }
 
-func (m *DbInstanceManager) IsDbReady(request *api.DbRequest) bool {
-	inst := m.FirstMatchedInstance(&request.InstanceFilter)
-	if inst == nil {
-		return false
-	}
-	return inst.IsDbReady(request.DbName)
-}
-
 func (m *DbInstanceManager) GetDbStatus(request *api.DbRequest) (*api.DbStatusResponse, error) {
 	inst := m.FirstMatchedInstance(&request.InstanceFilter)
 	if inst == nil {

@@ -136,11 +136,6 @@ func (a *DbInstance) Send(task *proto.DbTask) {
 	a.DbTaskChan <- task
 }
 
-func (a *DbInstance) IsDbReady(dbName string) bool {
-	db := a.GetDb(dbName)
-	return db != nil && db.Ready()
-}
-
 func (a *DbInstance) CreateDb(vo *api.CreateDbRequest) (*Database, error) {
 	a.dbLock.Lock()
 	defer a.dbLock.Unlock()

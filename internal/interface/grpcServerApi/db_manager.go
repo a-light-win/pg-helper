@@ -29,6 +29,14 @@ type CreateDbRequest struct {
 	MigrateFrom string `json:"migrate_from" binding:"max=63,iname"`
 }
 
+type MigrateOutDbRequest struct {
+	Name         string    `json:"name" binding:"required,max=63,id"`
+	InstanceName string    `json:"instance_name" binding:"required,max=63,iname"`
+	Reason       string    `json:"reason" binding:"max=1024"`
+	MigrateTo    string    `json:"migrate_to" binding:"required,max=63,iname"`
+	ExpireAt     time.Time `json:"-"`
+}
+
 type DbStatusResponse struct {
 	Name      string    `json:"name"`
 	Stage     string    `json:"stage"`
@@ -44,9 +52,23 @@ func (status *DbStatusResponse) IsFailed() bool {
 	return status.Status == "Failed" || status.Status == "Expired" || status.Status == "Cancelled"
 }
 
+func (status *DbStatusResponse) IsReady(name string, instanceName string) bool {
+	return status.Stage == "Ready" &&
+		status.Status == "Done" &&
+		status.Name == name &&
+		status.InstanceName == instanceName
+}
+
+func (status *DbStatusResponse) IsMigrateOutReady(name string, instanceName string) bool {
+	return status.Stage == "Idle" &&
+		status.Status == "Done" &&
+		status.Name == name &&
+		status.InstanceName == instanceName
+}
+
 type DbManager interface {
 	GetDbStatus(request *DbRequest) (*DbStatusResponse, error)
-	CreateDb(request *CreateDbRequest, waitReady bool) (*DbStatusResponse, error)
+	CreateDb(request *CreateDbRequest) error
 
 	SubscribeDbStatus
 	SubscribeInstanceStatus

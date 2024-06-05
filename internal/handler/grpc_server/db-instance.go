@@ -24,7 +24,7 @@ type DbInstance struct {
 
 	logger *zerolog.Logger
 
-	subcriber *DbStatusSubscriber
+	subscriber *DbStatusSubscriber
 }
 
 func NewDbInstance(name string, pgVersion int32, logger *zerolog.Logger, subcriber *DbStatusSubscriber) *DbInstance {
@@ -34,8 +34,8 @@ func NewDbInstance(name string, pgVersion int32, logger *zerolog.Logger, subcrib
 		Databases:  make(map[string]*Database),
 		DbTaskChan: make(chan *proto.DbTask),
 
-		logger:    logger,
-		subcriber: subcriber,
+		logger:     logger,
+		subscriber: subcriber,
 	}
 }
 
@@ -53,7 +53,7 @@ func (a *DbInstance) UpdateDatabases(databases []*proto.Database) {
 
 		oldDb := a.mustGetDb(db.Name)
 		if oldDb.Update(db) {
-			go a.subcriber.OnStatusChanged(a, oldDb)
+			go a.subscriber.OnStatusChanged(a, oldDb)
 		}
 	}
 }
@@ -67,7 +67,7 @@ func (a *DbInstance) UpdateDatabase(db *proto.Database) {
 
 	oldDb := a.MustGetDb(db.Name)
 	if oldDb.Update(db) {
-		go a.subcriber.OnStatusChanged(a, oldDb)
+		go a.subscriber.OnStatusChanged(a, oldDb)
 	}
 }
 
@@ -136,22 +136,22 @@ func (a *DbInstance) Send(task *proto.DbTask) {
 	a.DbTaskChan <- task
 }
 
-func (a *DbInstance) CreateDb(vo *api.CreateDbRequest) (*Database, error) {
+func (a *DbInstance) CreateDb(vo *api.CreateDbRequest) error {
 	a.dbLock.Lock()
 	defer a.dbLock.Unlock()
 
 	db := a.mustGetDb(vo.Name)
 
 	if db.Stage == proto.DbStage_Dropping || db.Stage == proto.DbStage_DropCompleted {
-		return nil, errors.New("database is dropping")
+		return errors.New("database is dropping")
 	}
 	if db.Stage == proto.DbStage_Idle {
 		// TODO: rollback to previous version here?
-		return nil, errors.New("database is migrating out")
+		return errors.New("database is migrating out")
 	}
 
 	if db.Stage != proto.DbStage_None && !db.IsFailed() {
-		return db, nil
+		return nil
 	}
 
 	task := &proto.DbTask{
@@ -169,7 +169,40 @@ func (a *DbInstance) CreateDb(vo *api.CreateDbRequest) (*Database, error) {
 	a.logger.Debug().Str("DbName", vo.Name).Msg("Task to create database")
 	a.Send(task)
 
-	return db, nil
+	return nil
+}
+
+// Return true if send the migrateOut task
+func (a *DbInstance) MigrateOut(request *api.MigrateOutDbRequest, callback func() error) error {
+	a.dbLock.Lock()
+
+	db, ok := a.Databases[request.Name]
+	if !ok || db.ReadyToMigrate() {
+		a.dbLock.Unlock()
+		return callback()
+	}
+
+	defer a.dbLock.Unlock()
+
+	a.subscriber.Subscribe(func(dbStatus *api.DbStatusResponse) bool {
+		if dbStatus.IsMigrateOutReady(request.Name, a.Name) {
+			go callback()
+			return api.StopSubscribe
+		}
+		return api.ContinueSubscribe
+	})
+
+	task := &proto.DbTask{
+		Task: &proto.DbTask_MigrateOutDatabase{
+			MigrateOutDatabase: &proto.MigrateOutDatabaseTask{
+				Name:      request.Name,
+				Reason:    request.Reason,
+				MigrateTo: request.MigrateTo,
+			},
+		},
+	}
+	a.Send(task)
+	return nil
 }
 
 func (a *DbInstance) StatusResponse() *api.InstanceStatusResponse {

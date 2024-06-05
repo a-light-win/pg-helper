@@ -80,7 +80,7 @@ message DbTask {
   string request_id = 1;
   oneof task {
     CreateDatabaseTask create_database = 4;
-    MigratedDatabaseTask migrated_database = 5;
+    MigrateOutDatabaseTask migrate_out_database = 5;
     RollbackDatabaseTask rollback_database = 6;
     DropDatabaseTask drop_database = 7;
   }
@@ -95,8 +95,9 @@ message CreateDatabaseTask {
   string migrate_from = 5;
 }
 
-// Notify the agent that the database is already migrated to another pg version.
-message MigratedDatabaseTask {
+// Notify the agent the database is  migrating to another pg instance,
+// and the agent should change the stage to idle.
+message MigrateOutDatabaseTask {
   string name = 1;
   string reason = 2;
   string migrate_to = 3;

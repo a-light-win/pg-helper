@@ -6,7 +6,7 @@ INSERT INTO dbs (name, owner) VALUES ($1, $2) RETURNING *;
 UPDATE dbs SET expired_at = @expired_at WHERE id = @id;
 
 -- name: SetDbStatus :one
-UPDATE dbs SET status = @status, stage = @stage, error_msg = @error_msg, updated_at = timezone('utc', now())
+UPDATE dbs SET status = @status, stage = @stage, error_msg = @error_msg, updated_at = timezone('utc', now()), expired_at = @expired_at 
 WHERE id = @id AND updated_at = @updated_at
 RETURNING *;
 

@@ -160,41 +160,29 @@ func (m *DbInstanceManager) GetDb(vo *api.DbRequest) (*proto.Database, error) {
 	return db.Database, nil
 }
 
-func (m *DbInstanceManager) CreateDb(request *api.CreateDbRequest, waitReady bool) (*api.DbStatusResponse, error) {
+func (m *DbInstanceManager) CreateDb(request *api.CreateDbRequest) error {
 	inst := m.FirstMatchedInstance(&request.InstanceFilter)
 	if inst == nil || !inst.Online {
-		return nil, api.ErrInstanceOffline
+		return api.ErrInstanceOffline
 	}
+
 	if request.MigrateFrom != "" {
-		if m.GetInstance(request.MigrateFrom) == nil {
-			return nil, api.ErrInstanceOffline
+		oldInst := m.GetInstance(request.MigrateFrom)
+		if oldInst == nil || !oldInst.Online {
+			return api.ErrInstanceOffline
 		}
+
+		migrateOutRequest := &api.MigrateOutDbRequest{
+			Name:         request.Name,
+			InstanceName: request.MigrateFrom,
+			Reason:       request.Reason,
+			MigrateTo:    inst.Name,
+		}
+		return oldInst.MigrateOut(migrateOutRequest,
+			func() error { return inst.CreateDb(request) })
 	}
 
-	db, err := inst.CreateDb(request)
-	if err != nil {
-		return nil, err
-	}
-
-	if !waitReady {
-		return nil, nil
-	}
-
-	if db.Stage != proto.DbStage_Ready {
-		m.WaitReady(inst.Name, request.Name, 5*time.Second)
-	}
-
-	response := &api.DbStatusResponse{
-		InstanceName: inst.Name,
-		Version:      inst.PgVersion,
-
-		Name:   db.Name,
-		Stage:  db.Stage.String(),
-		Status: db.Status.String(),
-
-		UpdatedAt: db.UpdatedAt.AsTime(),
-	}
-	return response, nil
+	return inst.CreateDb(request)
 }
 
 func (m *DbInstanceManager) SubscribeDbStatus(callback api.SubscribeDbStatusFunc) {
@@ -206,13 +194,17 @@ func (m *DbInstanceManager) SubscribeInstanceStatus(callback api.SubscribeInstan
 }
 
 func (m *DbInstanceManager) WaitReady(instName, dbName string, timeout time.Duration) bool {
+	if m.isReady(instName, dbName) {
+		return true
+	}
+
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	ready := false
 	m.dbSubscriber.Subscribe(func(dbStatus *api.DbStatusResponse) bool {
 		if timeoutCtx.Err() != nil {
 			return api.StopSubscribe
 		}
-		if dbStatus.Stage == "Ready" && dbStatus.Name == dbName && dbStatus.InstanceName == instName {
+		if dbStatus.IsReady(dbName, instName) {
 			ready = true
 			cancel()
 			return api.StopSubscribe
@@ -221,4 +213,16 @@ func (m *DbInstanceManager) WaitReady(instName, dbName string, timeout time.Dura
 	})
 	<-timeoutCtx.Done()
 	return ready
+}
+
+func (m *DbInstanceManager) isReady(instName, dbName string) bool {
+	inst := m.GetInstance(instName)
+	if inst == nil {
+		return false
+	}
+	db := inst.GetDb(dbName)
+	if db == nil {
+		return false
+	}
+	return db.Ready()
 }

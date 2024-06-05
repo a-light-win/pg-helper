@@ -63,6 +63,13 @@ func (d *Database) Ready() bool {
 		d.Status == proto.DbStatus_Done
 }
 
+func (d *Database) ReadyToMigrate() bool {
+	return d.Database == nil ||
+		d.Stage == proto.DbStage_Idle ||
+		d.Stage == proto.DbStage_Dropping ||
+		d.Stage == proto.DbStage_DropCompleted
+}
+
 func (d *Database) IsFailed() bool {
 	return d.Database != nil &&
 		(d.Status == proto.DbStatus_Failed ||

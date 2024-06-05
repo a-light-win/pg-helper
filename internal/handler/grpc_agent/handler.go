@@ -27,6 +27,8 @@ func (h *GrpcAgentHandler) handle(task *proto.DbTask) error {
 	switch task.Task.(type) {
 	case *proto.DbTask_CreateDatabase:
 		return h.createDatabase(task)
+	case *proto.DbTask_MigrateOutDatabase:
+		return h.migrateOutDatabase(task)
 	}
 	return nil
 }

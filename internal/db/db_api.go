@@ -65,6 +65,29 @@ func (api *DbApi) Query(queryFunc QueryFunc) error {
 	return queryFunc(q)
 }
 
+func (api *DbApi) QueryWithRollback(queryFunc QueryFunc) error {
+	conn, err := api.DbPool.Acquire(api.ConnCtx)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to acquire connection")
+		return err
+	}
+	defer conn.Release()
+	tx, err := conn.Begin(api.ConnCtx)
+	if err != nil {
+		log.Warn().Err(err).Msg("Failed to begin transaction")
+		return err
+	}
+	defer tx.Rollback(api.ConnCtx)
+
+	q := New(tx)
+	if err := queryFunc(q); err != nil {
+		return err
+	}
+
+	tx.Commit(api.ConnCtx)
+	return nil
+}
+
 func (api *DbApi) UpdateTaskStatus(task *DbTask, q *Queries) error {
 	if q == nil {
 		return api.Query(func(q *Queries) error {
@@ -106,6 +129,7 @@ func (api *DbApi) UpdateDbStatus(db *Db, q *Queries) error {
 		Stage:     db.Stage,
 		Status:    db.Status,
 		UpdatedAt: db.UpdatedAt,
+		ExpiredAt: db.ExpiredAt,
 		ErrorMsg:  db.ErrorMsg,
 	}
 

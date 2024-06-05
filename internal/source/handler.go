@@ -92,7 +92,7 @@ func (h *BaseSourceHandler) Handle(msg server.NamedElement) error {
 		Reason:      fmt.Sprintf("Create database %s from source %s", source.Name, source.Type),
 	}
 
-	if _, err := h.dbManager.CreateDb(request, false); err != nil {
+	if err := h.dbManager.CreateDb(request); err != nil {
 		log.Warn().Err(err).
 			Str("DbName", source.Name).
 			Msg("Failed to create database")

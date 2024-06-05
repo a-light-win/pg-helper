@@ -1,4 +1,9 @@
-package grpc_server
+package grpcServerApi
+
+const (
+	ContinueSubscribe bool = true
+	StopSubscribe     bool = false
+)
 
 // SubscribeDbStatusFunc is a callback function to be called when the status of the database changes
 // The function should return true if it wants to continue receiving notifications

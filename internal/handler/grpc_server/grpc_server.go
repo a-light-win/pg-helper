@@ -77,6 +77,7 @@ func (s *GrpcServer) Shutdown(ctx context.Context) {
 
 func (s *GrpcServer) Init(setter server.GlobalSetter) error {
 	setter.Set(constants.ServerKeyDbManager, s.SvcHandler.DbInstanceManager)
+	setter.Set(constants.ServerKeyDbReadyWaiter, s.SvcHandler.DbInstanceManager)
 	return nil
 }
 

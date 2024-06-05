@@ -1,4 +1,4 @@
-package source
+package sourceApi
 
 import (
 	"errors"
@@ -6,18 +6,23 @@ import (
 	"strings"
 	"time"
 
-	"github.com/a-light-win/pg-helper/internal/interface/grpc_server"
+	"github.com/a-light-win/pg-helper/internal/interface/grpcServerApi"
 	"github.com/rs/zerolog/log"
 )
 
-type DatabaseSource struct {
-	Name         string `yaml:"name" json:"name" validate:"required,max=63,id" help:"Name of the database"`
-	Owner        string `yaml:"owner" json:"owner" validate:"required,max=63,id" help:"Owner of the database"`
-	PasswordFile string `yaml:"password_file" json:"password_file" validate:"required,file" help:"Path to the password file of the database owner"`
+type DatabaseRequest struct {
+	Name         string `yaml:"name" json:"name" validate:"required,max=63,id" binding:"required,max=63,id" help:"Name of the database"`
+	Owner        string `yaml:"owner" json:"owner" validate:"required,max=63,id" binding:"required,max=63,id" help:"Owner of the database"`
+	PasswordFile string `yaml:"password_file" json:"-" validate:"required,file" binding:"-" help:"Path to the password file of the database owner"`
+	Password     string `yaml:"-" json:"password" binding:"required,min=8,max=256" help:"Password of the database owner"`
 
-	InstanceName string `yaml:"instance_name" json:"instance_name" validate:"required,max=63,iname" help:"Name of the pg instance"`
-	MigrateFrom  string `yaml:"migrate_from" json:"migrate_from" validate:"omitempty,max=63,iname" help:"Migrate database from another pg instance"`
-	BackupPath   string `yaml:"backup_path" json:"backup_path" validate:"omitempty,file" help:"Path to the backup file"`
+	InstanceName string `yaml:"instance_name" json:"instance_name" validate:"required,max=63,iname" binding:"required,max=63,iname" help:"Name of the pg instance"`
+	MigrateFrom  string `yaml:"migrate_from" json:"migrate_from" validate:"omitempty,max=63,iname" binding:"omitempty,max=63,iname" help:"Migrate database from another pg instance"`
+	BackupPath   string `yaml:"backup_path" json:"-" validate:"omitempty,file" binding:"-" help:"Path to the backup file"`
+}
+
+type DatabaseSource struct {
+	*DatabaseRequest
 
 	Type SourceType `yaml:"-"`
 
@@ -44,6 +49,7 @@ type (
 
 const (
 	FileSource SourceType = "file"
+	WebSource  SourceType = "web"
 
 	SourceStateUnknown    SourceState = "Unknown"
 	SourceStatePending    SourceState = "Pending"
@@ -55,17 +61,20 @@ const (
 	SourceStateDropped    SourceState = "Dropped"
 )
 
-func (s *DatabaseSource) IsConfigChanged(newSource *DatabaseSource) bool {
+func (s *DatabaseRequest) IsConfigChanged(newSource *DatabaseRequest) bool {
 	return s.InstanceName != newSource.InstanceName ||
 		s.MigrateFrom != newSource.MigrateFrom ||
 		s.BackupPath != newSource.BackupPath
 }
 
-func (s *DatabaseSource) GetName() string {
+func (s *DatabaseRequest) GetName() string {
 	return s.Name
 }
 
-func (s *DatabaseSource) PasswordContent() (string, error) {
+func (s *DatabaseRequest) PasswordContent() (string, error) {
+	if s.Password != "" {
+		return s.Password, nil
+	}
 	if s.PasswordFile != "" {
 		password, err := os.ReadFile(s.PasswordFile)
 		if err != nil {
@@ -74,7 +83,9 @@ func (s *DatabaseSource) PasswordContent() (string, error) {
 		}
 		return strings.TrimSpace(string(password)), nil
 	}
-	return "", errors.New("password file is empty")
+	// TODO: allow empty password here,
+	// because the password is not required for some cases
+	return "", errors.New("password is empty")
 }
 
 func (s *DatabaseSource) ResetRetryDelay() {
@@ -98,7 +109,7 @@ func (s *DatabaseSource) NextRetryDelay() time.Duration {
 	return time.Duration(s.RetryDelay) * time.Second
 }
 
-func (s *DatabaseSource) UpdateState(dbStatus *grpc_server.DbStatusResponse) bool {
+func (s *DatabaseSource) UpdateState(dbStatus *grpcServerApi.DbStatusResponse) bool {
 	if dbStatus.InstanceName != s.InstanceName {
 		log.Debug().
 			Str("DbName", dbStatus.Name).

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	handler "github.com/a-light-win/pg-helper/internal/interface/grpc_server"
+	api "github.com/a-light-win/pg-helper/internal/interface/grpcServerApi"
 	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/rs/zerolog"
 )
@@ -66,14 +66,14 @@ func (m *DbInstanceManager) addInstance(inst *DbInstance) {
 	m.Instances[inst.Name] = inst
 }
 
-func (m *DbInstanceManager) FilterInstances(filter *handler.InstanceFilter) []*DbInstance {
+func (m *DbInstanceManager) FilterInstances(filter *api.InstanceFilter) []*DbInstance {
 	m.instLock.Lock()
 	defer m.instLock.Unlock()
 
 	return m.filterInstances(filter)
 }
 
-func (m *DbInstanceManager) FirstMatchedInstance(filter *handler.InstanceFilter) *DbInstance {
+func (m *DbInstanceManager) FirstMatchedInstance(filter *api.InstanceFilter) *DbInstance {
 	instances := m.FilterInstances(filter)
 	if len(instances) > 0 {
 		return instances[0]
@@ -81,7 +81,7 @@ func (m *DbInstanceManager) FirstMatchedInstance(filter *handler.InstanceFilter)
 	return nil
 }
 
-func (m *DbInstanceManager) filterInstances(filter *handler.InstanceFilter) []*DbInstance {
+func (m *DbInstanceManager) filterInstances(filter *api.InstanceFilter) []*DbInstance {
 	var result []*DbInstance
 	matched := false
 
@@ -129,7 +129,7 @@ func (m *DbInstanceManager) filterInstances(filter *handler.InstanceFilter) []*D
 	return result
 }
 
-func (m *DbInstanceManager) IsDbReady(request *handler.DbRequest) bool {
+func (m *DbInstanceManager) IsDbReady(request *api.DbRequest) bool {
 	inst := m.FirstMatchedInstance(&request.InstanceFilter)
 	if inst == nil {
 		return false
@@ -137,7 +137,7 @@ func (m *DbInstanceManager) IsDbReady(request *handler.DbRequest) bool {
 	return inst.IsDbReady(request.DbName)
 }
 
-func (m *DbInstanceManager) GetDbStatus(request *handler.DbRequest) (*handler.DbStatusResponse, error) {
+func (m *DbInstanceManager) GetDbStatus(request *api.DbRequest) (*api.DbStatusResponse, error) {
 	inst := m.FirstMatchedInstance(&request.InstanceFilter)
 	if inst == nil {
 		return nil, errors.New("instance not found")
@@ -146,7 +146,7 @@ func (m *DbInstanceManager) GetDbStatus(request *handler.DbRequest) (*handler.Db
 	if db == nil {
 		return nil, errors.New("database not found")
 	}
-	return &handler.DbStatusResponse{
+	return &api.DbStatusResponse{
 		InstanceName: inst.Name,
 		Version:      inst.PgVersion,
 		Name:         db.Name,
@@ -156,7 +156,7 @@ func (m *DbInstanceManager) GetDbStatus(request *handler.DbRequest) (*handler.Db
 	}, nil
 }
 
-func (m *DbInstanceManager) GetDb(vo *handler.DbRequest) (*proto.Database, error) {
+func (m *DbInstanceManager) GetDb(vo *api.DbRequest) (*proto.Database, error) {
 	inst := m.FirstMatchedInstance(&vo.InstanceFilter)
 	if inst == nil {
 		return nil, errors.New("instance not found")
@@ -168,14 +168,14 @@ func (m *DbInstanceManager) GetDb(vo *handler.DbRequest) (*proto.Database, error
 	return db.Database, nil
 }
 
-func (m *DbInstanceManager) CreateDb(request *handler.CreateDbRequest, waitReady bool) (*handler.DbStatusResponse, error) {
+func (m *DbInstanceManager) CreateDb(request *api.CreateDbRequest, waitReady bool) (*api.DbStatusResponse, error) {
 	inst := m.FirstMatchedInstance(&request.InstanceFilter)
 	if inst == nil || !inst.Online {
-		return nil, handler.ErrInstanceOffline
+		return nil, api.ErrInstanceOffline
 	}
 	if request.MigrateFrom != "" {
 		if m.GetInstance(request.MigrateFrom) == nil {
-			return nil, handler.ErrInstanceOffline
+			return nil, api.ErrInstanceOffline
 		}
 	}
 
@@ -189,10 +189,10 @@ func (m *DbInstanceManager) CreateDb(request *handler.CreateDbRequest, waitReady
 	}
 
 	if db.Stage != proto.DbStage_Ready {
-		m.waitReady(inst.Name, request.DbName)
+		m.WaitReady(inst.Name, request.DbName, 5*time.Second)
 	}
 
-	response := &handler.DbStatusResponse{
+	response := &api.DbStatusResponse{
 		InstanceName: inst.Name,
 		Version:      inst.PgVersion,
 
@@ -205,25 +205,28 @@ func (m *DbInstanceManager) CreateDb(request *handler.CreateDbRequest, waitReady
 	return response, nil
 }
 
-func (m *DbInstanceManager) SubscribeDbStatus(callback handler.SubscribeDbStatusFunc) {
+func (m *DbInstanceManager) SubscribeDbStatus(callback api.SubscribeDbStatusFunc) {
 	m.dbSubscriber.Subscribe(callback)
 }
 
-func (m *DbInstanceManager) SubscribeInstanceStatus(callback handler.SubscribeInstanceStatusFunc) {
+func (m *DbInstanceManager) SubscribeInstanceStatus(callback api.SubscribeInstanceStatusFunc) {
 	m.InstSubscriber.Subscribe(callback)
 }
 
-func (m *DbInstanceManager) waitReady(instName, dbName string) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	m.dbSubscriber.Subscribe(func(dbStatus *handler.DbStatusResponse) bool {
+func (m *DbInstanceManager) WaitReady(instName, dbName string, timeout time.Duration) bool {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), timeout)
+	ready := false
+	m.dbSubscriber.Subscribe(func(dbStatus *api.DbStatusResponse) bool {
 		if timeoutCtx.Err() != nil {
-			return false
+			return api.StopSubscribe
 		}
 		if dbStatus.Stage == "Ready" && dbStatus.Name == dbName && dbStatus.InstanceName == instName {
+			ready = true
 			cancel()
-			return true
+			return api.StopSubscribe
 		}
-		return false
+		return api.ContinueSubscribe
 	})
 	<-timeoutCtx.Done()
+	return ready
 }

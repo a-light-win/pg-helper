@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	handler "github.com/a-light-win/pg-helper/internal/interface/grpc_server"
+	api "github.com/a-light-win/pg-helper/internal/interface/grpcServerApi"
 	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -141,7 +141,7 @@ func (a *DbInstance) IsDbReady(dbName string) bool {
 	return db != nil && db.Ready()
 }
 
-func (a *DbInstance) CreateDb(vo *handler.CreateDbRequest) (*Database, error) {
+func (a *DbInstance) CreateDb(vo *api.CreateDbRequest) (*Database, error) {
 	a.dbLock.Lock()
 	defer a.dbLock.Unlock()
 
@@ -177,11 +177,11 @@ func (a *DbInstance) CreateDb(vo *handler.CreateDbRequest) (*Database, error) {
 	return db, nil
 }
 
-func (a *DbInstance) StatusResponse() *handler.InstanceStatusResponse {
+func (a *DbInstance) StatusResponse() *api.InstanceStatusResponse {
 	a.dbLock.Lock()
 	defer a.dbLock.Unlock()
 
-	databases := make(map[string]*handler.DbStatusResponse)
+	databases := make(map[string]*api.DbStatusResponse)
 	if a.Online {
 		for _, db := range a.Databases {
 			dbStatus := db.StatusResponse()
@@ -191,7 +191,7 @@ func (a *DbInstance) StatusResponse() *handler.InstanceStatusResponse {
 		}
 	}
 
-	return &handler.InstanceStatusResponse{
+	return &api.InstanceStatusResponse{
 		Name:    a.Name,
 		Version: a.PgVersion,
 		Online:  a.Online,

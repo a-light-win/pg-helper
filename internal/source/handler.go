@@ -7,7 +7,8 @@ import (
 
 	config "github.com/a-light-win/pg-helper/internal/config/server"
 	"github.com/a-light-win/pg-helper/internal/constants"
-	"github.com/a-light-win/pg-helper/internal/interface/grpc_server"
+	"github.com/a-light-win/pg-helper/internal/interface/grpcServerApi"
+	"github.com/a-light-win/pg-helper/internal/interface/sourceApi"
 	"github.com/a-light-win/pg-helper/pkg/server"
 	"github.com/a-light-win/pg-helper/pkg/utils/logger"
 	"github.com/a-light-win/pg-helper/pkg/validate"
@@ -16,10 +17,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type SourceHandler struct {
+type BaseSourceHandler struct {
 	Config *config.SourceConfig
 
-	Databases      map[string]*DatabaseSource
+	Databases      map[string]*sourceApi.DatabaseSource
 	databasesMutex sync.Mutex
 
 	Instances      map[string]bool
@@ -27,50 +28,45 @@ type SourceHandler struct {
 
 	cronProducer   server.Producer
 	sourceProducer server.Producer
-	dbManager      grpc_server.DbManager
+	dbManager      grpcServerApi.DbManager
 
 	validator *validator.Validate
 }
 
-type ParentSourceHandler interface {
-	AddDatabaseSource(source *DatabaseSource) error
-	MarkDatabaseSourceIdle(name string) error
-}
-
-func NewSourceHandler(config *config.SourceConfig) *SourceHandler {
-	return &SourceHandler{
+func NewSourceHandler(config *config.SourceConfig) *BaseSourceHandler {
+	return &BaseSourceHandler{
 		Config:    config,
-		Databases: make(map[string]*DatabaseSource),
+		Databases: make(map[string]*sourceApi.DatabaseSource),
 		Instances: make(map[string]bool),
 		validator: validate.New(),
 	}
 }
 
-func (h *SourceHandler) Init(setter server.GlobalSetter) error {
+func (h *BaseSourceHandler) Init(setter server.GlobalSetter) error {
 	return nil
 }
 
-func (h *SourceHandler) PostInit(getter server.GlobalGetter) error {
+func (h *BaseSourceHandler) PostInit(getter server.GlobalGetter) error {
 	h.cronProducer = getter.Get(constants.ServerKeyCronProducer).(server.Producer)
 	h.sourceProducer = getter.Get(constants.ServerKeySourceProducer).(server.Producer)
-	h.dbManager = getter.Get(constants.ServerKeyDbManager).(grpc_server.DbManager)
+	h.dbManager = getter.Get(constants.ServerKeyDbManager).(grpcServerApi.DbManager)
 
 	h.dbManager.SubscribeDbStatus(h.OnDbStatusChanged)
 	h.dbManager.SubscribeInstanceStatus(h.OnInstanceStatusChanged)
 	return nil
 }
 
-func (h *SourceHandler) Handle(msg server.NamedElement) error {
-	source := msg.(*DatabaseSource)
+func (h *BaseSourceHandler) Handle(msg server.NamedElement) error {
+	source := msg.(*sourceApi.DatabaseSource)
 	source.LastScheduledAt = time.Now()
 
 	if h.syncDatabaseSource(source) {
 		return nil
 	}
 
-	source.State = SourceStateProcessing
+	source.State = sourceApi.SourceStateProcessing
 
-	if source.ExpectState == SourceStateIdle {
+	if source.ExpectState == sourceApi.SourceStateIdle {
 		// TODO: mark database as idle and drop it later (a month or more later?)
 		// we do not remove it immediately because we want to keep the data for a while
 		// in case we need to rollback.
@@ -85,8 +81,8 @@ func (h *SourceHandler) Handle(msg server.NamedElement) error {
 		return logger.NewAlreadyLoggedError(err, zerolog.WarnLevel)
 	}
 
-	request := &grpc_server.CreateDbRequest{
-		InstanceFilter: grpc_server.InstanceFilter{
+	request := &grpcServerApi.CreateDbRequest{
+		InstanceFilter: grpcServerApi.InstanceFilter{
 			Name:   source.InstanceName,
 			DbName: source.Name,
 		},
@@ -103,10 +99,10 @@ func (h *SourceHandler) Handle(msg server.NamedElement) error {
 
 		source.LastErrorMsg = err.Error()
 		source.UpdatedAt = time.Now()
-		if err == grpc_server.ErrInstanceOffline {
-			source.State = SourceStatePending
+		if err == grpcServerApi.ErrInstanceOffline {
+			source.State = sourceApi.SourceStatePending
 		} else {
-			source.State = SourceStateFailed
+			source.State = sourceApi.SourceStateFailed
 			h.retryNextTime(source)
 		}
 		return logger.NewAlreadyLoggedError(err, zerolog.WarnLevel)
@@ -115,7 +111,7 @@ func (h *SourceHandler) Handle(msg server.NamedElement) error {
 	return nil
 }
 
-func (h *SourceHandler) AddDatabaseSource(source *DatabaseSource) error {
+func (h *BaseSourceHandler) AddDatabaseSource(source *sourceApi.DatabaseSource) error {
 	if err := h.validator.Struct(source); err != nil {
 		return err
 	}
@@ -123,7 +119,7 @@ func (h *SourceHandler) AddDatabaseSource(source *DatabaseSource) error {
 	h.databasesMutex.Lock()
 	defer h.databasesMutex.Unlock()
 	if oldSource, ok := h.Databases[source.Name]; ok {
-		if !oldSource.IsConfigChanged(source) {
+		if !oldSource.IsConfigChanged(source.DatabaseRequest) {
 			log.Debug().Str("source", source.Name).Msg("Source not changed, skip")
 			return nil
 		}
@@ -133,7 +129,7 @@ func (h *SourceHandler) AddDatabaseSource(source *DatabaseSource) error {
 	}
 
 	if source.ExpectState == "" {
-		source.ExpectState = SourceStateReady
+		source.ExpectState = sourceApi.SourceStateReady
 	}
 	h.Databases[source.Name] = source
 
@@ -142,14 +138,14 @@ func (h *SourceHandler) AddDatabaseSource(source *DatabaseSource) error {
 	return nil
 }
 
-func (h *SourceHandler) MarkDatabaseSourceIdle(name string) error {
+func (h *BaseSourceHandler) MarkDatabaseSourceIdle(name string) error {
 	h.databasesMutex.Lock()
 	defer h.databasesMutex.Unlock()
 
 	if source, ok := h.Databases[name]; ok {
-		if source.ExpectState != SourceStateIdle {
-			source.ExpectState = SourceStateIdle
-			source.State = SourceStateScheduling
+		if source.ExpectState != sourceApi.SourceStateIdle {
+			source.ExpectState = sourceApi.SourceStateIdle
+			source.State = sourceApi.SourceStateScheduling
 			source.NextScheduleAt = time.Now().Add(h.Config.DeleyDelete)
 			h.cronProducer.Send(&server.CronElement{
 				TriggerAt: source.NextScheduleAt,
@@ -162,17 +158,17 @@ func (h *SourceHandler) MarkDatabaseSourceIdle(name string) error {
 	return nil
 }
 
-func (h *SourceHandler) idleDatabaseSource(name string, triggerAt time.Time) {
+func (h *BaseSourceHandler) idleDatabaseSource(name string, triggerAt time.Time) {
 	h.databasesMutex.Lock()
 	defer h.databasesMutex.Unlock()
 	if source, ok := h.Databases[name]; ok {
-		if source.ExpectState == SourceStateIdle && source.NextScheduleAt.Equal(triggerAt) {
+		if source.ExpectState == sourceApi.SourceStateIdle && source.NextScheduleAt.Equal(triggerAt) {
 			go h.sourceProducer.Send(source)
 		}
 	}
 }
 
-func (h *SourceHandler) OnDbStatusChanged(dbStatus *grpc_server.DbStatusResponse) bool {
+func (h *BaseSourceHandler) OnDbStatusChanged(dbStatus *grpcServerApi.DbStatusResponse) bool {
 	h.databasesMutex.Lock()
 	defer h.databasesMutex.Unlock()
 
@@ -182,32 +178,32 @@ func (h *SourceHandler) OnDbStatusChanged(dbStatus *grpc_server.DbStatusResponse
 	return true
 }
 
-func (h *SourceHandler) updateDbStatus(source *DatabaseSource, dbStatus *grpc_server.DbStatusResponse) {
+func (h *BaseSourceHandler) updateDbStatus(source *sourceApi.DatabaseSource, dbStatus *grpcServerApi.DbStatusResponse) {
 	if source.UpdateState(dbStatus) {
-		if source.State == SourceStateFailed {
+		if source.State == sourceApi.SourceStateFailed {
 			h.retryNextTime(source)
 			return
 		}
-		if source.State == SourceStateDropped {
+		if source.State == sourceApi.SourceStateDropped {
 			go h.RemoveDatabaseSource(source)
 			return
 		}
 	}
 }
 
-func (h *SourceHandler) RemoveDatabaseSource(source *DatabaseSource) {
+func (h *BaseSourceHandler) RemoveDatabaseSource(source *sourceApi.DatabaseSource) {
 	h.databasesMutex.Lock()
 	defer h.databasesMutex.Unlock()
 
-	if source.State == SourceStateDropped {
+	if source.State == sourceApi.SourceStateDropped {
 		delete(h.Databases, source.Name)
 	}
 }
 
 // return true if the source is synced else false
-func (h *SourceHandler) syncDatabaseSource(source *DatabaseSource) bool {
-	dbRequest := &grpc_server.DbRequest{
-		InstanceFilter: grpc_server.InstanceFilter{
+func (h *BaseSourceHandler) syncDatabaseSource(source *sourceApi.DatabaseSource) bool {
+	dbRequest := &grpcServerApi.DbRequest{
+		InstanceFilter: grpcServerApi.InstanceFilter{
 			Name:   source.InstanceName,
 			DbName: source.Name,
 		},
@@ -221,8 +217,8 @@ func (h *SourceHandler) syncDatabaseSource(source *DatabaseSource) bool {
 	return source.Synced()
 }
 
-func (h *SourceHandler) retryNextTime(source *DatabaseSource) {
-	source.State = SourceStateScheduling
+func (h *BaseSourceHandler) retryNextTime(source *sourceApi.DatabaseSource) {
+	source.State = sourceApi.SourceStateScheduling
 	source.NextScheduleAt = time.Now().Add(source.NextRetryDelay())
 	log.Debug().Int("RetryDelay", source.RetryDelay).
 		Int("RetryTimes", source.RetryTimes).
@@ -244,7 +240,7 @@ func (h *SourceHandler) retryNextTime(source *DatabaseSource) {
 	})
 }
 
-func (h *SourceHandler) OnInstanceStatusChanged(instanceStatus *grpc_server.InstanceStatusResponse) bool {
+func (h *BaseSourceHandler) OnInstanceStatusChanged(instanceStatus *grpcServerApi.InstanceStatusResponse) bool {
 	h.instancesMutex.Lock()
 	defer h.instancesMutex.Unlock()
 
@@ -261,7 +257,7 @@ func (h *SourceHandler) OnInstanceStatusChanged(instanceStatus *grpc_server.Inst
 	return true
 }
 
-func (h *SourceHandler) handleDatabasesOnInstanceOnline(instance *grpc_server.InstanceStatusResponse) {
+func (h *BaseSourceHandler) handleDatabasesOnInstanceOnline(instance *grpcServerApi.InstanceStatusResponse) {
 	h.databasesMutex.Lock()
 	defer h.databasesMutex.Unlock()
 	for _, source := range h.Databases {
@@ -276,10 +272,29 @@ func (h *SourceHandler) handleDatabasesOnInstanceOnline(instance *grpc_server.In
 			h.updateDbStatus(source, database)
 		}
 
-		if source.State == SourceStatePending {
-			source.State = SourceStateScheduling
+		if source.State == sourceApi.SourceStatePending {
+			source.State = sourceApi.SourceStateScheduling
 			source.NextScheduleAt = time.Now()
 			go h.sourceProducer.Send(source)
 		}
 	}
+}
+
+func (h *BaseSourceHandler) IsReady(dbName, instanceName string) bool {
+	h.databasesMutex.Lock()
+	defer h.databasesMutex.Unlock()
+
+	if source, ok := h.Databases[dbName]; ok {
+		return source.InstanceName == instanceName && source.State == sourceApi.SourceStateReady
+	}
+	return false
+}
+
+func (h *BaseSourceHandler) GetSource(name string) *sourceApi.DatabaseSource {
+	h.databasesMutex.Lock()
+	defer h.databasesMutex.Unlock()
+	if source, ok := h.Databases[name]; ok {
+		return source
+	}
+	return nil
 }

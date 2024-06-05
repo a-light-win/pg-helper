@@ -5,7 +5,9 @@ import (
 	"net/http"
 
 	config "github.com/a-light-win/pg-helper/internal/config/server"
-	"github.com/a-light-win/pg-helper/internal/interface/grpc_server"
+	"github.com/a-light-win/pg-helper/internal/constants"
+	"github.com/a-light-win/pg-helper/internal/interface/grpcServerApi"
+	"github.com/a-light-win/pg-helper/internal/interface/sourceApi"
 	ginAuth "github.com/a-light-win/pg-helper/pkg/auth/gin"
 	"github.com/a-light-win/pg-helper/pkg/server"
 	"github.com/a-light-win/pg-helper/pkg/validate"
@@ -22,10 +24,11 @@ type WebServer struct {
 	Router *gin.Engine
 	Auth   *ginAuth.GinAuth
 
-	Handler *Handler
+	sourceHandler sourceApi.SourceHandler
+	dbReadyWaiter grpcServerApi.DbReadyWaiter
 }
 
-func NewWebServer(config *config.WebConfig, dbManager grpc_server.DbManager) *WebServer {
+func NewWebServer(config *config.WebConfig) *WebServer {
 	w := &WebServer{
 		Config: config,
 		Router: gin.Default(),
@@ -45,12 +48,6 @@ func NewWebServer(config *config.WebConfig, dbManager grpc_server.DbManager) *We
 
 	w.Router.UseH2C = w.Config.UseH2C
 	w.Router.SetTrustedProxies(w.Config.TrustedProxies)
-
-	w.Handler = NewHandler()
-	w.Handler.DbManager = dbManager
-
-	w.registerRoutes()
-
 	return w
 }
 
@@ -91,5 +88,9 @@ func (w *WebServer) Init(setter server.GlobalSetter) error {
 }
 
 func (w *WebServer) PostInit(getter server.GlobalGetter) error {
+	w.sourceHandler = getter.Get(constants.ServerKeySourceHandler).(sourceApi.SourceHandler)
+	w.dbReadyWaiter = getter.Get(constants.ServerKeyDbReadyWaiter).(grpcServerApi.DbReadyWaiter)
+
+	w.registerRoutes()
 	return nil
 }

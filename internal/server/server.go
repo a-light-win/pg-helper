@@ -17,13 +17,13 @@ type Server struct {
 func New(config *config.ServerConfig) *Server {
 	signalServer := server.NewSignalServer()
 	grpcServer := grpc_server.NewGrpcServer(&config.Grpc, signalServer.QuitCtx)
-	webServer := web_server.NewWebServer(&config.Web, grpcServer.SvcHandler)
+	webServer := web_server.NewWebServer(&config.Web)
 	cronServer := server.NewCronServer()
 
 	sourceHandler := source.NewSourceHandler(&config.Source)
 	sourceConsumer := server.NewBaseConsumer[server.NamedElement]("Source Manager", sourceHandler, 8)
 
-	fileSourceHandler := source.NewFileSourceHandler(sourceHandler)
+	fileSourceHandler := source.NewFileSourceHandler(sourceHandler, &sourceHandler.Config.File)
 	fileSourceMonitor := server.NewFileMonitor("File Source Monitor", fileSourceHandler)
 
 	pgServer := Server{
@@ -45,6 +45,7 @@ func New(config *config.ServerConfig) *Server {
 
 	pgServer.Set(constants.ServerKeyCronProducer, cronServer.Producer())
 	pgServer.Set(constants.ServerKeySourceProducer, sourceConsumer.Producer())
+	pgServer.Set(constants.ServerKeySourceHandler, sourceHandler)
 
 	return &pgServer
 }

@@ -1,4 +1,4 @@
-package grpc_server
+package grpcServerApi
 
 import (
 	"time"
@@ -51,4 +51,8 @@ type DbManager interface {
 
 	SubscribeDbStatus
 	SubscribeInstanceStatus
+}
+
+type DbReadyWaiter interface {
+	WaitReady(instName string, dbName string, timeout time.Duration) bool
 }

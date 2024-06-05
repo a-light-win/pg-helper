@@ -3,7 +3,7 @@ package grpc_server
 import (
 	"sync"
 
-	api "github.com/a-light-win/pg-helper/internal/interface/grpc_server"
+	api "github.com/a-light-win/pg-helper/internal/interface/grpcServerApi"
 	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/rs/zerolog/log"
 )

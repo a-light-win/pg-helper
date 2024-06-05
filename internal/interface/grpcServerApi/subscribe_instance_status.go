@@ -1,4 +1,4 @@
-package grpc_server
+package grpcServerApi
 
 type InstanceStatusResponse struct {
 	Name    string `json:"name"`

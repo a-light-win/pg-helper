@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	config "github.com/a-light-win/pg-helper/internal/config/server"
+	"github.com/a-light-win/pg-helper/internal/interface/sourceApi"
 	"github.com/a-light-win/pg-helper/pkg/server"
 	"github.com/a-light-win/pg-helper/pkg/utils"
 	"github.com/fsnotify/fsnotify"
@@ -15,18 +16,18 @@ import (
 const FileSourceEnding = ".yaml"
 
 type FileSourceHandler struct {
-	ParentSourceHandler
+	sourceApi.SourceHandler
 
 	Config *config.FileSourceConfig
 
 	sourceMap map[string]string
 }
 
-func NewFileSourceHandler(handler *SourceHandler) *FileSourceHandler {
+func NewFileSourceHandler(handler sourceApi.SourceHandler, config *config.FileSourceConfig) *FileSourceHandler {
 	return &FileSourceHandler{
-		ParentSourceHandler: handler,
-		Config:              &handler.Config.File,
-		sourceMap:           make(map[string]string),
+		SourceHandler: handler,
+		Config:        config,
+		sourceMap:     make(map[string]string),
 	}
 }
 
@@ -119,15 +120,18 @@ func (h *FileSourceHandler) loadDatabaseSourceFromFile(path string) error {
 		return nil
 	}
 
-	var fileSource DatabaseSource
-	if err := utils.LoadYaml(path, &fileSource); err != nil {
+	var request sourceApi.DatabaseRequest
+	if err := utils.LoadYaml(path, &request); err != nil {
 		log.Warn().Err(err).Str("path", path).Msg("Load database source from file failed")
 		return err
 	}
 
+	fileSource := sourceApi.DatabaseSource{
+		DatabaseRequest: &request,
+		Type:            sourceApi.FileSource,
+	}
+	fileSource.State = sourceApi.SourceStateUnknown
 	h.sourceMap[path] = fileSource.Name
-	fileSource.Type = FileSource
-	fileSource.State = SourceStateUnknown
 
 	if err := h.AddDatabaseSource(&fileSource); err != nil {
 		log.Warn().Err(err).Str("path", path).Msg("Add database source failed")

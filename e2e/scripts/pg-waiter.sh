@@ -11,7 +11,7 @@ check_db_ready() {
 	instance_name="$2"
 	db_status=$(curl -L --no-progress-meter -X GET \
 		-H "Authorization: Bearer ${token}" \
-		"${PG_HELPER_URL}/api/v1/db/ready?db_name=${db_name}&&name=${instance_name}")
+		"${PG_HELPER_URL}/api/v1/db/ready?name=${db_name}&&instance_name=${instance_name}")
 
 	echo "$db_status" | grep "true" >/dev/null
 	if [ $? -eq 0 ]; then

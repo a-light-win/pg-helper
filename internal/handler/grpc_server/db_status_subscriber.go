@@ -3,16 +3,16 @@ package grpc_server
 import (
 	"sync"
 
-	handler "github.com/a-light-win/pg-helper/internal/interface/grpc_server"
+	api "github.com/a-light-win/pg-helper/internal/interface/grpcServerApi"
 	"github.com/a-light-win/pg-helper/pkg/proto"
 )
 
 type DbStatusSubscriber struct {
-	subscribers []handler.SubscribeDbStatusFunc
+	subscribers []api.SubscribeDbStatusFunc
 	mutex       sync.Mutex
 }
 
-func (s *DbStatusSubscriber) Subscribe(subscriber handler.SubscribeDbStatusFunc) {
+func (s *DbStatusSubscriber) Subscribe(subscriber api.SubscribeDbStatusFunc) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.subscribers = append(s.subscribers, subscriber)
@@ -42,7 +42,7 @@ func (s *DbStatusSubscriber) OnStatusChanged(instance *DbInstance, db *Database)
 	s.notifyStatusChanged(dbStatus)
 }
 
-func (s *DbStatusSubscriber) notifyStatusChanged(dbStatus *handler.DbStatusResponse) {
+func (s *DbStatusSubscriber) notifyStatusChanged(dbStatus *api.DbStatusResponse) {
 	for i := 0; i < len(s.subscribers); i++ {
 		if !s.subscribers[i](dbStatus) {
 			s.subscribers = append(s.subscribers[:i], s.subscribers[i+1:]...)

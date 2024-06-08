@@ -104,10 +104,8 @@ func (m *DbInstanceManager) filterInstances(filter *api.InstanceFilter) []*DbIns
 				continue
 			}
 			if db != nil &&
-				db.Stage != proto.DbStage_Idle &&
-				db.Stage != proto.DbStage_Dropping &&
-				db.Stage != proto.DbStage_DropCompleted &&
-				db.Stage != proto.DbStage_None {
+				!db.IsAlreadyIdle() &&
+				!db.IsNotExist() {
 				matched = true
 			}
 		}
@@ -224,5 +222,5 @@ func (m *DbInstanceManager) isReady(instName, dbName string) bool {
 	if db == nil {
 		return false
 	}
-	return db.Ready()
+	return db.IsReadyToUse()
 }

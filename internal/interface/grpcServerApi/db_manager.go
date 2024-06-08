@@ -2,6 +2,8 @@ package grpcServerApi
 
 import (
 	"time"
+
+	"github.com/a-light-win/pg-helper/pkg/proto"
 )
 
 // TODO: move from this package
@@ -27,6 +29,7 @@ type CreateDbRequest struct {
 	Password    string `json:"password" binding:"required,min=8,max=256"`
 	Reason      string `json:"reason" binding:"max=1024"`
 	MigrateFrom string `json:"migrate_from" binding:"max=63,iname"`
+	BackupPath  string `json:"backup_path" binding:"max=256"`
 }
 
 type MigrateOutDbRequest struct {
@@ -53,15 +56,15 @@ func (status *DbStatusResponse) IsFailed() bool {
 }
 
 func (status *DbStatusResponse) IsReady(name string, instanceName string) bool {
-	return status.Stage == "Ready" &&
-		status.Status == "Done" &&
+	return status.Stage == proto.DbStage_ReadyToUse.String() &&
+		status.Status == proto.DbStatus_Done.String() &&
 		status.Name == name &&
 		status.InstanceName == instanceName
 }
 
 func (status *DbStatusResponse) IsMigrateOutReady(name string, instanceName string) bool {
-	return status.Stage == "Idle" &&
-		status.Status == "Done" &&
+	return status.Stage == proto.DbStage_Idle.String() &&
+		status.Status == proto.DbStatus_Done.String() &&
 		status.Name == name &&
 		status.InstanceName == instanceName
 }

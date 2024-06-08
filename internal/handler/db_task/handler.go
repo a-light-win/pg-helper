@@ -1,4 +1,4 @@
-package db_job
+package db_task
 
 import (
 	"context"
@@ -9,26 +9,27 @@ import (
 	"github.com/a-light-win/pg-helper/internal/constants"
 	"github.com/a-light-win/pg-helper/internal/db"
 	"github.com/a-light-win/pg-helper/internal/job"
+	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/a-light-win/pg-helper/pkg/server"
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
 )
 
-type DbJobHandler struct {
+type DbTaskHandler struct {
 	DbApi    *db.DbApi
 	DbConfig *config.DbConfig
 
 	doneJobProducer server.Producer
 }
 
-func NewDbJobHandler(dbConfig *config.DbConfig) *DbJobHandler {
-	return &DbJobHandler{
+func NewDbTaskHandler(dbConfig *config.DbConfig) *DbTaskHandler {
+	return &DbTaskHandler{
 		DbConfig: dbConfig,
 	}
 }
 
-func (h *DbJobHandler) Handle(msg server.NamedElement) error {
-	dbJob, ok := msg.(*DbJob)
+func (h *DbTaskHandler) Handle(msg server.NamedElement) error {
+	dbJob, ok := msg.(*DbTask)
 	if !ok {
 		return errors.New("invalid job type")
 	}
@@ -38,25 +39,31 @@ func (h *DbJobHandler) Handle(msg server.NamedElement) error {
 	return err
 }
 
-func (h *DbJobHandler) handle(dbJob *DbJob) error {
-	if dbJob.Status == db.DbTaskStatusCancelling {
-		dbJob.Status = db.DbTaskStatusCancelled
-		return h.DbApi.UpdateTaskStatus(dbJob.DbTask, nil)
+func (h *DbTaskHandler) handle(dbTask *DbTask) error {
+	if dbTask.Status == db.DbTaskStatusCancelling {
+		dbTask.Status = db.DbTaskStatusCancelled
+		return h.DbApi.UpdateTaskStatus(dbTask.DbTask, nil)
 	}
 
-	switch dbJob.Action {
+	switch dbTask.Action {
+	case db.DbActionMigrateOut:
+		return h.MigrateOut(dbTask)
+	case db.DbActionCreateUser:
+		return h.CreateUser(dbTask)
+	case db.DbActionCreate:
+		return h.CreateDatabase(dbTask)
 	case db.DbActionBackup:
-		return h.BackupDb(dbJob)
+		return h.BackupDb(dbTask)
 	case db.DbActionRestore:
-		return h.RestoreDb(dbJob)
+		return h.RestoreDb(dbTask)
 	case db.DbActionWaitReady:
-		return h.WaitReadyDb(dbJob)
+		return h.WaitReadyDb(dbTask)
 	default:
-		return fmt.Errorf("invalid db action %s", dbJob.Action)
+		return fmt.Errorf("invalid db action %s", dbTask.Action)
 	}
 }
 
-func (h *DbJobHandler) RecoverJobs() (jobs []job.Job, err error) {
+func (h *DbTaskHandler) RecoverJobs() (jobs []job.Job, err error) {
 	err = h.DbApi.Query(func(q *db.Queries) error {
 		activeTasks, err := q.ListActiveDbTasks(h.DbApi.ConnCtx)
 		if err != nil {
@@ -67,7 +74,7 @@ func (h *DbJobHandler) RecoverJobs() (jobs []job.Job, err error) {
 		} else {
 			jobs = make([]job.Job, 0, len(activeTasks))
 			for _, task := range activeTasks {
-				jobs = append(jobs, NewDbJob(&task))
+				jobs = append(jobs, NewDbTask(&task))
 			}
 			return nil
 		}
@@ -75,7 +82,7 @@ func (h *DbJobHandler) RecoverJobs() (jobs []job.Job, err error) {
 	return
 }
 
-func (h *DbJobHandler) Init(setter server.GlobalSetter) (err error) {
+func (h *DbTaskHandler) Init(setter server.GlobalSetter) (err error) {
 	h.DbApi, err = db.NewDbApi(h.DbConfig)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create db api")
@@ -87,7 +94,7 @@ func (h *DbJobHandler) Init(setter server.GlobalSetter) (err error) {
 	return nil
 }
 
-func (h *DbJobHandler) PostInit(getter server.GlobalGetter) error {
+func (h *DbTaskHandler) PostInit(getter server.GlobalGetter) error {
 	h.DbApi.DbStatusNotifier = getter.Get(constants.AgentKeyNotifyDbStatusProducer).(server.Producer)
 	h.doneJobProducer = getter.Get(constants.AgentKeyDoneJobProducer).(server.Producer)
 
@@ -97,4 +104,26 @@ func (h *DbJobHandler) PostInit(getter server.GlobalGetter) error {
 	}
 
 	return nil
+}
+
+func setFinalTaskStatus(api *db.DbApi, task *DbTask, err error) {
+	if err != nil {
+		task.Status = db.DbTaskStatusFailed
+		task.Data.ErrReason = err.Error()
+	} else {
+		task.Status = db.DbTaskStatusCompleted
+		task.Data.ErrReason = ""
+	}
+	api.UpdateTaskStatus(task.DbTask, nil)
+}
+
+func setFinalDbStatus(api *db.DbApi, db_ *db.Db, err error) {
+	if err != nil {
+		db_.Status = proto.DbStatus_Failed
+		db_.ErrorMsg = err.Error()
+	} else {
+		db_.Status = proto.DbStatus_Done
+		db_.ErrorMsg = ""
+	}
+	api.UpdateDbStatus(db_, nil)
 }

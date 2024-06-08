@@ -22,7 +22,7 @@ import (
 
 type GrpcAgentServer struct {
 	GrpcConfig *config.GrpcClientConfig
-	GrpcClient proto.DbTaskSvcClient
+	GrpcClient proto.DbJobSvcClient
 
 	QuitCtx context.Context
 
@@ -80,7 +80,7 @@ func (s *GrpcAgentServer) initGrpcClient() error {
 		return err
 	}
 
-	s.GrpcClient = proto.NewDbTaskSvcClient(conn)
+	s.GrpcClient = proto.NewDbJobSvcClient(conn)
 	return nil
 }
 
@@ -97,7 +97,7 @@ func (s *GrpcAgentServer) PostInit(getter server.GlobalGetter) error {
 	s.DbApi = getter.Get(constants.AgentKeyDbApi).(*db.DbApi)
 	s.jobProducer = getter.Get(constants.AgentKeyJobProducer).(server.Producer)
 
-	s.handler = NewGrpcAgentHandler(s.DbApi, s.GrpcClient, s.jobProducer)
+	s.handler = NewGrpcAgentHandler(s.DbApi, s.GrpcClient, s.jobProducer, s.QuitCtx)
 
 	return nil
 }
@@ -159,7 +159,7 @@ func (s *GrpcAgentServer) Shutdown(ctx context.Context) {
 	log.Log().Msg("gRPC agent server is down")
 }
 
-func (s *GrpcAgentServer) registerService() proto.DbTaskSvc_RegisterClient {
+func (s *GrpcAgentServer) registerService() proto.DbJobSvc_RegisterClient {
 	wait := 2
 
 	registerAgentLoader := &registerAgentLoader{agent: s}
@@ -209,16 +209,13 @@ func (s *GrpcAgentServer) loadRegisterAgent() (*proto.RegisterInstance, error) {
 		PgVersion: s.DbApi.DbConfig.CurrentVersion,
 	}
 
-	err := s.DbApi.Query(func(q *db.Queries) error {
-		var err error
-		registerAgent.Databases, err = db.ListDatabases(q)
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to get databases when load register agent")
-			return err
-		}
-		return nil
-	})
-	return registerAgent, err
+	if dbs, err := s.DbApi.ListDbs(nil); err != nil {
+		log.Error().Err(err).Msg("Failed to get databases when load register agent")
+		return nil, err
+	} else {
+		registerAgent.Databases = s.DbApi.ToProtoDatabases(dbs)
+		return registerAgent, nil
+	}
 }
 
 type registerAgentLoader struct {
@@ -239,7 +236,7 @@ func (r *registerAgentLoader) Run() bool {
 type grpcServiceLoader struct {
 	agent         *GrpcAgentServer
 	registerAgent *proto.RegisterInstance
-	service       proto.DbTaskSvc_RegisterClient
+	service       proto.DbJobSvc_RegisterClient
 }
 
 func (g *grpcServiceLoader) Run() bool {

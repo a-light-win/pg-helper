@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (h *DbTaskSvcHandler) Register(m *proto.RegisterInstance, s proto.DbTaskSvc_RegisterServer) error {
+func (h *DbJobSvcHandler) Register(m *proto.RegisterInstance, s proto.DbJobSvc_RegisterServer) error {
 	authInfo, ok := grpcAuth.LoadAuthInfo(s.Context())
 	if !ok {
 		return status.Error(codes.Unauthenticated, "no auth info")
@@ -46,7 +46,7 @@ func (h *DbTaskSvcHandler) Register(m *proto.RegisterInstance, s proto.DbTaskSvc
 	instance.Online = true
 	h.InstSubscriber.OnStatusChanged(instance)
 
-	instance.ServeDbTask(s)
+	instance.ServeDbJob(s)
 
 	instance.Online = false
 	h.InstSubscriber.OnStatusChanged(instance)

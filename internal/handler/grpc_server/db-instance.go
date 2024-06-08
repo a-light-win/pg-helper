@@ -19,8 +19,8 @@ type DbInstance struct {
 	// Protects Databases
 	dbLock sync.Mutex
 
-	DbTaskChan    chan *proto.DbTask
-	nonSentDbTask *proto.DbTask
+	DbJobChan    chan *proto.DbJob
+	nonSentDbJob *proto.DbJob
 
 	logger *zerolog.Logger
 
@@ -29,10 +29,10 @@ type DbInstance struct {
 
 func NewDbInstance(name string, pgVersion int32, logger *zerolog.Logger, subcriber *DbStatusSubscriber) *DbInstance {
 	return &DbInstance{
-		Name:       name,
-		PgVersion:  pgVersion,
-		Databases:  make(map[string]*Database),
-		DbTaskChan: make(chan *proto.DbTask),
+		Name:      name,
+		PgVersion: pgVersion,
+		Databases: make(map[string]*Database),
+		DbJobChan: make(chan *proto.DbJob),
 
 		logger:     logger,
 		subscriber: subcriber,
@@ -99,41 +99,41 @@ func (a *DbInstance) mustGetDb(name string) *Database {
 	return db
 }
 
-func (a *DbInstance) ServeDbTask(s proto.DbTaskSvc_RegisterServer) {
-	if a.nonSentDbTask != nil {
-		if err := s.Send(a.nonSentDbTask); err != nil {
+func (a *DbInstance) ServeDbJob(s proto.DbJobSvc_RegisterServer) {
+	if a.nonSentDbJob != nil {
+		if err := s.Send(a.nonSentDbJob); err != nil {
 			a.logger.Error().Err(err).
-				Str("request_id", a.nonSentDbTask.RequestId).
-				Msg("Resent non-sent db task failed")
+				Str("job_id", a.nonSentDbJob.JobId).
+				Msg("Resent non-sent db job failed")
 			return
 		}
 		a.logger.Debug().
-			Str("request_id", a.nonSentDbTask.RequestId).
-			Msg("Resend non-sent db task success")
-		a.nonSentDbTask = nil
+			Str("job_id", a.nonSentDbJob.JobId).
+			Msg("Resend non-sent db job success")
+		a.nonSentDbJob = nil
 	}
 
 	for {
 		select {
 		case <-s.Context().Done():
 			return
-		case task := <-a.DbTaskChan:
-			if err := s.Send(task); err != nil {
+		case job := <-a.DbJobChan:
+			if err := s.Send(job); err != nil {
 				a.logger.Error().Err(err).
-					Str("request_id", task.RequestId).
-					Msg("Sent db task failed")
-				a.nonSentDbTask = task
+					Str("job_id", job.JobId).
+					Msg("Sent db job failed")
+				a.nonSentDbJob = job
 				return
 			}
 			a.logger.Debug().
-				Str("request_id", task.RequestId).
-				Msg("Sent db task success")
+				Str("job_id", job.JobId).
+				Msg("Sent db job success")
 		}
 	}
 }
 
-func (a *DbInstance) Send(task *proto.DbTask) {
-	a.DbTaskChan <- task
+func (a *DbInstance) Send(job *proto.DbJob) {
+	a.DbJobChan <- job
 }
 
 func (a *DbInstance) CreateDb(vo *api.CreateDbRequest) error {
@@ -142,7 +142,7 @@ func (a *DbInstance) CreateDb(vo *api.CreateDbRequest) error {
 
 	db := a.mustGetDb(vo.Name)
 
-	if db.Stage == proto.DbStage_Dropping || db.Stage == proto.DbStage_DropCompleted {
+	if db.Stage == proto.DbStage_DropDatabase {
 		return errors.New("database is dropping")
 	}
 	if db.Stage == proto.DbStage_Idle {
@@ -154,30 +154,31 @@ func (a *DbInstance) CreateDb(vo *api.CreateDbRequest) error {
 		return nil
 	}
 
-	task := &proto.DbTask{
-		RequestId: uuid.New().String(),
-		Task: &proto.DbTask_CreateDatabase{
-			CreateDatabase: &proto.CreateDatabaseTask{
+	job := &proto.DbJob{
+		JobId: uuid.New().String(),
+		Job: &proto.DbJob_CreateDatabase{
+			CreateDatabase: &proto.CreateDatabaseJob{
 				Name:        vo.Name,
 				Reason:      vo.Reason,
 				Owner:       vo.Owner,
 				Password:    vo.Password,
 				MigrateFrom: vo.MigrateFrom,
+				BackupPath:  vo.BackupPath,
 			},
 		},
 	}
-	a.logger.Debug().Str("DbName", vo.Name).Msg("Task to create database")
-	a.Send(task)
+	a.logger.Debug().Str("DbName", vo.Name).Msg("Job to create database")
+	a.Send(job)
 
 	return nil
 }
 
-// Return true if send the migrateOut task
+// Return true if send the migrateOut job
 func (a *DbInstance) MigrateOut(request *api.MigrateOutDbRequest, callback func() error) error {
 	a.dbLock.Lock()
 
 	db, ok := a.Databases[request.Name]
-	if !ok || db.ReadyToMigrate() {
+	if !ok || db.IsReadyToMigrate() {
 		a.dbLock.Unlock()
 		return callback()
 	}
@@ -192,16 +193,16 @@ func (a *DbInstance) MigrateOut(request *api.MigrateOutDbRequest, callback func(
 		return api.ContinueSubscribe
 	})
 
-	task := &proto.DbTask{
-		Task: &proto.DbTask_MigrateOutDatabase{
-			MigrateOutDatabase: &proto.MigrateOutDatabaseTask{
+	job := &proto.DbJob{
+		Job: &proto.DbJob_MigrateOutDatabase{
+			MigrateOutDatabase: &proto.MigrateOutDatabaseJob{
 				Name:      request.Name,
 				Reason:    request.Reason,
 				MigrateTo: request.MigrateTo,
 			},
 		},
 	}
-	a.Send(task)
+	a.Send(job)
 	return nil
 }
 

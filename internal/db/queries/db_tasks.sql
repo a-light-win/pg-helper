@@ -1,6 +1,6 @@
 
 -- name: CreateDbTask :one
-INSERT INTO db_tasks (db_id, db_name, action, reason, status, data) VALUES (@db_id, @db_name, @action, @reason, @status, @data) RETURNING *;
+INSERT INTO db_tasks (job_id, db_id, db_name, action, reason, status, data) VALUES (@job_id, @db_id, @db_name, @action, @reason, @status, @data) RETURNING *;
 
 -- name: SetDbTaskStatus :one
 UPDATE db_tasks SET status = @status, data = jsonb_set(data, '{err_reason}'::TEXT[], to_jsonb(@err_reason::TEXT), true), updated_at = timezone('utc', now()) 
@@ -31,3 +31,7 @@ WHERE id = @id;
 SELECT *
 FROM db_tasks
 WHERE db_tasks.status in ('pending', 'running');
+
+-- name: ListDbTasksByJobID :many
+SELECT * FROM db_tasks
+WHERE job_id = @job_id;

@@ -3,7 +3,7 @@ package agent
 import (
 	config "github.com/a-light-win/pg-helper/internal/config/agent"
 	"github.com/a-light-win/pg-helper/internal/constants"
-	"github.com/a-light-win/pg-helper/internal/handler/db_job"
+	"github.com/a-light-win/pg-helper/internal/handler/db_task"
 	"github.com/a-light-win/pg-helper/internal/handler/grpc_agent"
 	"github.com/a-light-win/pg-helper/internal/job"
 	"github.com/a-light-win/pg-helper/pkg/proto"
@@ -21,7 +21,7 @@ func New(config *config.AgentConfig) *Agent {
 
 	dbStatusConsumer := server.NewBaseConsumer[*proto.Database]("Db Status Notifier", &grpc_agent.DbStatusSender{}, 1)
 
-	dbJobHandler := db_job.NewDbJobHandler(&config.Db)
+	dbJobHandler := db_task.NewDbTaskHandler(&config.Db)
 	dbJobConsumer := server.NewBaseConsumer[job.Job]("Db Job Handler", dbJobHandler, 4)
 
 	pendingJobHandler := &job.PendingJobHandler{InitJobProvider: dbJobHandler}

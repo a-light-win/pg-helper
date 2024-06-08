@@ -12,7 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func (h *DbTaskSvcHandler) NotifyDbStatus(ctx context.Context, db *proto.Database) (*emptypb.Empty, error) {
+func (h *DbJobSvcHandler) NotifyDbStatus(ctx context.Context, db *proto.Database) (*emptypb.Empty, error) {
 	authInfo, ok := grpcAuth.LoadAuthInfo(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "no auth info")

@@ -5,9 +5,13 @@ import (
 	"time"
 
 	config "github.com/a-light-win/pg-helper/internal/config/agent"
+	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/a-light-win/pg-helper/pkg/server"
+	"github.com/a-light-win/pg-helper/pkg/utils/logger"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -19,6 +23,17 @@ type DbApi struct {
 	Cancel  context.CancelFunc
 
 	DbStatusNotifier server.Producer
+}
+
+func (q *Queries) Conn() *pgx.Conn {
+	switch q.db.(type) {
+	case *pgxpool.Conn:
+		return q.db.(*pgxpool.Conn).Conn()
+	case *pgx.Conn:
+		return q.db.(*pgx.Conn)
+	default:
+		return nil
+	}
 }
 
 func NewDbApi(config *config.DbConfig) (*DbApi, error) {
@@ -47,7 +62,10 @@ func initConnPool(dbConfig *config.DbConfig) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-type QueryFunc func(*Queries) error
+type (
+	QueryFunc             func(*Queries) error
+	QueryWithRollbackFunc func(pgx.Tx) error
+)
 
 func (api *DbApi) Acquire() (*pgxpool.Conn, error) {
 	return api.DbPool.Acquire(api.ConnCtx)
@@ -65,7 +83,7 @@ func (api *DbApi) Query(queryFunc QueryFunc) error {
 	return queryFunc(q)
 }
 
-func (api *DbApi) QueryWithRollback(queryFunc QueryFunc) error {
+func (api *DbApi) QueryWithRollback(queryFunc QueryWithRollbackFunc) error {
 	conn, err := api.DbPool.Acquire(api.ConnCtx)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to acquire connection")
@@ -79,13 +97,7 @@ func (api *DbApi) QueryWithRollback(queryFunc QueryFunc) error {
 	}
 	defer tx.Rollback(api.ConnCtx)
 
-	q := New(tx)
-	if err := queryFunc(q); err != nil {
-		return err
-	}
-
-	tx.Commit(api.ConnCtx)
-	return nil
+	return queryFunc(tx)
 }
 
 func (api *DbApi) UpdateTaskStatus(task *DbTask, q *Queries) error {
@@ -125,12 +137,15 @@ func (api *DbApi) UpdateDbStatus(db *Db, q *Queries) error {
 	}
 
 	dbStatusParams := SetDbStatusParams{
-		ID:        db.ID,
-		Stage:     db.Stage,
-		Status:    db.Status,
-		UpdatedAt: db.UpdatedAt,
-		ExpiredAt: db.ExpiredAt,
-		ErrorMsg:  db.ErrorMsg,
+		ID:          db.ID,
+		Stage:       db.Stage,
+		Status:      db.Status,
+		UpdatedAt:   db.UpdatedAt,
+		ExpiredAt:   db.ExpiredAt,
+		LastJobID:   db.LastJobID,
+		MigrateTo:   db.MigrateTo,
+		MigrateFrom: db.MigrateFrom,
+		ErrorMsg:    db.ErrorMsg,
 	}
 
 	newDb, err := q.SetDbStatus(api.ConnCtx, dbStatusParams)
@@ -207,14 +222,91 @@ func (api *DbApi) CreateDb(params *CreateDbParams, q *Queries) (*Db, error) {
 			db, err = api.CreateDb(params, q)
 			return err
 		})
-		return db, err
+		if err != nil {
+			if _, ok := err.(*logger.AlreadyLoggedError); !ok {
+				log.Error().Err(err).
+					Str("DbName", params.Name).
+					Msg("Create db recored failed")
+				return nil, logger.NewAlreadyLoggedError(err, zerolog.ErrorLevel)
+			}
+			return nil, err
+		}
+		return db, nil
 	}
 
 	db, err := q.CreateDb(api.ConnCtx, *params)
 	if err != nil {
+		log.Error().Err(err).
+			Str("DbName", params.Name).
+			Msg("Create db recored failed")
+		return nil, logger.NewAlreadyLoggedError(err, zerolog.ErrorLevel)
+	}
+	return &db, nil
+}
+
+func (api *DbApi) CreateDbTask(params *CreateDbTaskParams, q *Queries) (*DbTask, error) {
+	if q == nil {
+		var task *DbTask
+		var err error
+		err = api.Query(func(q *Queries) error {
+			task, err = api.CreateDbTask(params, q)
+			return err
+		})
+		if err != nil {
+			if _, ok := err.(*logger.AlreadyLoggedError); !ok {
+				log.Error().Err(err).
+					Str("DbName", params.DbName).
+					Str("Action", string(params.Action)).
+					Msg("Create db_task recored failed")
+				return nil, logger.NewAlreadyLoggedError(err, zerolog.ErrorLevel)
+			}
+			return nil, err
+		}
+		return task, nil
+	}
+
+	task, err := q.CreateDbTask(api.ConnCtx, *params)
+	if err != nil {
+		log.Error().Err(err).
+			Str("DbName", params.DbName).
+			Str("Action", string(params.Action)).
+			Msg("Create db_task recored failed")
+		return nil, logger.NewAlreadyLoggedError(err, zerolog.ErrorLevel)
+	}
+	return &task, nil
+}
+
+func (api *DbApi) ListDbs(q *Queries) ([]Db, error) {
+	if q == nil {
+		var dbs []Db
+		var err error
+		api.Query(func(q *Queries) error {
+			dbs, err = api.ListDbs(q)
+			return err
+		})
+		return dbs, err
+	}
+
+	dbs, err := q.ListDbs(api.ConnCtx)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return []Db{}, nil
+		}
 		return nil, err
 	}
-	return &db, err
+	return dbs, nil
+}
+
+func (api *DbApi) ToProtoDatabases(dbs []Db) []*proto.Database {
+	if len(dbs) == 0 {
+		return []*proto.Database{}
+	}
+
+	databases := make([]*proto.Database, len(dbs))
+	for i := range dbs {
+		databases[i] = dbs[i].ToProto()
+	}
+	return databases
 }
 
 func (api *DbApi) MigrateDB(quitCtx context.Context) error {

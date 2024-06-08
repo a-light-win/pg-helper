@@ -21,7 +21,7 @@ type GrpcServer struct {
 	GrpcServer *grpc.Server
 	Auth       *grpcAuth.GrpcAuth
 
-	SvcHandler *DbTaskSvcHandler
+	SvcHandler *DbJobSvcHandler
 	QuitCtx    context.Context
 }
 
@@ -46,10 +46,10 @@ func NewGrpcServer(config *config.GrpcConfig, quitCtx context.Context) *GrpcServ
 	}
 	opts = append(opts, grpc.KeepaliveEnforcementPolicy(keepalivePolicy))
 
-	s.SvcHandler = NewDbTaskSvcHandler(config, s.QuitCtx)
+	s.SvcHandler = NewDbJobSvcHandler(config, s.QuitCtx)
 
 	s.GrpcServer = grpc.NewServer(opts...)
-	proto.RegisterDbTaskSvcServer(s.GrpcServer, s.SvcHandler)
+	proto.RegisterDbJobSvcServer(s.GrpcServer, s.SvcHandler)
 
 	return s
 }

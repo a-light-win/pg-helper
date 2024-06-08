@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	api "github.com/a-light-win/pg-helper/internal/interface/grpcServerApi"
-	"github.com/a-light-win/pg-helper/pkg/proto"
 )
 
 type DbStatusSubscriber struct {
@@ -19,12 +18,7 @@ func (s *DbStatusSubscriber) Subscribe(subscriber api.SubscribeDbStatusFunc) {
 }
 
 func (s *DbStatusSubscriber) OnStatusChanged(instance *DbInstance, db *Database) {
-	if db.Stage != proto.DbStage_Ready &&
-		db.Stage != proto.DbStage_Idle &&
-		db.Stage != proto.DbStage_DropCompleted &&
-		db.Status != proto.DbStatus_Failed &&
-		db.Status != proto.DbStatus_Expired &&
-		db.Status != proto.DbStatus_Cancelled {
+	if !db.IsFailed() && !db.IsSynced() {
 		return
 	}
 

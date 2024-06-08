@@ -9,7 +9,7 @@ import (
 )
 
 type DbStatusSender struct {
-	grpcClient proto.DbTaskSvcClient
+	grpcClient proto.DbJobSvcClient
 	connCtx    context.Context
 }
 
@@ -23,7 +23,7 @@ func (s *DbStatusSender) Init(setter server.GlobalSetter) error {
 }
 
 func (s *DbStatusSender) PostInit(getter server.GlobalGetter) error {
-	s.grpcClient = getter.Get(constants.AgentKeyGrpcClient).(proto.DbTaskSvcClient)
+	s.grpcClient = getter.Get(constants.AgentKeyGrpcClient).(proto.DbJobSvcClient)
 	s.connCtx = getter.Get(constants.AgentKeyConnCtx).(context.Context)
 
 	return nil

@@ -2,6 +2,7 @@ package db
 
 import (
 	"github.com/a-light-win/pg-helper/pkg/proto"
+	"github.com/a-light-win/pg-helper/pkg/utils"
 	"github.com/jackc/pgx/v5/pgtype"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -21,6 +22,7 @@ func (db *Db) ToProto() *proto.Database {
 		Status:      db.Status,
 		Stage:       db.Stage,
 		ErrorMsg:    db.ErrorMsg,
+		LastJobId:   utils.UuidToString(db.LastJobID),
 	}
 }
 

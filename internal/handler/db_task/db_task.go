@@ -1,4 +1,4 @@
-package db_job
+package db_task
 
 import (
 	"github.com/a-light-win/pg-helper/internal/db"
@@ -6,35 +6,35 @@ import (
 	"github.com/google/uuid"
 )
 
-type DbJob struct {
+type DbTask struct {
 	*db.DbTask
 }
 
-func NewDbJob(task *db.DbTask) job.Job {
-	return &DbJob{DbTask: task}
+func NewDbTask(task *db.DbTask) job.Job {
+	return &DbTask{DbTask: task}
 }
 
-func (j *DbJob) UUID() uuid.UUID {
+func (j *DbTask) UUID() uuid.UUID {
 	return j.ID
 }
 
-func (j *DbJob) GetName() string {
+func (j *DbTask) GetName() string {
 	return j.ID.String()
 }
 
-func (j *DbJob) Requires() []uuid.UUID {
+func (j *DbTask) Requires() []uuid.UUID {
 	return j.Data.DependsOn
 }
 
-func (j *DbJob) IsPending() bool {
+func (j *DbTask) IsPending() bool {
 	return j.Status == db.DbTaskStatusPending
 }
 
-func (j *DbJob) IsRunning() bool {
+func (j *DbTask) IsRunning() bool {
 	return j.Status == db.DbTaskStatusRunning
 }
 
-func (j *DbJob) IsDone() bool {
+func (j *DbTask) IsDone() bool {
 	switch j.Status {
 	case db.DbTaskStatusCompleted, db.DbTaskStatusFailed, db.DbTaskStatusCancelled:
 		return true
@@ -43,11 +43,11 @@ func (j *DbJob) IsDone() bool {
 	}
 }
 
-func (j *DbJob) IsCancelling() bool {
+func (j *DbTask) IsCancelling() bool {
 	return j.Status == db.DbTaskStatusCancelling
 }
 
-func (j *DbJob) IsFailed() bool {
+func (j *DbTask) IsFailed() bool {
 	switch j.Status {
 	case db.DbTaskStatusFailed, db.DbTaskStatusCancelled:
 		return true
@@ -56,7 +56,7 @@ func (j *DbJob) IsFailed() bool {
 	}
 }
 
-func (j *DbJob) Cancelling(reason string) {
+func (j *DbTask) Cancelling(reason string) {
 	j.Status = db.DbTaskStatusCancelling
 	j.Reason = reason
 }

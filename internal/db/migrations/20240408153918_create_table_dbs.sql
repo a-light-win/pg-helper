@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS dbs (
     status int4 NOT NULL DEFAULT 0,
     stage int4 NOT NULL DEFAULT 0,
 
-    error_msg TEXT NOT NULL DEFAULT ''
+    error_msg TEXT NOT NULL DEFAULT '',
+    last_job_id UUID
   );
 
 CREATE UNIQUE INDEX dbs_name_idx ON dbs (name);

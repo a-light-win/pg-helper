@@ -89,6 +89,7 @@ func (h *BaseSourceHandler) Handle(msg server.NamedElement) error {
 		Owner:       source.Owner,
 		Password:    dbPassword,
 		MigrateFrom: source.MigrateFrom,
+		BackupPath:  source.BackupPath,
 		Reason:      fmt.Sprintf("Create database %s from source %s", source.Name, source.Type),
 	}
 

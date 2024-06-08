@@ -24,4 +24,9 @@ type DbTaskData struct {
 	// - remote-backup
 	// - restore
 	BackupPath string `json:"backup_path"`
+
+	Owner string `json:"owner"`
+
+	// Do not save password to database
+	Password string `json:"-"`
 }

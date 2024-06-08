@@ -1,6 +1,8 @@
 package grpc_agent
 
 import (
+	"context"
+
 	"github.com/a-light-win/pg-helper/internal/db"
 	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/a-light-win/pg-helper/pkg/server"
@@ -8,27 +10,33 @@ import (
 )
 
 type GrpcAgentHandler struct {
-	DbApi       *db.DbApi
-	GrpcClient  proto.DbTaskSvcClient
+	DbApi *db.DbApi
+
+	GrpcClient proto.DbJobSvcClient
+	QuitCtx    context.Context
+
 	JobProducer server.Producer
 	Validator   *validator.Validate
 }
 
-func NewGrpcAgentHandler(dbApi *db.DbApi, grpcClient proto.DbTaskSvcClient, jobProducer server.Producer) *GrpcAgentHandler {
+func NewGrpcAgentHandler(dbApi *db.DbApi, grpcClient proto.DbJobSvcClient, jobProducer server.Producer, quitCtx context.Context) *GrpcAgentHandler {
 	return &GrpcAgentHandler{
 		DbApi:       dbApi,
 		GrpcClient:  grpcClient,
 		JobProducer: jobProducer,
+		QuitCtx:     quitCtx,
 		Validator:   NewValidator(),
 	}
 }
 
-func (h *GrpcAgentHandler) handle(task *proto.DbTask) error {
-	switch task.Task.(type) {
-	case *proto.DbTask_CreateDatabase:
-		return h.createDatabase(task)
-	case *proto.DbTask_MigrateOutDatabase:
-		return h.migrateOutDatabase(task)
+func (h *GrpcAgentHandler) handle(task *proto.DbJob) error {
+	switch task.Job.(type) {
+	case *proto.DbJob_CreateDatabase:
+		request := NewCreateDatabaseRequest(task)
+		return request.Process(h)
+	case *proto.DbJob_MigrateOutDatabase:
+		request := NewMigrateOutDatabaseRequest(task)
+		return request.Process(h)
 	}
 	return nil
 }

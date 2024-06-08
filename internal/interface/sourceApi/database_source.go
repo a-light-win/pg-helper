@@ -56,7 +56,7 @@ const (
 	SourceStateScheduling SourceState = "Scheduling"
 	SourceStateProcessing SourceState = "Processing"
 	SourceStateIdle       SourceState = "Idle"
-	SourceStateReady      SourceState = "Ready"
+	SourceStateReady      SourceState = "ReadyToUse"
 	SourceStateFailed     SourceState = "Failed"
 	SourceStateDropped    SourceState = "Dropped"
 )
@@ -119,7 +119,7 @@ func (s *DatabaseSource) UpdateState(dbStatus *grpcServerApi.DbStatusResponse) b
 		return false
 	}
 
-	if dbStatus.Stage == "DropCompleted" && s.ExpectState == SourceStateIdle {
+	if dbStatus.Stage == "DropDatabase" && dbStatus.Status == "Done" && s.ExpectState == SourceStateIdle {
 		s.State = SourceStateDropped
 		s.UpdatedAt = dbStatus.UpdatedAt
 

@@ -7,10 +7,10 @@ option go_package = "github.com/a-light-win/pg-helper/pkg/proto";
 
 package proto;
 
-service DbTaskSvc {
+service DbJobSvc {
   // Register a new agent to the manager
   // and the manager will send tasks to the agent if needed.
-  rpc Register(RegisterInstance) returns (stream DbTask) {}
+  rpc Register(RegisterInstance) returns (stream DbJob) {}
   // Agent will call this method to notify the manager
   // that the task status has been updated.
   rpc NotifyDbStatus(Database) returns (google.protobuf.Empty) {}
@@ -44,72 +44,56 @@ message Database {
 
   string instance_name = 10;
   string error_msg = 11;
+  string last_job_id = 12;
 }
 
 enum DbStatus {
   Processing = 0;
   Done = 1;
   Failed = 2;
-  Expired = 3;
-  Cancelled = 4;
 }
 
 enum DbStage {
   // The database is not in any stage.
   None = 0;
-  // The database is in the process of creating.
-  Creating = 1;
-  CreateCompleted = 2;
-  // The database is in the process of backuping.
-  BackingUp = 3;
-  BackupCompleted = 4;
-  // The database is in the process of restoring.
-  Restoring = 5;
-  RestoreCompleted = 6;
-  // The database is ready to use.
-  Ready = 7;
-  // The database is migrated to another pg instance.
-  // so now it's in idle state.
-  Idle = 8;
-  // The database is in the process of dropping.
-  Dropping = 9;
-  DropCompleted = 10;
+  CreateUser = 1;
+  CreateDatabase = 2;
+  BackupDatabase = 3;
+  RestoreDatabase = 4;
+  ReadyToUse = 5;
+  Idle = 6;
+  DropDatabase = 7;
 }
 
-message DbTask {
-  string request_id = 1;
-  oneof task {
-    CreateDatabaseTask create_database = 4;
-    MigrateOutDatabaseTask migrate_out_database = 5;
-    RollbackDatabaseTask rollback_database = 6;
-    DropDatabaseTask drop_database = 7;
+message DbJob {
+  string job_id = 1;
+  oneof job {
+    CreateDatabaseJob create_database = 4;
+    MigrateOutDatabaseJob migrate_out_database = 5;
+    RollbackDatabaseJob rollback_database = 6;
+    DropDatabaseJob drop_database = 7;
   }
 }
 
 // Create and migrate a database to the new pg version.
-message CreateDatabaseTask {
+message CreateDatabaseJob {
   string name = 1;
   string reason = 2;
   string owner = 3;
   string password = 4;
   string migrate_from = 5;
+  string backup_path = 6;
 }
 
 // Notify the agent the database is  migrating to another pg instance,
 // and the agent should change the stage to idle.
-message MigrateOutDatabaseTask {
+message MigrateOutDatabaseJob {
   string name = 1;
   string reason = 2;
   string migrate_to = 3;
   google.protobuf.Timestamp expired_at = 4;
 }
 
-message RollbackDatabaseTask { string name = 1; }
+message RollbackDatabaseJob { string name = 1; }
 
-message DropDatabaseTask { string name = 1; }
-
-message DbTaskStatus {
-  string task_id = 1;
-  string result = 2;
-  Database database = 4;
-}
+message DropDatabaseJob { string name = 1; }

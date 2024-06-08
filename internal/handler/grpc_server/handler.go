@@ -7,8 +7,8 @@ import (
 	"github.com/a-light-win/pg-helper/pkg/proto"
 )
 
-type DbTaskSvcHandler struct {
-	proto.UnimplementedDbTaskSvcServer
+type DbJobSvcHandler struct {
+	proto.UnimplementedDbJobSvcServer
 	*DbInstanceManager
 
 	GrpcConfig *config.GrpcConfig
@@ -16,8 +16,8 @@ type DbTaskSvcHandler struct {
 	QuitCtx context.Context
 }
 
-func NewDbTaskSvcHandler(config *config.GrpcConfig, quitCtx context.Context) *DbTaskSvcHandler {
-	return &DbTaskSvcHandler{
+func NewDbJobSvcHandler(config *config.GrpcConfig, quitCtx context.Context) *DbJobSvcHandler {
+	return &DbJobSvcHandler{
 		GrpcConfig: config, QuitCtx: quitCtx,
 		DbInstanceManager: NewDbInstanceManager(),
 	}

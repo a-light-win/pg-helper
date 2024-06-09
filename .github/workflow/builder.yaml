@@ -1,0 +1,80 @@
+---
+on:
+  push:
+    tags:
+      - "builder-*"
+
+env:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      packages: write
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup just
+        uses: extractions/setup-just@v2
+
+      - name: Setup build environment
+        run: |
+          just --unstable setup container-env
+
+      - name: Login to GitHub Container Registry
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if builder exists
+        run: |
+          BUILDER_TAG=$(sed -e 's/builder-//' <<<"${{ github.ref_name }}")
+          echo "BUILDER_TAG=$BUILDER_TAG" >> $GITHUB_ENV
+          if docker manifest inspect ghcr.io/a-light-win/pg-helper/builder:"${ BUILDER_TAG }" > /dev/null 2>&1; then
+            echo "BUILDER_EXIST=true" >> $GITHUB_ENV
+          else
+            echo "BUILDER_EXIST=false" >> $GITHUB_ENV
+          fi
+
+      - name: Build builder if missing
+        if: env.BUILDER_EXIST != 'true'
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ghcr.io/a-light-win/pg-helper/builder
+          containerfiles: Dockerfile.builder
+          provenance: false
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ env.BUILDER_TAG }}
+
+      - name: push image to ghcr.io
+        if: env.BUILDER_EXIST != 'true'
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          registry: ghcr.io/a-light-win
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+
+      - name: Update builder reference in this repository
+        run: |
+          sed -i "s/^builder_version :=.*/builder_version := '${{ env.BUILDER_TAG }}'/" ./just.d/mods/dev.just
+
+      - name: Create pull request to use the new builder
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Use new builder"
+          title: "Use new builder"
+          body: "The builder image has been updated to ${{ steps.build-image.outputs.tags }}."
+          labels: "builder"
+          branch: "builder-${{ env.BUILDER_TAG }}"
+          delete-branch: true
+          add-paths: |
+            ./just.d/mods/dev.just

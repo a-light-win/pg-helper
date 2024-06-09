@@ -1,7 +1,8 @@
 
 import "../lib/vars.just"
 
-builder_cmd := container_provider + " run -it --rm -v `pwd`:/pg-helper -v /tmp/go:/go ghcr.io/a-light-win/pg-helper/bulder:latest"
+builder_version := "0.1.4"
+builder_cmd := container_provider + " run -it --rm -v `pwd`:/pg-helper -v /tmp/go:/go ghcr.io/a-light-win/pg-helper/bulder:" + builder_version
 just_cmd := 'just --unstable'
 
 # Build pg-helper inside a container

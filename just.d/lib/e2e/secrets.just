@@ -69,17 +69,17 @@ _jwt secret_name name scopes resources: _secrets_dir && (_compose_secret secret_
 [no-cd,private]
 _ensure_compose_provider_exists:
   #!/usr/bin/env bash
-  echo "docker podman nerdctl" | grep -w "{{ compose_provider }}" > /dev/null || (echo >&2 "Invalid compose provider" && exit 1)
+  echo "docker podman nerdctl" | grep -w "{{ container_provider }}" > /dev/null || (echo >&2 "Invalid compose provider" && exit 1)
 
 [no-cd,private]
 _compose_secret secret_name: _ensure_compose_provider_exists
   #!/usr/bin/env bash
-  exists_name=$({{compose_provider }} secret ls --format '{{{{.Name}}'|grep -w "{{ secret_name }}")
+  exists_name=$({{container_provider }} secret ls --format '{{{{.Name}}'|grep -w "{{ secret_name }}")
   if [ -n "$exists_name" ]; then
     echo "Secret {{ secret_name }} already exists"
     exit 0
   fi
-  {{ compose_provider }} secret create "{{ secret_name }}" "{{ secrets_dir / secret_name }}"
+  {{ container_provider }} secret create "{{ secret_name }}" "{{ secrets_dir / secret_name }}"
 
 [no-cd,private]
 _clean_jwt_key private_key_name public_key_name: (_clean_secret public_key_name)
@@ -98,6 +98,6 @@ _clean_secret secret_name: (_clean_compose_secret secret_name)
 [no-cd,private]
 _clean_compose_secret secret_name: _ensure_compose_provider_exists
   #!/usr/bin/env bash
-  if {{ compose_provider }} secret exists "{{ secret_name }}"; then
-    {{ compose_provider }} secret rm "{{ secret_name }}"
+  if {{ container_provider }} secret exists "{{ secret_name }}"; then
+    {{ container_provider }} secret rm "{{ secret_name }}"
   fi

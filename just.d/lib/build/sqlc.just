@@ -1,7 +1,7 @@
 
 [no-cd,private]
 _sqlc:
-  {{ env('DOCKER_CMD', 'podman') }} run -it --rm -v `pwd`:`pwd` -w `pwd` docker.io/sqlc/sqlc generate 
+  sqlc generate 
 
 [no-cd,private]
 _clean_sqlc:

@@ -11,12 +11,20 @@ _update_repo_cache:
   fi
 
 [no-cd,private]
-_setup name:
+_setup name ignore_error="false":
   #!/usr/bin/env bash
+  ret=1
   if which pacman &>/dev/null ; then
     {{ sudo_cmd }} pacman -S --noconfirm --needed {{ name }}
+    ret=$?
   elif which apt &>/dev/null ; then
     {{ sudo_cmd }} apt install -y {{ name }}
+    ret=$?
+  fi
+
+  if [ $ret -ne 0 ] && [ "{{ ignore_error }}" != "true" ]; then
+    echo "Failed to install {{ name }}"
+    exit 1
   fi
 
 # Only install the package if the package manager is available
@@ -108,7 +116,13 @@ _setup_goose:
 _setup_podman: (_setup 'buildah podman')
 
 [no-cd,private]
-_setup_podman_compose: (_setup 'podman-compose')
+_setup_podman_compose: (_setup 'podman-compose' "true")
+  #!/usr/bin/env bash
+  grep -q "VERSION_CODENAME=jammy" /etc/os-release
+  if [ $? -eq 0 ]; then
+    curl -o /usr/local/bin/podman-compose https://raw.githubusercontent.com/containers/podman-compose/main/podman_compose.py
+    chmod +x /usr/local/bin/podman-compose
+  fi
 
 [no-cd,private]
 _setup_proto: (_setup_protoc) (_setup_protoc_gen_go) (_setup_protoc_gen_go_grpc)

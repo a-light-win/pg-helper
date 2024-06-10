@@ -1,7 +1,7 @@
 import "./build.just"
 
 [no-cd,private]
-_test_all: _build_all
+_test_all:
   go test -coverprofile=coverage.out ./...
 
 [no-cd,private]

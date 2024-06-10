@@ -1,7 +1,7 @@
 
 import "../lib/vars.just"
 
-builder_version := '0.1.11'
+builder_version := '0.1.12'
 builder_cmd := container_provider + " run -it --rm -v `pwd`:/pg-helper -v /tmp/go:/go ghcr.io/a-light-win/pg-helper/bulder:" + builder_version
 just_cmd := 'just --unstable'
 

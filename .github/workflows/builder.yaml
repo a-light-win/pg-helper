@@ -69,10 +69,10 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "Use new builder"
-          title: "Use new builder"
+          title: "chore(ci): Update builder to ${{ env.BUILDER_TAG }}"
           body: "The builder image has been updated to ${{ steps.build-image.outputs.tags }}."
           labels: "builder"
-          branch: "update-to-builder-${{ env.BUILDER_TAG }}"
+          branch: "update-builder-to-${{ env.BUILDER_TAG }}"
           delete-branch: true
           base: "main"
           add-paths: |

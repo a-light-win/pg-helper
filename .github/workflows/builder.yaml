@@ -74,5 +74,6 @@ jobs:
           labels: "builder"
           branch: "builder-${{ env.BUILDER_TAG }}"
           delete-branch: true
+          base: "main"
           add-paths: |
             ./just.d/mods/dev.just

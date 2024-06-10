@@ -48,7 +48,7 @@ jobs:
         with:
           image: ghcr.io/a-light-win/pg-helper/builder
           containerfiles: Dockerfile.builder
-          provenance: false
+          oci: true
           platforms: linux/amd64
           tags: ${{ env.BUILDER_TAG }}
 

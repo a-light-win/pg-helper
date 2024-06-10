@@ -35,7 +35,7 @@ jobs:
         run: |
           BUILDER_TAG=$(sed -e 's/builder-//' <<<"${{ github.ref_name }}")
           echo "BUILDER_TAG=$BUILDER_TAG" >> $GITHUB_ENV
-          if docker manifest inspect ghcr.io/a-light-win/pg-helper/builder:"${ BUILDER_TAG }" > /dev/null 2>&1; then
+          if podman manifest inspect ghcr.io/a-light-win/pg-helper/builder:"${BUILDER_TAG}" > /dev/null 2>&1; then
             echo "BUILDER_EXIST=true" >> $GITHUB_ENV
           else
             echo "BUILDER_EXIST=false" >> $GITHUB_ENV

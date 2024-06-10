@@ -51,7 +51,7 @@ jobs:
           image: ghcr.io/a-light-win/pg-helper/builder
           containerfiles: Dockerfile.builder
           provenance: false
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           tags: ${{ env.BUILDER_TAG }}
 
       - name: push image to ghcr.io

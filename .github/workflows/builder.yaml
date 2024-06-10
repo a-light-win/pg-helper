@@ -72,7 +72,7 @@ jobs:
           title: "Use new builder"
           body: "The builder image has been updated to ${{ steps.build-image.outputs.tags }}."
           labels: "builder"
-          branch: "builder-${{ env.BUILDER_TAG }}"
+          branch: "update-to-builder-${{ env.BUILDER_TAG }}"
           delete-branch: true
           base: "main"
           add-paths: |

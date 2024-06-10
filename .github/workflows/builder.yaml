@@ -46,7 +46,7 @@ jobs:
         id: build-image
         uses: redhat-actions/buildah-build@v2
         with:
-          image: ghcr.io/a-light-win/pg-helper/builder
+          image: pg-helper/builder
           containerfiles: Dockerfile.builder
           oci: true
           platforms: linux/amd64

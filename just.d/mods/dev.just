@@ -1,8 +1,10 @@
 
 import "../lib/vars.just"
 
+go_path := env('GOPATH', '~/go')
+go_cache := env('GOCACHE', '~/.cache/go-build')
 builder_version := '0.1.12'
-builder_cmd := container_provider + " run -it --rm -v `pwd`:/pg-helper -v /tmp/go:/go ghcr.io/a-light-win/pg-helper/builder:" + builder_version
+builder_cmd := container_provider + " run -it --rm -v `pwd`:/pg-helper -v " + go_path + ":/go -v " + go_cache + ":/go/cache ghcr.io/a-light-win/pg-helper/builder:" + builder_version
 just_cmd := 'just --unstable'
 
 # Build pg-helper inside a container
@@ -38,4 +40,5 @@ bash: go-cache
 
 [no-cd, private]
 go-cache:
-  mkdir -p /tmp/go
+  mkdir -p "{{ go_path }}"
+  mkdir -p "{{ go_cache }}"

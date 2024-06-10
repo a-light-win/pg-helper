@@ -6,8 +6,8 @@ on:
       - "release-*"
 
 env:
-  GOPATH: ~/go
-  GOCACHE: ~/go/cache
+  GOPATH: "$HOME/go"
+  GOCACHE: "$HOME/go/cache"
 
 jobs:
   build:

@@ -7,7 +7,8 @@ container-env: _update_repo_cache && \
 
 [no-cd]
 e2e-env: container-env && \
-  _setup_podman_compose
+  _setup_podman_compose \
+  _setup_venom
 
 [no-cd]
 build-env: _update_repo_cache && \

@@ -113,6 +113,23 @@ _setup_goose:
   GOBIN={{ gobin_path }} go install github.com/pressly/goose/v3/cmd/goose@{{ goose_version }}
 
 [no-cd,private]
+_setup_venom:
+  #!/usr/bin/env bash
+  which venom &> /dev/null
+  if [ $? -eq 0 ]; then
+    existing_version=$(venom --version|awk '{print $3}')
+    if [ "$existing_version" = "{{ venom_version }}" ]; then
+      echo "venom {{venom_version}} is already installed"
+      exit 0
+    fi
+    echo "Upgrading venom to {{ venom_version }}..."
+  else
+    echo "Installing venom {{ venom_version }}..."
+  fi
+
+  GOBIN={{ gobin_path }} go install -v github.com/ovh/venom@latest || exit 1
+
+[no-cd,private]
 _setup_podman: (_setup 'buildah podman')
 
 [no-cd,private]

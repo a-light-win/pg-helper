@@ -18,10 +18,6 @@ testsuites:
   #!/usr/bin/env bash
   find e2e/tests -maxdepth 1 -name '*.yaml' -exec basename {} .yaml \;
 
-# install and update venom to the latest version
-[no-cd]
-update-venom: _update_venom
-
 # Show the logs of a specific test suite
 [no-cd]
 log name:

@@ -127,7 +127,14 @@ _setup_venom:
     echo "Installing venom {{ venom_version }}..."
   fi
 
-  GOBIN={{ gobin_path }} go install -v github.com/ovh/venom@latest || exit 1
+  arch=$(uname -m)
+  if [ "$arch" = "aarch64" ]; then
+    arch=arm64
+  elif [ "$arch" = "x86_64" ]; then
+    arch=amd64
+  fi
+  curl -L -o "{{ gobin_path / 'venom' }}" https://github.com/ovh/venom/releases/download/{{ venom_version }}/venom.linux-$arch || exit $?
+  chmod +x "{{ gobin_path / 'venom' }}"
 
 [no-cd,private]
 _setup_podman: (_setup 'buildah podman')

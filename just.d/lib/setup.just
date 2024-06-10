@@ -105,7 +105,10 @@ _setup_goose:
   GOBIN={{ gobin_path }} go install github.com/pressly/goose/v3/cmd/goose@{{ goose_version }}
 
 [no-cd,private]
-_setup_podman: (_setup 'buildah podman podman-compose')
+_setup_podman: (_setup 'buildah podman')
+
+[no-cd,private]
+_setup_podman_compose: (_setup 'podman-compose')
 
 [no-cd,private]
 _setup_proto: (_setup_protoc) (_setup_protoc_gen_go) (_setup_protoc_gen_go_grpc)

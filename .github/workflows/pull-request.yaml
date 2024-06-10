@@ -63,6 +63,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: pg_helper_bin
+          path: ./dist/pg-helper
 
       - name: Setup e2e environment
         run: |

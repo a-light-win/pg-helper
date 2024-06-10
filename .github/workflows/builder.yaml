@@ -4,8 +4,6 @@ on:
     tags:
       - "builder-*"
 
-env:
-
 jobs:
   build:
     runs-on: ubuntu-latest

@@ -117,7 +117,7 @@ _setup_venom:
   #!/usr/bin/env bash
   which venom &> /dev/null
   if [ $? -eq 0 ]; then
-    existing_version=$(venom --version|awk '{print $3}')
+    existing_version=$(venom version|awk '{print $3}')
     if [ "$existing_version" = "{{ venom_version }}" ]; then
       echo "venom {{venom_version}} is already installed"
       exit 0

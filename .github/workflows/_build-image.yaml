@@ -42,13 +42,13 @@ jobs:
 
       - name: Tag image
         run: |
-          if grep "alpha\|beta\|rc" <<<"${{ github.ref_name }}" ; then
-            echo "BUILD_TAG={{ github.ref_name }}" >> $GITHUB_ENV
-            exit 0
-          fi
-
           version="${{ github.ref_name }}"
           BUILD_TAG="${version}"
+
+          if grep "alpha\|beta\|rc" <<<"${version}" ; then
+            echo "BUILD_TAG=${version}" >> $GITHUB_ENV
+            exit 0
+          fi
 
           major_version="${version%%.*}"
           podman tag pg-helper:"${version}" pg-helper:${major_version}

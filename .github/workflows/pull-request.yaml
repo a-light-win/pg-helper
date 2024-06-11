@@ -53,6 +53,10 @@ jobs:
           retention-days: 7
           compression-level: 0
   e2e:
+    # Disable e2e test now
+    # the podman in ubuntu 22.04 is not working, It may be too old?
+    # Try again after ubuntu 24.04 is available
+    if: false
     needs:
       - build
     runs-on: ubuntu-latest

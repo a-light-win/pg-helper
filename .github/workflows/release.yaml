@@ -16,7 +16,6 @@ jobs:
   call-workflow-build-image:
     needs:
       - call-workflow-build
-      - call-workflow-e2e-test
     uses: a-light-win/pg-helper/.github/workflows/_build-image.yaml@main
     permissions:
       contents: read

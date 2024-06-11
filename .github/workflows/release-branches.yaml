@@ -12,4 +12,4 @@ jobs:
   # 1. reuse the go cache in later pull requests
   # 2. get the latest code coverage of branches
   call-workflow-build:
-    uses: ./.github/workflows/_build.yaml@main
+    uses: a-light-win/pg-helper/.github/workflows/_build.yaml@main

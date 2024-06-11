@@ -1,16 +1,20 @@
 
 import "../lib/vars.just"
 
+builder_version := '0.1.12'
 go_path := env('GOPATH', "$HOME/go")
 go_cache := env('GOCACHE', '$HOME/.cache/go-build')
-builder_version := '0.1.12'
 builder_cmd := container_provider + " run -it --rm -v `pwd`:/pg-helper -v " + go_path + ":/go -v " + go_cache + ":/go/cache ghcr.io/a-light-win/pg-helper/builder:" + builder_version
 just_cmd := 'just --unstable'
 
 # Build pg-helper inside a container
 [no-cd]
-build: go-cache
-  {{ builder_cmd }} {{ just_cmd }} build
+build-all release_mode='release': go-cache
+  {{ builder_cmd }} {{ just_cmd }} build build-all "{{ release_mode }}"
+
+[no-cd]
+build release_mode='release' arch='': go-cache
+  {{ builder_cmd }} {{ just_cmd }} build build "{{ release_mode }}" "{{ arch}}"
 
 # Clean the build files
 [no-cd]

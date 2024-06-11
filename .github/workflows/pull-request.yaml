@@ -8,6 +8,7 @@ on:
 env:
   GOPATH: "$HOME/go"
   GOCACHE: "$HOME/go/cache"
+  GOBIN: "/usr/local/bin"
 
 jobs:
   build:

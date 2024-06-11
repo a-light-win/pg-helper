@@ -144,7 +144,7 @@ _setup_podman_compose: (_setup 'podman-compose' "true")
   #!/usr/bin/env bash
   grep -q "VERSION_CODENAME=jammy" /etc/os-release
   if [ $? -eq 0 ]; then
-    curl -o /usr/local/bin/podman-compose https://raw.githubusercontent.com/containers/podman-compose/main/podman_compose.py
+    curl -L -o /usr/local/bin/podman-compose https://raw.githubusercontent.com/containers/podman-compose/main/podman_compose.py
     chmod +x /usr/local/bin/podman-compose
   fi
 

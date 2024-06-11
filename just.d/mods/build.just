@@ -3,12 +3,14 @@ import "../lib/test.just"
 
 # Build pg-helper on the host machine
 [no-cd]
-build: _build_all
+build-all release_mode='release': (_build_all release_mode)
+
+[no-cd]
+build release_mode='release' arch='': (_build release_mode arch)
 
 # Clean the build files
 [no-cd]
 clean: _clean_build
-  rm -rf dist/pg-helper
 
 # Run the unit tests on the host machine
 [no-cd]

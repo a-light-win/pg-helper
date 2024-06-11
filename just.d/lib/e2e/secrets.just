@@ -52,7 +52,7 @@ _jwt_key private_key_name public_key_name: _secrets_dir && (_compose_secret publ
   public_key_file="{{ secrets_dir / public_key_name }}"
   if [ ! -e "${private_key_file}" ]; then
     echo "Generating jwt auth key for {{ private_key_name }}"
-    ./dist/pg-helper gen-key --config e2e/config/local/pg-helper.yaml
+    ./dist/amd64/pg-helper gen-key --config e2e/config/local/pg-helper.yaml
   fi
 
 [no-cd,private]
@@ -60,7 +60,7 @@ _jwt secret_name name scopes resources: _secrets_dir && (_compose_secret secret_
   #!/usr/bin/env bash
   echo "Generating JWT {{ secret_name }} with scope {{ scopes }} and resources {{ resources }}"
   _jwt_file="{{ secrets_dir / secret_name }}"
-  ./dist/pg-helper gen-jwt --config e2e/config/local/pg-helper.yaml \
+  ./dist/amd64/pg-helper gen-jwt --config e2e/config/local/pg-helper.yaml \
     --output "${_jwt_file}" \
     --subject "{{ name }}" \
     --scopes "{{ scopes }}" \

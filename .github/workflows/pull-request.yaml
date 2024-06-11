@@ -34,7 +34,7 @@ jobs:
       - name: Build
         run: |
           just --unstable dev build
-          tar -cf pg-helper.tar dist/pg-helper
+          tar -cf pg-helper.tar dist/amd64/pg-helper
 
       - name: Unit Test
         run: |

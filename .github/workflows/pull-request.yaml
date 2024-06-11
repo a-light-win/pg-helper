@@ -8,9 +8,9 @@ on:
 
 jobs:
   call-workflow-build:
-    uses: .github/workflows/_build.yaml@main
+    uses: ./.github/workflows/_build.yaml@main
   call-workflow-e2e-test:
-    uses: .github/workflows/_e2e-test.yaml@main
+    uses: ./.github/workflows/_e2e-test.yaml@main
     if: false
     needs:
       - call-workflow-build

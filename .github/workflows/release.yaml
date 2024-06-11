@@ -6,15 +6,15 @@ on:
 
 jobs:
   call-workflow-build:
-    uses: .github/workflows/_build.yaml@main
+    uses: ./.github/workflows/_build.yaml@main
   call-workflow-e2e-test:
     if: false
     needs:
       - call-workflow-build
-    uses: .github/workflows/_e2e-test.yaml@main
+    uses: ./.github/workflows/_e2e-test.yaml@main
   call-workflow-build-image:
     needs:
       - call-workflow-e2e-build
       - call-workflow-e2e-test
-    uses: .github/workflows/_build-image.yaml@main
+    uses: ./.github/workflows/_build-image.yaml@main
   # TODO: Add release to GitHub

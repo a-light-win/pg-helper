@@ -5,80 +5,14 @@ on:
       - "v*"
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup just
-        uses: extractions/setup-just@v2
-
-      - name: Setup build environment
-        run: |
-          just --unstable setup build-env
-
-      - name: Login to GitHub Container Registry
-        uses: redhat-actions/podman-login@v1
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update the builder tag
-        run: |
-          dockerfile_sha=$(sha256sum Dockerfile.builder | cut -c 1-16)
-          poetry_lock_sha=$(sha256sum poetry.lock | cut -c 1-16)
-          echo "BUILDER_TAG=${dockerfile_sha}-${poetry_lock_sha}" >> $GITHUB_ENV
-
-      - name: Update builder tag in Dockerfile
-        run: |
-          sed -i 's%pg-operator/builder:[^ ]\+%pg-operator/builder:${{ env.BUILDER_TAG }}%' Dockerfile
-
-      - name: Check if builder exists
-        run: |
-          if docker manifest inspect ghcr.io/a-light-win/pg-operator/builder:${{ env.BUILDER_TAG }} > /dev/null 2>&1; then
-            echo "BUILDER_EXIST=true" >> $GITHUB_ENV
-          else
-            echo "BUILDER_EXIST=false" >> $GITHUB_ENV
-          fi
-
-      - name: Build builder if missing
-        if: env.BUILDER_EXIST != 'true'
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile.builder
-          push: true
-          provenance: false
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ghcr.io/a-light-win/pg-operator/builder:${{ env.BUILDER_TAG }}
-            ghcr.io/a-light-win/pg-operator/builder:${{ github.ref_name }}-latest
-
-      - name: Set docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ghcr.io/a-light-win/pg-operator
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern=v{{version}}
-            type=semver,pattern=v{{major}}.{{minor}}
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          provenance: false
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          annotations: ${{ steps.meta.outputs.annotations }}
+  call-workflow-build:
+    uses: a-light-win/pg-helper/.github/workflows/reusable/build.yaml@main
+  call-workflow-e2e-test:
+    needs:
+      - call-workflow-build
+    uses: a-light-win/pg-helper/.github/workflows/reusable/build.yaml@main
+  call-workflow-build-image:
+    needs:
+      - call-workflow-e2e-test
+    uses: a-light-win/pg-helper/.github/workflows/reusable/build-image.yaml@main
+  # TODO: Add release to GitHub

@@ -1,0 +1,15 @@
+---
+name: Release Branches
+on:
+  push:
+    branches:
+      - main
+      - "release-*"
+
+jobs:
+  # Run build after pull request merged so we can:
+  #
+  # 1. reuse the go cache in later pull requests
+  # 2. get the latest code coverage of branches
+  call-workflow-build:
+    uses: a-light-win/pg-helper/.github/workflows/reusable/build.yaml@main

@@ -1,0 +1,68 @@
+---
+name: Build pg-helper image
+
+on:
+  workflow_call:
+
+env:
+  LATEST_MAJOR_VERSION: "0"
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download pg-helper
+        uses: actions/download-artifact@v4
+        with:
+          name: pg_helper_bin
+
+      - name: Extract pg-helper
+        run: |
+          tar -xf pg-helper.tar
+
+      - name: Login to GitHub Container Registry
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        run: |
+          podman manifest create pg-helper:"{{ github.ref_name }}"
+          for arch in amd64 arm64 ; do
+            podman build --platform linux/$arch -t pg-helper:"{{ github.ref_name }}" -f Dockerfile dist/$arch/
+          done
+
+      - name: Tag image
+        run: |
+          if grep "alpha\|beta\|rc" <<<"${{ github.ref_name }}" ; then
+            echo "BUILD_TAG={{ github.ref_name }}" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          version="${{ github.ref_name }}"
+          BUILD_TAG="${version}"
+
+          major_version="${version%%.*}"
+          podman tag pg-helper:"${version}" pg-helper:${major_version}
+          BUILD_TAG="${BUILD_TAG} ${major_version}"
+
+          if [ "${major_version}" = "v${{ env.LATEST_MAJOR_VERSION }}" ]; then
+            podman tag pg-helper:"${version}" pg-helper:latest
+            BUILD_TAG="${BUILD_TAG} latest"
+          fi
+          echo "BUILD_TAG=${BUILD_TAG}" >> $GITHUB_ENV
+
+      - name: Push to GitHub Container Registry
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          registry: ghcr.io/a-light-win
+          image: pg-helper
+          tags: ${{ env.BUILD_TAG }}

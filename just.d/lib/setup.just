@@ -11,12 +11,20 @@ _update_repo_cache:
   fi
 
 [no-cd,private]
-_setup name:
+_setup name ignore_error="false":
   #!/usr/bin/env bash
+  ret=1
   if which pacman &>/dev/null ; then
     {{ sudo_cmd }} pacman -S --noconfirm --needed {{ name }}
+    ret=$?
   elif which apt &>/dev/null ; then
     {{ sudo_cmd }} apt install -y {{ name }}
+    ret=$?
+  fi
+
+  if [ $ret -ne 0 ] && [ "{{ ignore_error }}" != "true" ]; then
+    echo "Failed to install {{ name }}"
+    exit 1
   fi
 
 # Only install the package if the package manager is available
@@ -105,10 +113,40 @@ _setup_goose:
   GOBIN={{ gobin_path }} go install github.com/pressly/goose/v3/cmd/goose@{{ goose_version }}
 
 [no-cd,private]
+_setup_venom:
+  #!/usr/bin/env bash
+  which venom &> /dev/null
+  if [ $? -eq 0 ]; then
+    existing_version=$(venom version|awk '{print $3}')
+    if [ "$existing_version" = "{{ venom_version }}" ]; then
+      echo "venom {{venom_version}} is already installed"
+      exit 0
+    fi
+    echo "Upgrading venom to {{ venom_version }}..."
+  else
+    echo "Installing venom {{ venom_version }}..."
+  fi
+
+  arch=$(uname -m)
+  if [ "$arch" = "aarch64" ]; then
+    arch=arm64
+  elif [ "$arch" = "x86_64" ]; then
+    arch=amd64
+  fi
+  curl -L -o "{{ gobin_path / 'venom' }}" https://github.com/ovh/venom/releases/download/{{ venom_version }}/venom.linux-$arch || exit $?
+  chmod +x "{{ gobin_path / 'venom' }}"
+
+[no-cd,private]
 _setup_podman: (_setup 'buildah podman')
 
 [no-cd,private]
-_setup_podman_compose: (_setup 'podman-compose')
+_setup_podman_compose: (_setup 'podman-compose' "true")
+  #!/usr/bin/env bash
+  grep -q "VERSION_CODENAME=jammy" /etc/os-release
+  if [ $? -eq 0 ]; then
+    curl -L -o /usr/local/bin/podman-compose https://raw.githubusercontent.com/containers/podman-compose/main/podman_compose.py
+    chmod +x /usr/local/bin/podman-compose
+  fi
 
 [no-cd,private]
 _setup_proto: (_setup_protoc) (_setup_protoc_gen_go) (_setup_protoc_gen_go_grpc)

@@ -1,5 +1,5 @@
 ---
-name: Build pg-helper image
+name: Reusable workflow - Build pg-helper image
 
 on:
   workflow_call:

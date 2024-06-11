@@ -49,6 +49,7 @@ jobs:
         with:
           name: pg_helper_bin
           path: dist/pg-helper
+          compression-level: 0
   e2e:
     needs:
       - build
@@ -64,7 +65,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: pg_helper_bin
-          path: ./dist/pg-helper
+          path: ./dist
 
       - name: Setup e2e environment
         run: |

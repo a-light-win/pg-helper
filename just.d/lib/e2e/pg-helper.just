@@ -1,8 +1,12 @@
 import "../build.just"
 
 [no-cd,private]
-_copy_pg_helper_to_e2e: _build_all
+_copy_pg_helper_to_e2e:
   #!/usr/bin/env bash
+  if [ ! -x dist/pg-helper ]; then
+    echo >&2 "pg-helper not built yet"
+    exit 1
+  fi
   rsync -av dist e2e/
 
 [no-cd,private]

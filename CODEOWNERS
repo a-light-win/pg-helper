@@ -1,0 +1,7 @@
+
+# Build system relative files
+/Dockerfile         @pg-helper/maintainer
+/Dockerfile.builder @pg-helper/maintainer
+/.github/**         @pg-helper/maintainer
+/just.d/**          @pg-helper/maintainer
+/Justfile           @pg-helper/maintainer

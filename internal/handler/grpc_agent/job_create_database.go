@@ -5,6 +5,7 @@ import (
 
 	"github.com/a-light-win/pg-helper/internal/db"
 	"github.com/a-light-win/pg-helper/internal/handler/db_task"
+	"github.com/a-light-win/pg-helper/internal/job"
 	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/a-light-win/pg-helper/pkg/utils"
 	"github.com/a-light-win/pg-helper/pkg/utils/logger"
@@ -98,14 +99,18 @@ func (r *CreateDatabaseRequest) process(h *GrpcAgentHandler, tx pgx.Tx) error {
 			BackupPath: h.DbApi.DbConfig.NewBackupFile(r.Name),
 		},
 	}
-	var dbTasks []*db.DbTask
+
+	job_ := &job.BaseJob{
+		ID:   r.JobId,
+		Name: fmt.Sprintf("CreateDatabase-%s", r.Name),
+	}
 
 	createUserTask, err := dbApi.CreateDbTask(dbTaskParams, q)
 	if err != nil {
 		return err
 	}
 	createUserTask.Data.Password = r.Password
-	dbTasks = append(dbTasks, createUserTask)
+	job_.Tasks = append(job_.Tasks, db_task.NewDbTask(createUserTask, dbApi))
 
 	dbTaskParams.Action = db.DbActionCreate
 	dbTaskParams.Data.DependsOn = []uuid.UUID{createUserTask.ID}
@@ -113,7 +118,7 @@ func (r *CreateDatabaseRequest) process(h *GrpcAgentHandler, tx pgx.Tx) error {
 	if err != nil {
 		return err
 	}
-	dbTasks = append(dbTasks, createDbTask)
+	job_.Tasks = append(job_.Tasks, db_task.NewDbTask(createDbTask, dbApi))
 
 	if r.MigrateFrom != "" {
 		dbTaskParams.Action = db.DbActionBackup
@@ -122,31 +127,29 @@ func (r *CreateDatabaseRequest) process(h *GrpcAgentHandler, tx pgx.Tx) error {
 		if err != nil {
 			return err
 		}
-		dbTasks = append(dbTasks, backupDbTask)
+		job_.Tasks = append(job_.Tasks, db_task.NewDbTask(backupDbTask, dbApi))
 	}
 
 	if r.MigrateFrom != "" || r.BackupPath != "" {
 		dbTaskParams.Action = db.DbActionRestore
-		dbTaskParams.Data.DependsOn = []uuid.UUID{dbTasks[len(dbTasks)-1].ID}
+		dbTaskParams.Data.DependsOn = []uuid.UUID{job_.Tasks[len(job_.Tasks)-1].UUID()}
 		restoreDbTask, err := dbApi.CreateDbTask(dbTaskParams, q)
 		if err != nil {
 			return err
 		}
-		dbTasks = append(dbTasks, restoreDbTask)
+		job_.Tasks = append(job_.Tasks, db_task.NewDbTask(restoreDbTask, dbApi))
 	}
 
 	dbTaskParams.Action = db.DbActionWaitReady
-	dbTaskParams.Data.DependsOn = []uuid.UUID{dbTasks[len(dbTasks)-1].ID}
+	dbTaskParams.Data.DependsOn = []uuid.UUID{job_.Tasks[len(job_.Tasks)-1].UUID()}
 	waitReadyTask, err := dbApi.CreateDbTask(dbTaskParams, q)
 	if err != nil {
 		return err
 	}
-	dbTasks = append(dbTasks, waitReadyTask)
+	job_.Tasks = append(job_.Tasks, db_task.NewDbTask(waitReadyTask, dbApi))
 
 	tx.Commit(dbApi.ConnCtx)
 
-	for _, dbTask := range dbTasks {
-		h.JobProducer.Send(db_task.NewDbTask(dbTask))
-	}
+	h.JobProducer.Send(job_)
 	return nil
 }

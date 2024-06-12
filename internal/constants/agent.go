@@ -11,5 +11,4 @@ const (
 
 	AgentKeyJobProducer           = "job_producer"
 	AgentKeyReadyToRunJobProducer = "ready_to_run_job_producer"
-	AgentKeyDoneJobProducer       = "done_job_producer"
 )

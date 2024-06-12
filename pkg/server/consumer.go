@@ -99,25 +99,27 @@ func (c *BaseConsumer[T]) PostInit(getter GlobalGetter) error {
 	return nil
 }
 
-func (p *BaseConsumer[T]) Send(msg NamedElement) {
+func (c *BaseConsumer[T]) Send(msg NamedElement) {
 	if element, ok := msg.(T); ok {
-		if !p.chanClosed.Get() {
-			p.addingWg.Add(1)
-			p.Elements <- element
-			p.addingWg.Done()
+		if !c.chanClosed.Get() {
+			c.addingWg.Add(1)
+			c.Elements <- element
+			c.addingWg.Done()
 		} else {
 			log.Warn().Str("Name", element.GetName()).
 				Msg("Producer is closed, discard element")
 		}
 	} else {
-		log.Error().Interface("Element", msg).
+		log.Error().
+			Str("MsgName", msg.GetName()).
+			Str("Server", c.Name).
 			Msg("Invalid element type")
 	}
 }
 
-func (p *BaseConsumer[T]) Close() {
-	if p.chanClosed.CompareAndSwap(false, true) {
-		p.addingWg.Wait()
-		close(p.Elements)
+func (c *BaseConsumer[T]) Close() {
+	if c.chanClosed.CompareAndSwap(false, true) {
+		c.addingWg.Wait()
+		close(c.Elements)
 	}
 }

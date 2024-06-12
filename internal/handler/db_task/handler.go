@@ -11,6 +11,7 @@ import (
 	"github.com/a-light-win/pg-helper/internal/job"
 	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/a-light-win/pg-helper/pkg/server"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
 )
@@ -19,7 +20,7 @@ type DbTaskHandler struct {
 	DbApi    *db.DbApi
 	DbConfig *config.DbConfig
 
-	doneJobProducer server.Producer
+	jobProducer server.Producer
 }
 
 func NewDbTaskHandler(dbConfig *config.DbConfig) *DbTaskHandler {
@@ -29,13 +30,13 @@ func NewDbTaskHandler(dbConfig *config.DbConfig) *DbTaskHandler {
 }
 
 func (h *DbTaskHandler) Handle(msg server.NamedElement) error {
-	dbJob, ok := msg.(*DbTask)
+	task, ok := msg.(*DbTask)
 	if !ok {
 		return errors.New("invalid job type")
 	}
 
-	err := h.handle(dbJob)
-	h.doneJobProducer.Send(dbJob)
+	err := h.handle(task)
+	h.jobProducer.Send(task)
 	return err
 }
 
@@ -63,25 +64,6 @@ func (h *DbTaskHandler) handle(dbTask *DbTask) error {
 	}
 }
 
-func (h *DbTaskHandler) RecoverJobs() (jobs []job.Job, err error) {
-	err = h.DbApi.Query(func(q *db.Queries) error {
-		activeTasks, err := q.ListActiveDbTasks(h.DbApi.ConnCtx)
-		if err != nil {
-			if err != pgx.ErrNoRows {
-				return err
-			}
-			return nil
-		} else {
-			jobs = make([]job.Job, 0, len(activeTasks))
-			for _, task := range activeTasks {
-				jobs = append(jobs, NewDbTask(&task))
-			}
-			return nil
-		}
-	})
-	return
-}
-
 func (h *DbTaskHandler) Init(setter server.GlobalSetter) (err error) {
 	h.DbApi, err = db.NewDbApi(h.DbConfig)
 	if err != nil {
@@ -96,10 +78,14 @@ func (h *DbTaskHandler) Init(setter server.GlobalSetter) (err error) {
 
 func (h *DbTaskHandler) PostInit(getter server.GlobalGetter) error {
 	h.DbApi.DbStatusNotifier = getter.Get(constants.AgentKeyNotifyDbStatusProducer).(server.Producer)
-	h.doneJobProducer = getter.Get(constants.AgentKeyDoneJobProducer).(server.Producer)
-
+	h.jobProducer = getter.Get(constants.AgentKeyJobProducer).(server.Producer)
 	quitCtx := getter.Get(constants.AgentKeyQuitCtx).(context.Context)
+
 	if err := h.DbApi.MigrateDB(quitCtx); err != nil {
+		return err
+	}
+
+	if err := h.recoverJobs(); err != nil {
 		return err
 	}
 
@@ -126,4 +112,58 @@ func setFinalDbStatus(api *db.DbApi, db_ *db.Db, err error) {
 		db_.ErrorMsg = ""
 	}
 	api.UpdateDbStatus(db_, nil)
+}
+
+func (h *DbTaskHandler) recoverJobs() error {
+	log.Log().Msg("Recovering jobs ...")
+	defer log.Log().Msg("Recovering jobs done")
+
+	dbs, err := h.DbApi.ListDbs(nil)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil
+		}
+		return err
+	}
+
+	for i := range dbs {
+		if err := h.recoverJob(dbs[i].LastJobID, dbs[i].Name); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (h *DbTaskHandler) recoverJob(jobID uuid.UUID, dbName string) error {
+	if jobID == uuid.Nil {
+		return nil
+	}
+
+	return h.DbApi.Query(func(q *db.Queries) error {
+		tasks, err := q.ListDbTasksByJobID(h.DbApi.ConnCtx, jobID)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				return nil
+			}
+			return err
+		}
+
+		job_ := &job.BaseJob{ID: jobID}
+		for i := range tasks {
+			dbTask := NewDbTask(&tasks[i], h.DbApi)
+			job_.Tasks = append(job_.Tasks, dbTask)
+		}
+		if job_.IsDone() {
+			return nil
+		}
+
+		log.Info().
+			Str("JobID", jobID.String()).
+			Str("DbName", dbName).
+			Msg("Recovering job")
+
+		job_.Init()
+		h.jobProducer.Send(job_)
+		return nil
+	})
 }

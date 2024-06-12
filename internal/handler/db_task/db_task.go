@@ -8,34 +8,43 @@ import (
 
 type DbTask struct {
 	*db.DbTask
+	dbApi *db.DbApi
+
+	*job.BaseTaskDependency
 }
 
-func NewDbTask(task *db.DbTask) job.Job {
-	return &DbTask{DbTask: task}
+func NewDbTask(task *db.DbTask, dbApi *db.DbApi) job.Task {
+	dbTask := &DbTask{DbTask: task, dbApi: dbApi}
+	dbTask.BaseTaskDependency = job.NewBaseTaskDependency(dbTask, dbTask.Requires())
+	return dbTask
 }
 
-func (j *DbTask) UUID() uuid.UUID {
-	return j.ID
+func (t *DbTask) UUID() uuid.UUID {
+	return t.ID
 }
 
-func (j *DbTask) GetName() string {
-	return j.ID.String()
+func (t *DbTask) JobID() uuid.UUID {
+	return t.DbTask.JobID
 }
 
-func (j *DbTask) Requires() []uuid.UUID {
-	return j.Data.DependsOn
+func (t *DbTask) GetName() string {
+	return t.ID.String()
 }
 
-func (j *DbTask) IsPending() bool {
-	return j.Status == db.DbTaskStatusPending
+func (t *DbTask) Requires() []uuid.UUID {
+	return t.Data.DependsOn
 }
 
-func (j *DbTask) IsRunning() bool {
-	return j.Status == db.DbTaskStatusRunning
+func (t *DbTask) IsPending() bool {
+	return t.Status == db.DbTaskStatusPending
 }
 
-func (j *DbTask) IsDone() bool {
-	switch j.Status {
+func (t *DbTask) IsRunning() bool {
+	return t.Status == db.DbTaskStatusRunning
+}
+
+func (t *DbTask) IsDone() bool {
+	switch t.Status {
 	case db.DbTaskStatusCompleted, db.DbTaskStatusFailed, db.DbTaskStatusCancelled:
 		return true
 	default:
@@ -43,12 +52,8 @@ func (j *DbTask) IsDone() bool {
 	}
 }
 
-func (j *DbTask) IsCancelling() bool {
-	return j.Status == db.DbTaskStatusCancelling
-}
-
-func (j *DbTask) IsFailed() bool {
-	switch j.Status {
+func (t *DbTask) IsFailed() bool {
+	switch t.Status {
 	case db.DbTaskStatusFailed, db.DbTaskStatusCancelled:
 		return true
 	default:
@@ -56,7 +61,8 @@ func (j *DbTask) IsFailed() bool {
 	}
 }
 
-func (j *DbTask) Cancelling(reason string) {
-	j.Status = db.DbTaskStatusCancelling
-	j.Reason = reason
+func (t *DbTask) Cancel(reason string) {
+	t.Status = db.DbTaskStatusCancelled
+	t.Data.ErrReason = reason
+	t.dbApi.UpdateTaskStatus(t.DbTask, nil)
 }

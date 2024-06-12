@@ -5,6 +5,7 @@ import (
 
 	"github.com/a-light-win/pg-helper/internal/db"
 	"github.com/a-light-win/pg-helper/internal/handler/db_task"
+	"github.com/a-light-win/pg-helper/internal/job"
 	"github.com/a-light-win/pg-helper/pkg/proto"
 	"github.com/a-light-win/pg-helper/pkg/utils"
 	"github.com/a-light-win/pg-helper/pkg/utils/logger"
@@ -105,7 +106,10 @@ func (r *MigrateOutDatabaseRequest) process(h *GrpcAgentHandler, tx pgx.Tx) erro
 
 	tx.Commit(h.DbApi.ConnCtx)
 
-	h.JobProducer.Send(db_task.NewDbTask(&migrateOutTask))
+	job_ := &job.BaseJob{ID: r.JobId}
+	job_.Tasks = append(job_.Tasks, db_task.NewDbTask(&migrateOutTask, h.DbApi))
+
+	h.JobProducer.Send(job_)
 
 	return nil
 }

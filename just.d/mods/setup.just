@@ -20,4 +20,4 @@ build-env: _update_repo_cache && \
 [no-cd]
 builder version: container-env
   #!/usr/bin/env bash
-  {{ container_provider }} build -t ghcr.io/a-light-win/pg-helper/bulder:{{ version }} -f Dockerfile.builder .
+  {{ container_provider }} build -t ghcr.io/a-light-win/pg-helper/bulder:{{ version }} -f dockerfile.d/Dockerfile.builder .

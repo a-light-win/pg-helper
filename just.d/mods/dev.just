@@ -1,7 +1,7 @@
 
 import "../lib/vars.just"
 
-builder_version := '0.1.13'
+builder_version := '0.1.15'
 go_path := env('GOPATH', "$HOME/go")
 go_cache := env('GOCACHE', '$HOME/.cache/go-build')
 builder_cmd := container_provider + " run -it --rm -v `pwd`:/pg-helper -v " + go_path + ":/go -v " + go_cache + ":/go/cache ghcr.io/a-light-win/pg-helper/builder:" + builder_version

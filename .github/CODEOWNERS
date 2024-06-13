@@ -1,0 +1,18 @@
+
+# Build system
+/Dockerfile         @a-light-win/pg-helper-maintainer
+/Dockerfile.builder @a-light-win/pg-helper-maintainer
+/.github/**         @a-light-win/pg-helper-maintainer
+/just.d/**          @a-light-win/pg-helper-maintainer
+/Justfile           @a-light-win/pg-helper-maintainer
+
+# codes
+/cmd/**             @a-light-win/pg-helper-member
+/pkg/**             @a-light-win/pg-helper-member
+/internal/**        @a-light-win/pg-helper-member
+/sqlc.yaml          @a-light-win/pg-helper-member
+/go.mod             @a-light-win/pg-helper-member
+/go.sum             @a-light-win/pg-helper-member
+
+# e2e test 
+/e2e/**             @a-light-win/pg-helper-member

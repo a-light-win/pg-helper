@@ -48,7 +48,8 @@ jobs:
         uses: redhat-actions/buildah-build@v2
         with:
           image: pg-helper/builder
-          containerfiles: Dockerfile.builder
+          containerfiles: dockerfile.d/Dockerfile.builder
+          context: .
           oci: true
           platforms: linux/amd64
           tags: ${{ env.BUILDER_TAG }}

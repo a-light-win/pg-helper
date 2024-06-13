@@ -2,7 +2,7 @@ ARG GO_VERSION=1.22.4
 FROM docker.io/library/golang:${GO_VERSION}
 
 # Install just
-COPY scripts/install-just.sh /usr/local/bin/install-just.sh
+COPY dockerfile.d/scripts/install-just.sh /usr/local/bin/install-just.sh
 ARG JUST_VERSION=1.28.0
 RUN bash /usr/local/bin/install-just.sh ${JUST_VERSION}
 

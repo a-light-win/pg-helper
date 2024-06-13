@@ -1,9 +1,8 @@
 
 # Build system
-/Dockerfile         @a-light-win/pg-helper-maintainer
-/Dockerfile.builder @a-light-win/pg-helper-maintainer
 /.github/**         @a-light-win/pg-helper-maintainer
 /just.d/**          @a-light-win/pg-helper-maintainer
+/dockerfile.d/**    @a-light-win/pg-helper-maintainer
 /Justfile           @a-light-win/pg-helper-maintainer
 
 # codes

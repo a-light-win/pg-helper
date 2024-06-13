@@ -13,7 +13,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/pressly/goose/v3 v3.20.0
-	github.com/rs/zerolog v1.32.0
+	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.9.0
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.2

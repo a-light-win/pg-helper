@@ -1,6 +1,6 @@
 
-protoc_gen_go_version := "v1.33.0"
-protoc_gen_go_grpc_version := "v1.3.0"
-sqlc_version := "v1.26.0"
-goose_version := "v3.20.0"
-venom_version := "v1.2.0"
+protoc_gen_go_version := `sed -n 's%^\s*google.golang.org/protobuf\s\+\([v0-9.]\+\)$%\1%p' go.mod`
+protoc_gen_go_grpc_version := "v1.4.0"
+sqlc_version := `sed -n 's%^\s*github.com/sqlc-dev/sqlc\s\+\([v0-9.]\+\)$%\1%p' just.d/lib/go.mod`
+goose_version := `sed -n 's%^\s*github.com/pressly/goose/v[0-9]*\s\+\([v0-9.]\+\)$%\1%p' go.mod`
+venom_version := `sed -n 's%^\s*github.com/ovh/venom\s\+\([v0-9.]\+\)$%\1%p' just.d/lib/go.mod`

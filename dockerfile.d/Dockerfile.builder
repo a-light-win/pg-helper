@@ -9,6 +9,8 @@ RUN bash /usr/local/bin/install-just.sh ${JUST_VERSION}
 # Setup build environment
 COPY Justfile /setup/Justfile
 COPY just.d/ /setup/just.d/
+COPY go.mod /setup/go.mod
+
 WORKDIR /setup
 ENV SUDO=''
 ENV GOBIN=/usr/local/bin

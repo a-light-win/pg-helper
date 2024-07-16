@@ -37,7 +37,7 @@ jobs:
         run: |
           podman manifest create pg-helper:"${{ github.ref_name }}"
           for arch in amd64 arm64 ; do
-            podman build --platform linux/$arch -t pg-helper:"${{ github.ref_name }}" -f dockerfile.d/Dockerfile dist/$arch/
+            podman build --platform linux/$arch --manifest=pg-helper:"${{ github.ref_name }}" -f dockerfile.d/Dockerfile dist/$arch/
           done
 
       - name: Tag image

@@ -1,22 +1,23 @@
 
 [no-cd]
 @next-tag mode='patch':
-  just -f {{ source_file() }} _tag $(git describe --tags --dirty)  {{ mode }}
+  just -f {{ source_file() }} _tag {{ mode }}
 
 [no-cd]
 @next-builder mode='patch':
-  just -f {{ source_file() }} _tag $(git describe --tags --dirty)  {{ mode }} 'builder'
+  just -f {{ source_file() }} _tag {{ mode }} 'builder'
 
 [no-cd,private]
-_tag version mode='patch' force='false' prefix='v':
+_tag mode='patch' prefix='v':
   #!/usr/bin/env python3
   import sys
   import re
-  from subprocess import call
+  from subprocess import call, check_output
 
-  version = '{{ version }}'
   prefix = '{{ prefix }}'
   mode = '{{ mode }}'
+
+  version = check_output(["git", "describe", "--tags", "--dirty", "--match", f'{ prefix }*']).decode().strip()
 
   if 'dirty' in version:
     print("Working tree is dirty, exiting", file=sys.stderr)

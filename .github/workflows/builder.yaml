@@ -66,6 +66,10 @@ jobs:
         run: |
           sed -i "s/^builder_version :=.*/builder_version := '${{ env.BUILDER_TAG }}'/" ./just.d/mods/dev.just
 
+      - name: Keep double newlines in commit message
+        run: |
+          git config --global commit.cleanup verbatim
+
       - name: Create pull request to use the new builder
         uses: peter-evans/create-pull-request@v6
         with:
@@ -76,7 +80,7 @@ jobs:
             The builder image has been updated to ${{ steps.build-image.outputs.tags }}.
 
 
-            skip-checks: "true"
+            skip-checks: true
           title: "chore(ci): Update builder to ${{ env.BUILDER_TAG }}"
           body: |
             The builder image has been updated to ${{ steps.build-image.outputs.tags }}.

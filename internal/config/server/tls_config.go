@@ -9,11 +9,11 @@ import (
 )
 
 type TlsConfig struct {
-	Enabled    bool   `default:"true" negatable:"true" help:"Enable Tls"`
+	Enabled    bool   `default:"false" help:"Enable Tls"`
 	ServerCert string `validate:"required_if=Enabled true,omitempty,file" help:"Path to the server tls cert"`
 	ServerKey  string `validate:"required_if=Enabled true,omitempty,file" help:"Path to the server tls key"`
 
-	MTLSEnabled         bool   `name:"mtls-enabled" negatable:"true" help:"Enable mutual tls"`
+	MTLSEnabled         bool   `name:"mtls-enabled" default:"false" help:"Enable mutual tls"`
 	TrustedCA           string `name:"trusted-ca" validate:"required_if=MTLSEnabled true,omitempty,file" help:"Path to the server trusted ca certs"`
 	TrustedClientDomain string `validate:"omitempty,fqdn"`
 }

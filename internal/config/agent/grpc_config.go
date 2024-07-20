@@ -2,6 +2,7 @@ package agent
 
 import (
 	"os"
+	"strings"
 )
 
 type GrpcClientConfig struct {
@@ -18,5 +19,5 @@ func (g *GrpcClientConfig) AuthToken() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(token), nil
+	return strings.TrimSpace(string(token)), nil
 }

@@ -10,7 +10,7 @@ import (
 
 func TestGrpcClientConfig_AuthToken(t *testing.T) {
 	// Create a temporary file
-	tempFile, err := os.CreateTemp("", "test")
+	tempFile, err := os.CreateTemp("", "pg_helper_test-grpc_config")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -79,7 +79,7 @@ func (h *JobHandler) addJob(job Job) error {
 
 	if _, ok := h.jobs[job.UUID()]; ok {
 		err := ErrJobAlreadyExist
-		log.Warn().Err(err).
+		log.Debug().Err(err).
 			Str("JobName", job.GetName()).
 			Msg("Nothing to do")
 		return logger.NewAlreadyLoggedError(err, zerolog.WarnLevel)
@@ -106,11 +106,14 @@ func (h *JobHandler) processTask(task Task) error {
 		err = ErrNotSupportedTaskStatus
 	}
 
-	log.Warn().Err(err).
-		Str("JobID", task.JobID().String()).
-		Str("TaskName", task.GetName()).
-		Msg("Nothing to do")
-	return logger.NewAlreadyLoggedError(err, zerolog.WarnLevel)
+	if err != nil {
+		log.Warn().Err(err).
+			Str("JobID", task.JobID().String()).
+			Str("TaskName", task.GetName()).
+			Msg("Nothing to do")
+		return logger.NewAlreadyLoggedError(err, zerolog.WarnLevel)
+	}
+	return nil
 }
 
 func (h *JobHandler) processDoneTask(task Task) error {

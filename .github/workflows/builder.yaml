@@ -71,7 +71,7 @@ jobs:
           git config --global commit.cleanup verbatim
 
       - name: Create pull request to use the new builder
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: |

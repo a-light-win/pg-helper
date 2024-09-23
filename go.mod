@@ -3,7 +3,7 @@ module github.com/a-light-win/pg-helper
 go 1.22.1
 
 require (
-	github.com/alecthomas/kong v0.9.0
+	github.com/alecthomas/kong v1.2.1
 	github.com/alecthomas/kong-yaml v0.2.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gin-gonic/gin v1.10.0
